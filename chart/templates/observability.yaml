@@ -1,0 +1,192 @@
+{{- if .Values.observability.enabled }}
+{{- $issuer := include "chat-gsi.oidcIssuer" . -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "prometheus") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "prometheus") | nindent 4 }}
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "prometheus") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "prometheus") | nindent 8 }}
+      annotations:
+        # Roll the pod when the scrape config changes — Prometheus only re-reads
+        # on SIGHUP and the Deployment is otherwise identical.
+        checksum/config: {{ .Files.Get "files/prometheus/prometheus.yml" | sha256sum }}
+    spec:
+      securityContext:
+        # The image runs as nobody; local-path provisions root-owned dirs, so
+        # without this the TSDB cannot be created and the pod CrashLoopBackOffs.
+        fsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: prometheus
+          image: {{ .Values.prometheus.image }}
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time={{ .Values.prometheus.retention }}
+            - --web.enable-lifecycle
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - { name: config, mountPath: /etc/prometheus/prometheus.yml, subPath: prometheus.yml, readOnly: true }
+            - { name: rules, mountPath: /etc/prometheus/rules, readOnly: true }
+            - { name: data, mountPath: /prometheus }
+          readinessProbe:
+            httpGet: { path: /-/ready, port: 9090 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources: {{- toYaml .Values.prometheus.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap: { name: prometheus-config }
+        - name: rules
+          configMap: { name: prometheus-rules }
+        - name: data
+          persistentVolumeClaim: { claimName: prometheus-data }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "grafana") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.grafana.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "grafana") | nindent 4 }}
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "grafana") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "grafana") | nindent 8 }}
+    spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      {{- include "chat-gsi.hostAliases" . | nindent 6 }}
+      containers:
+        - name: grafana
+          image: {{ .Values.grafana.image }}
+          env:
+            - { name: GF_SERVER_ROOT_URL, value: {{ include "chat-gsi.url.grafana" . | quote }} }
+            - { name: GF_SERVER_HTTP_PORT, value: "3001" }
+            # --- llmbot-admin only ---
+            - { name: GF_AUTH_GENERIC_OAUTH_ENABLED, value: "true" }
+            - { name: GF_AUTH_GENERIC_OAUTH_NAME, value: "GSI Login" }
+            - { name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID, value: {{ .Values.grafana.oauthClientId | quote }} }
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-secrets
+                  key: GRAFANA_OIDC_CLIENT_SECRET
+            - { name: GF_AUTH_GENERIC_OAUTH_SCOPES, value: "openid email profile roles" }
+            - { name: GF_AUTH_GENERIC_OAUTH_AUTH_URL, value: {{ printf "%s/protocol/openid-connect/auth" $issuer | quote }} }
+            - { name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL, value: {{ printf "%s/protocol/openid-connect/token" $issuer | quote }} }
+            - { name: GF_AUTH_GENERIC_OAUTH_API_URL, value: {{ printf "%s/protocol/openid-connect/userinfo" $issuer | quote }} }
+            - { name: GF_AUTH_GENERIC_OAUTH_SIGNOUT_REDIRECT_URL, value: {{ printf "%s/protocol/openid-connect/logout" $issuer | quote }} }
+            - { name: GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH, value: {{ .Values.grafana.roleAttributePath | quote }} }
+            - { name: GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT, value: "true" }
+            - { name: GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP, value: "true" }
+            - { name: GF_AUTH_GENERIC_OAUTH_USE_PKCE, value: "true" }
+            - { name: GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH, value: "preferred_username" }
+            - { name: GF_AUTH_GENERIC_OAUTH_NAME_ATTRIBUTE_PATH, value: "name" }
+            - { name: GF_AUTH_OAUTH_AUTO_LOGIN, value: "true" }
+            # RECOVERY: set GRAFANA_DISABLE_LOGIN_FORM=false and log in as admin.
+            - { name: GF_AUTH_DISABLE_LOGIN_FORM, value: {{ .Values.config.GRAFANA_DISABLE_LOGIN_FORM | quote }} }
+            - { name: GF_AUTH_ANONYMOUS_ENABLED, value: "false" }
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-secrets
+                  key: GRAFANA_ADMIN_PASSWORD
+            - { name: GF_USERS_ALLOW_SIGN_UP, value: "false" }
+            - { name: GF_ANALYTICS_REPORTING_ENABLED, value: "false" }
+            - { name: GF_ANALYTICS_CHECK_FOR_UPDATES, value: "false" }
+            - { name: GF_NEWS_NEWS_FEED_ENABLED, value: "false" }
+            - { name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH, value: /var/lib/grafana/dashboards/overview.json }
+          ports:
+            - containerPort: 3001
+          volumeMounts:
+            - { name: datasources, mountPath: /etc/grafana/provisioning/datasources, readOnly: true }
+            - { name: providers, mountPath: /etc/grafana/provisioning/dashboards, readOnly: true }
+            - { name: dashboards, mountPath: /var/lib/grafana/dashboards, readOnly: true }
+            - { name: data, mountPath: /var/lib/grafana }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3001 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 30
+          resources: {{- toYaml .Values.grafana.resources | nindent 12 }}
+      volumes:
+        - name: datasources
+          configMap: { name: grafana-datasources }
+        - name: providers
+          configMap: { name: grafana-dashboard-provider }
+        - name: dashboards
+          configMap: { name: grafana-dashboards }
+        - name: data
+          persistentVolumeClaim: { claimName: grafana-data }
+{{- end }}

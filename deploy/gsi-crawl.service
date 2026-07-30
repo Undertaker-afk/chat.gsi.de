@@ -1,0 +1,12 @@
+# Weekly corpus refresh. Install into ~/.config/systemd/user/ and enable the timer:
+#   systemctl --user enable --now gsi-crawl.timer
+[Unit]
+Description=chat.gsi.de corpus crawl
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Desktop/chat.gsi.de
+ExecStart=/usr/bin/podman compose run --rm crawler crawl
+TimeoutStartSec=6h

@@ -1,0 +1,146 @@
+# Kubernetes dev loop for chat.gsi.de
+# Usage:  make -f k8s/Makefile.k8s <target>     (run from the repo root)
+
+REGISTRY := 192.168.50.112:5000
+NODE_IP  := 192.168.50.119
+NS       := chat-gsi
+FRONTEND := $(REGISTRY)/chat-gsi-frontend:dev
+CRAWLER  := $(REGISTRY)/chat-gsi-crawler:dev
+STATUS   := $(REGISTRY)/chat-gsi-statuspage:dev
+
+.PHONY: config build push deploy up restart restart-observability restart-status logs status dev-forward crawl tick migrate metrics down nuke status-drill status-drill-clean
+
+## one-time (and after any .env / migration / realm / s3.json change)
+config:
+	kubectl apply -f k8s/00-namespace.yaml
+	kubectl -n $(NS) create secret generic chat-gsi-env \
+	  --from-env-file=.env \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap db-migrations \
+	  --from-file=db/migrations/ \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap keycloak-realm \
+	  --from-file=deploy/keycloak/realm-gsi.json \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap seaweed-s3-config \
+	  --from-file=deploy/seaweedfs/s3.json \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	@# Observability. Prometheus re-reads its config only on SIGHUP and Grafana
+	@# only at startup, so `config` is followed by `restart-observability`.
+	kubectl -n $(NS) create configmap prometheus-config \
+	  --from-file=deploy/prometheus/prometheus.yml \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap prometheus-rules \
+	  --from-file=deploy/prometheus/rules/ \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap grafana-datasources \
+	  --from-file=deploy/grafana/provisioning/datasources/ \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap grafana-dashboard-provider \
+	  --from-file=deploy/grafana/provisioning/dashboards/ \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap grafana-dashboards \
+	  --from-file=deploy/grafana/dashboards/ \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap loki-config \
+	  --from-file=deploy/loki/loki.yaml \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+	kubectl -n $(NS) create configmap promtail-config \
+	  --from-file=deploy/promtail/promtail-k8s.yaml \
+	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
+
+build:
+	podman build -t $(FRONTEND) -f frontend/Containerfile ./frontend
+	podman build -t $(CRAWLER)  -f crawler/Containerfile  ./crawler
+	podman build -t $(STATUS)   -f statuspage/Containerfile ./statuspage
+
+push:
+	podman push --tls-verify=false $(FRONTEND)
+	podman push --tls-verify=false $(CRAWLER)
+	podman push --tls-verify=false $(STATUS)
+
+## full apply, safe to repeat
+deploy:
+	kubectl apply -f k8s/00-namespace.yaml
+	kubectl apply -f k8s/10-postgres.yaml
+	kubectl apply -f k8s/11-valkey.yaml
+	kubectl apply -f k8s/20-seaweedfs.yaml
+	kubectl apply -f k8s/30-keycloak.yaml
+	kubectl apply -f k8s/40-frontend.yaml
+	kubectl apply -f k8s/51-crawler-cron.yaml
+	kubectl apply -f k8s/60-observability.yaml
+	kubectl apply -f k8s/70-logs.yaml
+	kubectl apply -f k8s/80-status.yaml
+
+up: config build push deploy
+
+## the loop you will actually run all day
+restart: build push
+	kubectl -n $(NS) rollout restart deployment/frontend
+	kubectl -n $(NS) rollout status deployment/frontend --timeout=180s
+
+## rebuild and restart just the status agent
+restart-status: 
+	podman build -t $(STATUS) -f statuspage/Containerfile ./statuspage
+	podman push --tls-verify=false $(STATUS)
+	kubectl -n $(NS) rollout restart deployment/uptime-kuma
+	kubectl -n $(NS) rollout status deployment/uptime-kuma --timeout=180s
+
+## after editing deploy/prometheus/ or deploy/grafana/: `config` then this
+restart-observability:
+	kubectl -n $(NS) rollout restart deployment/prometheus deployment/grafana deployment/loki
+	kubectl -n $(NS) rollout restart daemonset/promtail
+	kubectl -n $(NS) rollout status deployment/grafana --timeout=180s
+
+## apply a migration to the EXISTING database (see AGENTS.md 6)
+migrate:
+	@test -n "$(FILE)" || { echo "usage: make -f k8s/Makefile.k8s migrate FILE=db/migrations/018_....sql"; exit 1; }
+	kubectl -n $(NS) exec -i deployment/db -- psql -U llmbot -d llmbot -v ON_ERROR_STOP=1 < $(FILE)
+
+## run one scheduler pass now instead of waiting for the CronJob
+tick:
+	kubectl -n $(NS) create job --from=cronjob/crawler-tick crawler-tick-manual-$$(date +%s)
+
+## what Prometheus sees, without waiting for a scrape
+metrics:
+	kubectl -n $(NS) exec deployment/frontend -- \
+	  node -e "fetch('http://127.0.0.1:3000/metrics').then(r=>r.text()).then(t=>console.log(t))"
+
+logs:
+	kubectl -n $(NS) logs -f deployment/frontend
+
+status:
+	kubectl -n $(NS) get pods,svc,ingress,pvc
+
+## run the app locally against cluster backing services
+dev-forward:
+	kubectl -n $(NS) port-forward svc/db 5432:5432 & \
+	kubectl -n $(NS) port-forward svc/valkey 6379:6379 & \
+	kubectl -n $(NS) port-forward svc/seaweed-s3 8333:8333 & \
+	kubectl -n $(NS) port-forward svc/prometheus 9090:9090 & \
+	wait
+
+crawl:
+	kubectl -n $(NS) create -f k8s/50-crawler-job.yaml
+
+down:
+	kubectl -n $(NS) scale deployment --all --replicas=0
+	kubectl -n $(NS) scale statefulset --all --replicas=0
+
+## drive the status page through a real degraded/outage/maintenance event and
+## assert the right incident opens each time. ~12-18 min (real thresholds).
+## Uses a throwaway target; cleans itself up. See deploy/status-drill.py.
+status-drill:
+	python3 deploy/status-drill.py $(ARGS)
+
+## remove anything a drill left behind (e.g. after Ctrl-C or --keep)
+status-drill-clean:
+	-kubectl -n $(NS) exec deploy/uptime-kuma -c agent -- \
+	  python -m app.drilltools del-monitor --name "Drill target (test)"
+	-kubectl -n $(NS) exec deploy/uptime-kuma -c agent -- \
+	  python -m app.drilltools purge --name "Drill target (test)"
+	-kubectl delete -f k8s/90-status-drill.yaml --ignore-not-found
+
+## deletes data too
+nuke:
+	kubectl delete namespace $(NS)

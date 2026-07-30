@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "db") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.postgres.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "db") | nindent 4 }}
+spec:
+  selector:
+    app: db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "db") | nindent 4 }}
+spec:
+  replicas: 1
+  # Recreate, not RollingUpdate: the PVC is ReadWriteOnce, so two pods can never
+  # mount it at once and a rolling update would deadlock.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "db") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.config.POSTGRES_DB | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.config.POSTGRES_USER | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-secrets
+                  key: POSTGRES_PASSWORD
+            # Keep the cluster in a subdirectory: the volume root may contain
+            # entries initdb refuses to run against; a subdir is always clean.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: migrations
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.config.POSTGRES_USER | quote }}, "-d", {{ .Values.config.POSTGRES_DB | quote }}]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 20
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.config.POSTGRES_USER | quote }}, "-d", {{ .Values.config.POSTGRES_DB | quote }}]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources: {{- toYaml .Values.postgres.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: db-data
+        - name: migrations
+          configMap:
+            name: db-migrations

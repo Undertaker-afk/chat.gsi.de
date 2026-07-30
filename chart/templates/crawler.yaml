@@ -1,0 +1,77 @@
+{{- if .Values.crawler.enabled }}
+# The corpus volume. Shared by the scheduler tick and any manual crawl Job
+# (start one with: kubectl create job --from=cronjob/crawler-tick crawl-now).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: corpus
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "crawler") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.crawlerJob.persistence.size }}
+---
+# The scheduler tick. Deliberately dumb: it runs `crawler tick` on a fixed
+# schedule and the DATABASE decides what is actually due, so the crawl interval
+# is an admin setting in the UI, not a schedule baked in here.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: crawler-tick
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "crawler") | nindent 4 }}
+spec:
+  schedule: {{ .Values.crawlerJob.schedule | quote }}
+  # Forbid: a tick still crawling blocks the next one rather than starting a
+  # second crawler against the same source.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      # Long enough for a full wiki crawl claimed from the queue; beyond this the
+      # Job is killed and the next tick reaps the stale run.
+      activeDeadlineSeconds: 21600
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "crawler") | nindent 12 }}
+        spec:
+          restartPolicy: Never
+          {{- include "chat-gsi.imagePullSecrets" . | nindent 10 }}
+          containers:
+            - name: crawler
+              image: {{ include "chat-gsi.image" (dict "ctx" . "component" "crawler") }}
+              imagePullPolicy: {{ .Values.image.crawler.pullPolicy }}
+              args: ["tick"]
+              envFrom:
+                - configMapRef:
+                    name: chat-gsi-config
+                - secretRef:
+                    name: chat-gsi-secrets
+              env:
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: chat-gsi-secrets
+                      key: POSTGRES_PASSWORD
+                - name: DATABASE_URL
+                  value: postgres://{{ .Values.config.POSTGRES_USER }}:$(POSTGRES_PASSWORD)@db:5432/{{ .Values.config.POSTGRES_DB }}
+                - name: VALKEY_URL
+                  value: redis://valkey:6379
+                - name: CORPUS_DIR
+                  value: /data/corpus
+                - name: LOG_FORMAT
+                  value: json
+              volumeMounts:
+                - name: corpus
+                  mountPath: /data/corpus
+              resources: {{- toYaml .Values.crawlerJob.resources | nindent 16 }}
+          volumes:
+            - name: corpus
+              persistentVolumeClaim:
+                claimName: corpus
+{{- end }}

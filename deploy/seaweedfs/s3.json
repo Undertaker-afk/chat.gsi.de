@@ -1,0 +1,20 @@
+{
+  "identities": [
+    {
+      "name": "chat-gsi-de",
+      "credentials": [
+        {
+          "accessKey": "gsi-chat",
+          "secretKey": "0gBDOfeVeF9srUKEd2_H8moXfHf76h_BLLwLaBr0qwQ"
+        }
+      ],
+      "actions": [
+        "Read:gsi-uploads",
+        "Write:gsi-uploads",
+        "List:gsi-uploads",
+        "Tagging:gsi-uploads",
+        "Admin:gsi-uploads"
+      ]
+    }
+  ]
+}

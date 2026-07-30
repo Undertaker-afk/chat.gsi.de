@@ -1,0 +1,37 @@
+-- 003: retrieval indexes.
+--
+-- WHY THERE IS NO HNSW INDEX ON `embedding`
+-- =========================================
+-- Qwen3-Embedding-8B returns 4096 dimensions. pgvector 0.8.5 refuses to build an
+-- HNSW index above 2000 dimensions for `vector`, and above 4000 for `halfvec`:
+--
+--     ERROR: column cannot have more than 2000 dimensions for hnsw index
+--     ERROR: column cannot have more than 4000 dimensions for hnsw index
+--
+-- 4096 exceeds both. Server-side Matryoshka truncation is not available either --
+-- this vLLM deployment rejects the `dimensions` parameter:
+--
+--     "Model 'Qwen/Qwen3-Embedding-8B' does not support Matryoshka embeddings"
+--
+-- So dense retrieval runs as an EXACT sequential scan. For a single wiki that is
+-- the right trade: perfect recall, no approximation, no truncation risk, and at
+-- this corpus size the scan cost is small. Measure before changing it.
+--
+-- SCALING PATH (enable via `make ann-index` when measurements justify it)
+-- ----------------------------------------------------------------------
+-- Client-side MRL truncation to 2048 dims was verified empirically on
+-- 2026-07-27: the top-4 ranking was IDENTICAL to full 4096 dims at 2048, 1024
+-- and even 512 dims -- only irrelevant tail results reordered. So the model is
+-- MRL-trained even though the server does not expose it, and this is safe:
+--
+--   ALTER TABLE chunks ADD COLUMN embedding_ann halfvec(2048);
+--   UPDATE chunks SET embedding_ann =
+--       (l2_normalize(subvector(embedding, 1, 2048)))::halfvec(2048);
+--   CREATE INDEX chunks_embedding_ann ON chunks
+--       USING hnsw (embedding_ann halfvec_cosine_ops) WITH (m = 16, ef_construction = 64);
+--
+-- Retrieval then becomes two-stage: ANN candidates on embedding_ann, exact
+-- rerank on the full 4096-dim embedding. retrieval.ts documents the switch.
+
+CREATE INDEX chunks_tsv      ON chunks USING gin (tsv);
+CREATE INDEX chunks_document ON chunks (document_id);

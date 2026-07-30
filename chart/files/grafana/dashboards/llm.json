@@ -1,0 +1,1750 @@
+{
+ "uid": "chatgsi-llm",
+ "title": "chat.gsi.de \u2014 LLM & retrieval",
+ "description": "The GSI LLM proxy, embeddings, hybrid retrieval, the orchestrator's fan-out, and how fresh the corpus behind it all is.",
+ "tags": [
+  "chat-gsi",
+  "llm",
+  "rag"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 60,
+   "type": "row",
+   "title": "LLM proxy",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 61,
+   "type": "stat",
+   "title": "Calls/min",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "cpm",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_requests_total[5m]) * 60)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 62,
+   "type": "stat",
+   "title": "Error rate",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percentunit",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 0.05
+       },
+       {
+        "color": "red",
+        "value": 0.2
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "(sum(rate(chatgsi_llm_errors_total[10m])) or vector(0)) / clamp_min(sum(rate(chatgsi_llm_requests_total[10m])), 0.0001)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 63,
+   "type": "stat",
+   "title": "TTFT p95",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_llm_time_to_first_token_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "How long the page sits blank. This is what degrades first when the proxy is loaded.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 64,
+   "type": "stat",
+   "title": "Prompt tokens/min",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_tokens_total{direction=\"prompt\"}[5m]) * 60)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 65,
+   "type": "stat",
+   "title": "Completion tokens/min",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_tokens_total{direction=\"completion\"}[5m]) * 60)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 66,
+   "type": "stat",
+   "title": "Aborted (1h)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(increase(chatgsi_llm_requests_total{outcome=\"aborted\"}[1h])) or vector(0)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Users navigating away mid-answer, or the wall-clock budget firing.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 67,
+   "type": "timeseries",
+   "title": "Calls per minute by model and outcome",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "cpm",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (model, outcome) (rate(chatgsi_llm_requests_total[$__rate_interval]) * 60)",
+     "legendFormat": "{{model}} {{outcome}}",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 68,
+   "type": "timeseries",
+   "title": "Errors by status",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "cpm",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (endpoint, status) (rate(chatgsi_llm_errors_total[$__rate_interval]) * 60)",
+     "legendFormat": "{{endpoint}} {{status}}",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "403 means the path prefix is wrong: the working base ends in /api/v1, not /v1. `network` means 192.168.50.1:8080 is unreachable from the pods.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 69,
+   "type": "timeseries",
+   "title": "Time to first token",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 13
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.5, sum by (le, model) (rate(chatgsi_llm_time_to_first_token_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "{{model}} p50",
+     "range": true,
+     "refId": "A"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le, model) (rate(chatgsi_llm_time_to_first_token_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "{{model}} p95",
+     "range": true,
+     "refId": "B"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 70,
+   "type": "timeseries",
+   "title": "Full response duration",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 13
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le, endpoint) (rate(chatgsi_llm_request_duration_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "{{endpoint}} p95",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 71,
+   "type": "timeseries",
+   "title": "Tokens per second",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 21
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (model, direction) (rate(chatgsi_llm_tokens_total[$__rate_interval]))",
+     "legendFormat": "{{model}} {{direction}}",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Zero here with healthy call rates just means the proxy is not reporting a usage block; it is not an outage.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 72,
+   "type": "row",
+   "title": "Retrieval",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 28
+   },
+   "panels": [
+    {
+     "id": 73,
+     "type": "timeseries",
+     "title": "Retrieval latency",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.5, sum by (le) (rate(chatgsi_retrieval_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "p50",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_retrieval_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "p95",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "description": "Query embedding plus both SQL arms. Dense search is an exact scan until the ANN index in 003_indexes.sql is built, so this grows with the corpus.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 74,
+     "type": "timeseries",
+     "title": "Embedding latency by direction",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le, direction) (rate(chatgsi_embedding_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "{{direction}} p95",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Qwen3-Embedding is asymmetric: queries carry an instruction prefix, documents do not. A stream of `document` embeddings from the app would be a bug.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 75,
+     "type": "timeseries",
+     "title": "Chunks returned",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.5, sum by (le) (rate(chatgsi_retrieval_chunks_bucket[$__rate_interval])))",
+       "legendFormat": "p50",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_retrieval_chunks_bucket[$__rate_interval])))",
+       "legendFormat": "p95",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "description": "Capped by CONTEXT_CHUNKS_FAST / CONTEXT_CHUNKS_DEEP. A p50 well under the cap means retrieval is finding nothing, not that it is being frugal.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 76,
+     "type": "timeseries",
+     "title": "Embedding calls",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 37
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cpm",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (outcome) (rate(chatgsi_embedding_requests_total[$__rate_interval]) * 60)",
+       "legendFormat": "{{outcome}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 77,
+     "type": "timeseries",
+     "title": "Texts embedded",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 37
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cpm",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (direction) (rate(chatgsi_embedding_inputs_total[$__rate_interval]) * 60)",
+       "legendFormat": "{{direction}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 78,
+   "type": "row",
+   "title": "Orchestrator",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 29
+   },
+   "panels": [
+    {
+     "id": 79,
+     "type": "timeseries",
+     "title": "Rounds per turn",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le, mode) (rate(chatgsi_orchestrator_rounds_bucket[$__rate_interval])))",
+       "legendFormat": "{{mode}} p95",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Capped by MAX_ROUNDS (3). gsi-fast is one round by definition.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 80,
+     "type": "timeseries",
+     "title": "Subagents dispatched",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cpm",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (mode) (rate(chatgsi_orchestrator_subagents_total[$__rate_interval]) * 60)",
+       "legendFormat": "{{mode}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Each subagent is its own LLM call against the 200k context window; this is the main lever on proxy load.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 81,
+     "type": "timeseries",
+     "title": "Turns cut short by the time budget",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cph",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 25,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum(rate(chatgsi_orchestrator_budget_exhausted_total[$__rate_interval]) * 3600)",
+       "legendFormat": "per hour",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 82,
+   "type": "row",
+   "title": "Corpus and crawler",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 30
+   },
+   "panels": [
+    {
+     "id": 83,
+     "type": "table",
+     "title": "Corpus freshness by source",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "align": "auto",
+        "cellOptions": {
+         "type": "auto"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "time() - chatgsi_corpus_last_document_timestamp_seconds",
+       "legendFormat": "__auto",
+       "range": false,
+       "refId": "A",
+       "format": "table",
+       "instant": true
+      }
+     ],
+     "description": "Seconds since the newest document of each source was fetched. A stale corpus has no user-visible symptom until someone gets a wrong answer.",
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false,
+       "reducer": [
+        "sum"
+       ],
+       "countRows": false,
+       "fields": ""
+      }
+     },
+     "transformations": [
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "job": true,
+         "instance": true,
+         "__name__": true,
+         "service": true,
+         "stack": true
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 84,
+     "type": "timeseries",
+     "title": "Documents per source",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_corpus_documents",
+       "legendFormat": "{{source}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Live documents only -- swept ones are excluded.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 85,
+     "type": "timeseries",
+     "title": "Chunks per source",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_corpus_chunks{state=\"all\"}",
+       "legendFormat": "{{source}} total",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_corpus_chunks{state=\"embedded\"}",
+       "legendFormat": "{{source}} embedded",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "description": "A persistent gap between the two lines means embedding failed partway through a crawl; `make reindex` rebuilds from stored markdown without re-fetching.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 86,
+     "type": "timeseries",
+     "title": "Crawl runs by status",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 0,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (source, status) (increase(chatgsi_crawl_runs_total[$__interval]))",
+       "legendFormat": "{{source}} {{status}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Derived from the crawl_runs table, not from a running process: the crawler is a batch Job with nothing to scrape, and this way the history survives its pod being collected.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 87,
+     "type": "timeseries",
+     "title": "Answer feedback",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 12,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (rating) (increase(chatgsi_feedback_total[$__interval]))",
+       "legendFormat": "{{rating}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,99 @@
+# Promtail for k3s: reads container stdout from the node and ships it to Loki.
+#
+# Runs as a DaemonSet with the node's /var/log mounted read-only. On a
+# single-node cluster that is one pod, but the DaemonSet shape is still right:
+# it is what makes a second node work without a config change.
+#
+# Everything is scoped to the chat-gsi namespace. The kube-system pods
+# (Traefik, CoreDNS, local-path-provisioner) are deliberately excluded — they
+# would triple the volume for logs nobody on this stack reads, and Loki's
+# retention is bounded by a laptop's disk.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  # On a hostPath so a Promtail restart resumes where it left off instead of
+  # re-shipping every log on disk, which would duplicate every line in Grafana.
+  filename: /run/promtail/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    # A pod restart storm should back off, not hammer a Loki that is also
+    # starting up.
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+
+scrape_configs:
+  - job_name: chat-gsi-pods
+    kubernetes_sd_configs:
+      - role: pod
+    pipeline_stages:
+      # k3s uses containerd, so the on-disk format is CRI:
+      #   2026-07-29T12:00:00.000Z stdout F {"level":"info",...}
+      # This unwraps it to the bare application line.
+      - cri: {}
+      # Both the frontend and the crawler emit one JSON object per line. Pulling
+      # `level` out here means `{app="frontend"} |= "" | level="error"` works as
+      # a LABEL filter, which Loki answers from the index rather than by reading
+      # every chunk.
+      - json:
+          expressions:
+            level: level
+            kind: kind
+            msg: msg
+      - labels:
+          level:
+          kind:
+      # Use the application's own timestamp rather than ingestion time, so a
+      # backlog shipped after a Promtail restart lands where it belongs on the
+      # graph instead of all at once.
+      - json:
+          expressions:
+            ts: ts
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          action_on_failure: skip
+      # Anything not matching the JSON shape (a stack trace, Keycloak's Quarkus
+      # output, Postgres) still ships — it just arrives without the extra
+      # labels, which is exactly what should happen.
+
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: chat-gsi
+      # `app` is the label everything is queried by. It comes from the pod label
+      # the Deployments already set, so nothing new has to be maintained.
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node
+      # Crawler Jobs have no `app` label — they are created from a Job template
+      # with a generated name. Without this they would arrive with an empty
+      # `app` and be invisible to every dashboard query.
+      - source_labels: [__meta_kubernetes_pod_label_job_name]
+        regex: (crawler.*)
+        target_label: app
+        replacement: crawler
+      - source_labels: [__meta_kubernetes_pod_label_batch_kubernetes_io_job_name]
+        regex: (crawler.*)
+        target_label: app
+        replacement: crawler
+      # The actual file to tail. containerd writes
+      # /var/log/pods/<ns>_<pod>_<uid>/<container>/N.log; this builds that path
+      # from the discovered metadata.
+      - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+        separator: /
+        target_label: __path__
+        replacement: /var/log/pods/*$1/*.log

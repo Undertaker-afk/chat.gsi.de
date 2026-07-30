@@ -1,0 +1,11 @@
+[Unit]
+Description=Weekly chat.gsi.de corpus crawl
+
+[Timer]
+# Sunday 03:00 local time (plan.md §5).
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

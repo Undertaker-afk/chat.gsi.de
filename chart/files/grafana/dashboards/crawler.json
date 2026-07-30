@@ -1,0 +1,1548 @@
+{
+ "uid": "chatgsi-crawler",
+ "title": "chat.gsi.de \u2014 Crawler",
+ "description": "What the crawler is doing right now, what its last run did, and why. Control lives on /admin; this is the read side.",
+ "tags": [
+  "chat-gsi",
+  "crawler"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "row",
+   "title": "Right now",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Crawls running",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_active) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "A wiki crawl legitimately runs for hours. Length is not a fault signal; the heartbeat next to it is.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Worst heartbeat age",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 3,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 30
+       },
+       {
+        "color": "red",
+        "value": 60
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "max(chatgsi_crawl_heartbeat_age_seconds) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Seconds since the running crawl last wrote progress. Over 60 means the crawler process died \u2014 the next `crawler tick` reaps the run.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Queued requests",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 6,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_queue_depth) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Crawls requested from the admin UI and not yet claimed. The CronJob claims every 5 minutes.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Oldest queued",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 9,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 600
+       },
+       {
+        "color": "red",
+        "value": 1800
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "max(chatgsi_crawl_queue_oldest_seconds) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Growing past ~10 minutes means `crawler tick` is not running: check the CronJob, not the crawler.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Paused sources",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_paused) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Paused by an admin. Scheduled runs do not start and a running crawl waits at its next page.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Stops pending",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 15,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_stop_pending) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Stop pressed, not yet acknowledged. Cleared by the crawler once the run has wound down.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Sources scheduled",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 18,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "count(chatgsi_crawl_interval_minutes) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Sources with an automatic interval configured. The rest are crawled only on request.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 9,
+   "type": "timeseries",
+   "title": "Live progress of running crawls",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 16,
+    "x": 0,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_crawl_active_pages",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{source}} {{outcome}}"
+    }
+   ],
+   "description": "Straight from the heartbeat the crawler writes every 5 seconds. `not_fetched` climbing while `changed` stays flat is changed-only mode working as intended.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 10,
+   "type": "table",
+   "title": "Schedules",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_crawl_interval_minutes",
+     "refId": "A",
+     "range": false,
+     "legendFormat": "__auto",
+     "format": "table",
+     "instant": true
+    }
+   ],
+   "description": "Configured intervals, in minutes. Set from the admin UI; this is the crawl_control table.",
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false,
+     "reducer": [
+      "sum"
+     ],
+     "countRows": false,
+     "fields": ""
+    }
+   },
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "job": true,
+       "instance": true,
+       "__name__": true,
+       "service": true,
+       "stack": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "type": "row",
+   "title": "The last run of each source",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 13
+   },
+   "panels": [
+    {
+     "id": 12,
+     "type": "bargauge",
+     "title": "Pages by outcome, most recent run",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 14
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "min": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "blue",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_crawl_last_run_pages",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}} \u00b7 {{outcome}}"
+      }
+     ],
+     "description": "seen = discovered; changed = re-embedded; unchanged = fetched but identical; not_fetched = skipped without a request at all.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "displayMode": "gradient",
+      "orientation": "horizontal",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "sizing": "auto"
+     }
+    },
+    {
+     "id": 13,
+     "type": "timeseries",
+     "title": "Duration of the most recent run",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": 14
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "s"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_crawl_last_run_duration_seconds",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}} ({{mode}})"
+      }
+     ],
+     "description": "Watch this fall when a source is switched to changed-only: the saving is one HTTP request plus the 5 s politeness delay per unchanged page.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 14,
+     "type": "stat",
+     "title": "Last run ok?",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 8,
+      "x": 0,
+      "y": 24
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "red",
+          "value": null
+         },
+         {
+          "color": "green",
+          "value": 1
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_crawl_last_run_ok",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}}"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "value_and_name",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 15,
+     "type": "timeseries",
+     "title": "Chunks written by the last run",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 8,
+      "x": 8,
+      "y": 24
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_crawl_last_run_chunks",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}}"
+      }
+     ],
+     "description": "Every chunk here cost one embedding call against the shared proxy.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 16,
+     "type": "timeseries",
+     "title": "Bytes fetched by the last run",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 8,
+      "x": 16,
+      "y": 24
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "bytes"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_crawl_last_run_bytes_fetched",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}}"
+      }
+     ],
+     "description": "What the crawl actually pulled off wiki.gsi.de. The number changed-only exists to shrink.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "type": "row",
+   "title": "History",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 14
+   },
+   "panels": [
+    {
+     "id": 18,
+     "type": "timeseries",
+     "title": "Runs by status",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 15
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (status) (increase(chatgsi_crawl_runs_by_mode_total[$__interval]))",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{status}}"
+      }
+     ],
+     "description": "`stopped` is its own status, not a failure: an admin ended it deliberately, and such a run never runs the delete sweep.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 19,
+     "type": "timeseries",
+     "title": "Runs by mode",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 15
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (mode) (increase(chatgsi_crawl_runs_by_mode_total[$__interval]))",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{mode}}"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 20,
+     "type": "timeseries",
+     "title": "Time since the last successful crawl",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 15
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "s"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "time() - chatgsi_crawl_last_finished_timestamp_seconds{status=\"ok\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}}"
+      }
+     ],
+     "description": "Rising without bound means no crawl is completing. The corpus does not shrink \u2014 it silently stops matching the wiki.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 21,
+     "type": "timeseries",
+     "title": "Corpus freshness",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 0,
+      "y": 23
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "s"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "time() - chatgsi_corpus_last_document_timestamp_seconds",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{source}}"
+      }
+     ],
+     "description": "Age of the newest document per source. There is no user-visible symptom of staleness until somebody gets a wrong answer.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 22,
+     "type": "timeseries",
+     "title": "Control actions from the admin UI",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 12,
+      "y": 23
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (action) (increase(chatgsi_crawl_control_actions_total[$__interval]))",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{action}}"
+      }
+     ],
+     "description": "Start / pause / resume / stop / cancel / schedule, as pressed on /admin.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "type": "row",
+   "title": "Crawler logs",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 15
+   },
+   "panels": [
+    {
+     "id": 24,
+     "type": "logs",
+     "title": "Crawl events",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 11,
+      "w": 24,
+      "x": 0,
+      "y": 16
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=\"crawler\"} | json | __error__=\"\" | kind = \"crawl\"",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "description": "Structured lines from the pipeline: start, indexed, page_failed, stopped, finish. Every one carries source and run_id, so clicking a run_id filters to that crawl alone.",
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    },
+    {
+     "id": 25,
+     "type": "timeseries",
+     "title": "Crawler log lines by level",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 0,
+      "y": 27
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "label_replace(sum by (level) (count_over_time({app=\"crawler\"} | json | __error__=\"\" [$__auto])), \"level\", \"warn\", \"level\", \"warning\")",
+       "refId": "A",
+       "range": true,
+       "queryType": "range",
+       "legendFormat": "{{level}}"
+      }
+     ],
+     "description": "A burst of warnings without a matching rise in pages_failed usually means restricted topics, which are expected on a mixed-visibility wiki.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 26,
+     "type": "logs",
+     "title": "Crawler errors and warnings",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 12,
+      "y": 27
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=\"crawler\"} | json | __error__=\"\" | level =~ \"warn|warning|error\"",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    }
+   ]
+  }
+ ]
+}

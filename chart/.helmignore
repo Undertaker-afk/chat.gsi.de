@@ -1,0 +1,9 @@
+# Patterns to exclude from the packaged chart.
+.git
+.gitignore
+*.tmpl.bak
+*.swp
+*~
+.DS_Store
+# Keep files/ — it holds the migrations, realm, dashboards and configs the
+# templates read with .Files. Nothing here should exclude it.

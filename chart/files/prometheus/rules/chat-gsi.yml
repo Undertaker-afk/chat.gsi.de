@@ -1,0 +1,103 @@
+# Alerting rules. Prometheus evaluates them; with no Alertmanager deployed they
+# surface as firing alerts in the Grafana "Alert rules" view, which is enough for
+# a lab and costs nothing to point at a real Alertmanager later.
+#
+# Deliberately few. An alert nobody acts on trains people to ignore the ones that
+# matter, so this list is limited to states that are either already broken or
+# will be broken soon with no further input.
+
+groups:
+  - name: chat-gsi
+    rules:
+      - alert: FrontendDown
+        expr: up{job="chat-gsi"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The frontend is not answering scrapes"
+          description: >-
+            /metrics is the only scrape target, so this also means every other
+            panel on the dashboards is stale rather than reporting zero.
+
+      - alert: BackendCollectorDown
+        expr: chatgsi_collector_up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Collector {{ $labels.collector }} has been failing for 5 minutes"
+          description: >-
+            The frontend is up but cannot reach this backend. Storage and corpus
+            panels fed by it are showing their last good value, not the truth.
+
+      - alert: ObjectStorageFillingUp
+        expr: >-
+          chatgsi_object_storage_used_bytes
+            / chatgsi_object_storage_capacity_bytes > 0.8
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Object storage is above 80% of planned capacity"
+          description: >-
+            {{ $value | humanizePercentage }} of S3_CAPACITY_BYTES is in use.
+            Check chatgsi_object_storage_reclaimable_bytes first: a volume
+            compaction may recover it without adding disk.
+
+      - alert: VolumeServerDiskFull
+        expr: >-
+          sum(chatgsi_seaweed_disk_bytes{state="free"})
+            / clamp_min(sum(chatgsi_seaweed_disk_bytes{state="all"}), 1) < 0.1
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Less than 10% free on the SeaweedFS filesystem"
+          description: >-
+            This is the REAL disk, not the 25 TB plan. Uploads start failing when
+            it hits zero, and on k3s the same local-path directory holds every
+            other PVC too.
+
+      - alert: StorageAccountingDrift
+        expr: >-
+          abs(
+            sum(chatgsi_object_storage_used_bytes)
+            - sum(chatgsi_stored_bytes{kind=~"upload|generated"})
+          ) > 1073741824
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Object storage and the database disagree by more than 1 GiB"
+          description: >-
+            The gap is orphaned objects: uploads whose row insert failed, or
+            deletes that never reached the gateway. Quota is enforced against the
+            database number, so the disk fills faster than any user's quota says
+            it should.
+
+      - alert: CorpusStale
+        expr: >-
+          time() - chatgsi_corpus_last_document_timestamp_seconds > 7 * 24 * 3600
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Source {{ $labels.source }} has not been crawled in a week"
+          description: >-
+            The assistant keeps answering confidently from a stale corpus; there
+            is no user-visible symptom until someone notices a wrong answer.
+
+      - alert: LLMProxyErrors
+        expr: >-
+          sum(rate(chatgsi_llm_errors_total[10m]))
+            / sum(rate(chatgsi_llm_requests_total[10m])) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 20% of LLM calls are failing"
+          description: >-
+            Break down by status. 403 means the path prefix is wrong (/api/v1,
+            not /v1); `network` means the proxy at 192.168.50.1:8080 is
+            unreachable from the pods.

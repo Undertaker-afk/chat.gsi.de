@@ -1,0 +1,57 @@
+# Batch job, not a service -- the equivalent of the compose `tools` profile.
+# Run one with:  kubectl -n chat-gsi create -f k8s/50-crawler-job.yaml
+# (create, not apply: generateName gives each run a fresh name.)
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: corpus
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: crawler-
+  namespace: chat-gsi
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: crawler
+          image: 192.168.50.112:5000/chat-gsi-crawler:dev
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: chat-gsi-env
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: postgres://llmbot:$(POSTGRES_PASSWORD)@db:5432/llmbot
+            - name: VALKEY_URL
+              value: redis://valkey:6379
+            - name: CORPUS_DIR
+              value: /data/corpus
+          volumeMounts:
+            - name: corpus
+              mountPath: /data/corpus
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+      volumes:
+        - name: corpus
+          persistentVolumeClaim:
+            claimName: corpus

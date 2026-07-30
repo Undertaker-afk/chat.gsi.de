@@ -1,0 +1,294 @@
+# Uptime Kuma (uptime.lab) and the AI status agent (status.lab).
+#
+# Independent of everything else in this namespace, on purpose. No initContainer
+# waiting on the app, no depends-on, no shared database, no Service of the
+# monitored stack in its readiness path. A status page that fails together with
+# the thing it reports on is worse than none, because the one moment anybody
+# opens it is the moment the stack is broken.
+#
+# The only link is a read-only mount of Kuma's SQLite database. SQLite is opened
+# with mode=ro so the agent physically cannot write it (see statuspage/app/kuma.py
+# for why the database and not the API).
+#
+# Both share one pod. That is the exception to "one process per container" and it
+# is bought with something specific: local-path is ReadWriteOnce, so a separate
+# Deployment could not mount Kuma's volume at all without pinning both to the
+# same node and giving up on ever separating them. Same pod, two containers, one
+# volume — and the agent still cannot write it.
+---
+# Read-only Kubernetes access for the status agent.
+#
+# This is what lets it tell "the chat interface is broken" apart from "somebody
+# is deploying the chat interface" -- both are a failing HTTP check, and only one
+# is an incident. Without it the agent still reports outages; it just cannot
+# label any of them maintenance.
+#
+# Scoped as tightly as the job allows: one namespace, four resource types, and
+# only get/list/watch. No secrets, no writes, nothing cluster-wide. A Role rather
+# than a ClusterRole because everything it needs to see lives in chat-gsi.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: statuspage
+  namespace: chat-gsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: statuspage-readonly
+  namespace: chat-gsi
+rules:
+  - apiGroups: ["apps"]
+    resources: [deployments, statefulsets, daemonsets, replicasets]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: statuspage-readonly
+  namespace: chat-gsi
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: statuspage-readonly
+subjects:
+  - kind: ServiceAccount
+    name: statuspage
+    namespace: chat-gsi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kuma-data
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: status-data
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      # Incident history is text and grows by a few KB per incident. This is
+      # sized for "never think about it again", not for the data.
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uptime-kuma
+  namespace: chat-gsi
+spec:
+  selector:
+    app: uptime-kuma
+  ports:
+    - name: kuma
+      port: 80
+      targetPort: 3001
+    - name: status
+      port: 8080
+      targetPort: 3003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-kuma
+  namespace: chat-gsi
+spec:
+  replicas: 1
+  # ReadWriteOnce PVCs: a RollingUpdate deadlocks waiting for volumes the
+  # outgoing pod still holds. Same reason as every other stateful workload here.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: uptime-kuma
+  template:
+    metadata:
+      labels:
+        app: uptime-kuma
+    spec:
+      # Grants ONLY the read-only Role above; the token is what kube.py reads.
+      serviceAccountName: statuspage
+      # Resolve the .lab names from inside the pod, so Kuma checks the app the
+      # same way a browser does: through Traefik, over the node's address. A
+      # check against an in-cluster Service name would pass while every real user
+      # got a 502 from the ingress.
+      hostAliases:
+        - ip: "192.168.50.119"
+          hostnames:
+            - chat.lab
+            - keycloak.lab
+            - s3.lab
+            - grafana.lab
+            - prometheus.lab
+            - uptime.lab
+            - status.lab
+      containers:
+        - name: kuma
+          image: docker.io/louislam/uptime-kuma:1
+          ports:
+            - containerPort: 3001
+              name: http
+          volumeMounts:
+            - name: kuma
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+
+        - name: agent
+          image: 192.168.50.112:5000/chat-gsi-statuspage:dev
+          imagePullPolicy: Always
+          env:
+            - name: KUMA_DB
+              value: /kuma/kuma.db
+            - name: STATUS_DB
+              value: /data/status.db
+            - name: PORT
+              value: "3003"
+            # Optional context only. Prometheus being unreachable is expected
+            # during exactly the outages this page exists to report.
+            - name: PROMETHEUS_URL
+              value: http://prometheus:9090
+            # Same pod, so localhost. Used ONLY to create the default monitors
+            # on first run (statuspage/app/provision.py); every read still goes
+            # through the read-only SQLite mount.
+            - name: KUMA_URL
+              value: http://127.0.0.1:3001
+            # Kuma's own API, for live status and response time. /metrics is
+            # all an API key unlocks, and it is a snapshot -- history still comes
+            # from the read-only database mount.
+            - name: KUMA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: KUMA_API_KEY
+                  optional: true
+            - name: KUBE_NAMESPACE
+              value: chat-gsi
+            - name: KUMA_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: KUMA_ADMIN_USER
+                  optional: true
+            - name: KUMA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: KUMA_ADMIN_PASSWORD
+                  optional: true
+            - name: LLM_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: LLM_BASE_URL
+                  optional: true
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: LLM_API_KEY
+                  optional: true
+            - name: STATUS_MODEL
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: UTILITY_MODEL
+                  optional: true
+            - name: LOG_LEVEL
+              value: info
+          ports:
+            - containerPort: 3003
+              name: status
+          volumeMounts:
+            - name: kuma
+              mountPath: /kuma
+              readOnly: true
+            - name: status
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3003
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: kuma
+          persistentVolumeClaim:
+            claimName: kuma-data
+        - name: status
+          persistentVolumeClaim:
+            claimName: status-data
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma
+  namespace: chat-gsi
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: uptime.lab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  number: 80
+---
+# The public status page. Unauthenticated by design: this is the one page that
+# has to be readable when nothing else is, and Keycloak is one of the things it
+# reports on. It exposes component names, up/down state and incident text —
+# nothing about users, and no way to reach the app.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: statuspage
+  namespace: chat-gsi
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: status.lab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  number: 8080

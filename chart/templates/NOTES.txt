@@ -1,0 +1,41 @@
+
+  {{ .Chart.Name }} {{ .Chart.Version }} installed as "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+  Scheme: {{ include "chat-gsi.scheme" . }}   (tls.enabled={{ .Values.tls.enabled }})
+
+  Reach it at:
+    App          {{ include "chat-gsi.url.chat" . }}
+    Sign-in      {{ include "chat-gsi.url.keycloak" . }}
+{{- if .Values.observability.enabled }}
+    Dashboards   {{ include "chat-gsi.url.grafana" . }}
+    Metrics      {{ include "chat-gsi.scheme" . }}://{{ .Values.hosts.prometheus }}
+{{- end }}
+{{- if .Values.statusPage.enabled }}
+    Status       {{ include "chat-gsi.scheme" . }}://{{ .Values.hosts.status }}
+    Uptime Kuma  {{ include "chat-gsi.scheme" . }}://{{ .Values.hosts.uptime }}
+{{- end }}
+
+  Enabled: core{{ if .Values.observability.enabled }}, observability{{ end }}{{ if .Values.logs.enabled }}, logs{{ end }}{{ if .Values.crawler.enabled }}, crawler{{ end }}{{ if .Values.statusPage.enabled }}, status-page{{ end }}
+
+  Watch it come up:
+    kubectl -n {{ .Release.Namespace }} get pods -w
+
+{{- if eq .Values.secrets.postgresPassword "change-me" }}
+
+  ⚠  secrets.postgresPassword is still "change-me". Set real secrets before this
+     is anything but a throwaway — see values.yaml → secrets.
+{{- end }}
+{{- if hasPrefix "ghcr.io/OWNER/" .Values.image.frontend.repository }}
+
+  ⚠  image.frontend.repository still points at ghcr.io/OWNER. The three app
+     images are not public — build and push them to your own registry and set
+     image.*.repository. See chart/README.md → Building images.
+{{- end }}
+{{- if not .Values.nodeHostAliases.enabled }}
+
+  ℹ  DNS: every host in `hosts` must resolve to this cluster's ingress for BOTH
+     browsers and pods, or OIDC issuer validation fails. If pods cannot resolve
+     the public names, enable nodeHostAliases (see values-lab.yaml).
+{{- end }}
+
+  Manual crawl:  kubectl -n {{ .Release.Namespace }} create job --from=cronjob/crawler-tick crawl-now

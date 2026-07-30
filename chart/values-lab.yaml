@@ -1,0 +1,76 @@
+# =============================================================================
+# The GSI lab overlay. Reproduces the exact hand-written k8s/ deployment:
+#
+#   helm upgrade --install chat ./chart -n chat-gsi --create-namespace \
+#     -f chart/values-lab.yaml
+#
+# This is the environment-specific half; the portable defaults live in
+# values.yaml. Secrets below still say change-me — keep the real ones in your
+# own untracked overrides file, exactly as .env is gitignored today.
+# =============================================================================
+
+global:
+  # k3s ships local-path as the only StorageClass.
+  storageClass: local-path
+
+tls:
+  enabled: false          # isolated lab subnet, deliberately plain HTTP
+
+hosts:
+  chat: chat.lab
+  keycloak: keycloak.lab
+  s3: s3.lab
+  grafana: grafana.lab
+  prometheus: prometheus.lab
+  uptime: uptime.lab
+  status: status.lab
+
+ingress:
+  enabled: true
+  className: traefik
+
+# The lab's single node has no DNS for the .lab names, so pods are given a
+# hostAlias pinning them to the node IP — that is what makes the OIDC issuer
+# string identical from the browser and from inside every pod.
+nodeHostAliases:
+  enabled: true
+  ip: "192.168.50.119"
+  hostnames:
+    - chat.lab
+    - keycloak.lab
+    - s3.lab
+    - grafana.lab
+    - prometheus.lab
+    - uptime.lab
+    - status.lab
+
+# The private in-cluster registry, mutable :dev tags (re-pulled every restart).
+image:
+  frontend:
+    repository: 192.168.50.112:5000/chat-gsi-frontend
+    tag: dev
+    pullPolicy: Always
+  crawler:
+    repository: 192.168.50.112:5000/chat-gsi-crawler
+    tag: dev
+    pullPolicy: Always
+  statuspage:
+    repository: 192.168.50.112:5000/chat-gsi-statuspage
+    tag: dev
+    pullPolicy: Always
+
+# Demo users (testuser/manager/normaluser) are wanted on the lab.
+keycloak:
+  seedUsers: true
+
+config:
+  # The lab's LLM proxy.
+  LLM_BASE_URL: http://192.168.50.1:8080/api/v1
+  APP_VERSION: dev
+
+# Secrets: set these in an untracked -f overrides file. Shown here only so the
+# lab's non-default values (which must match what is already provisioned) are
+# recorded in one place.
+secrets:
+  llmApiKey: pk-praktikum2026
+  s3AccessKey: gsi-chat

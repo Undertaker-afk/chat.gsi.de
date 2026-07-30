@@ -1,0 +1,282 @@
+@import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn-svelte/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.145 0 0);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.145 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.145 0 0);
+	--primary: oklch(0.205 0 0);
+	--primary-foreground: oklch(0.985 0 0);
+	--secondary: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.205 0 0);
+	--muted: oklch(0.97 0 0);
+	--muted-foreground: oklch(0.556 0 0);
+	--accent: oklch(0.97 0 0);
+	--accent-foreground: oklch(0.205 0 0);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.922 0 0);
+	--input: oklch(0.922 0 0);
+	--ring: oklch(0.708 0 0);
+	--chart-1: oklch(0.87 0 0);
+	--chart-2: oklch(0.556 0 0);
+	--chart-3: oklch(0.439 0 0);
+	--chart-4: oklch(0.371 0 0);
+	--chart-5: oklch(0.269 0 0);
+	--radius: 0.625rem;
+	--sidebar: oklch(0.985 0 0);
+	--sidebar-foreground: oklch(0.145 0 0);
+	--sidebar-primary: oklch(0.205 0 0);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.205 0 0);
+	--sidebar-border: oklch(0.922 0 0);
+	--sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+	--background: oklch(0.145 0 0);
+	--foreground: oklch(0.985 0 0);
+	--card: oklch(0.205 0 0);
+	--card-foreground: oklch(0.985 0 0);
+	--popover: oklch(0.205 0 0);
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: oklch(0.922 0 0);
+	--primary-foreground: oklch(0.205 0 0);
+	--secondary: oklch(0.269 0 0);
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: oklch(0.269 0 0);
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: oklch(0.269 0 0);
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(1 0 0 / 10%);
+	--input: oklch(1 0 0 / 15%);
+	--ring: oklch(0.556 0 0);
+	--chart-1: oklch(0.87 0 0);
+	--chart-2: oklch(0.556 0 0);
+	--chart-3: oklch(0.439 0 0);
+	--chart-4: oklch(0.371 0 0);
+	--chart-5: oklch(0.269 0 0);
+	--sidebar: oklch(0.205 0 0);
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: oklch(0.488 0.243 264.376);
+	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-accent: oklch(0.269 0 0);
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: oklch(1 0 0 / 10%);
+	--sidebar-ring: oklch(0.556 0 0);
+}
+
+@theme inline {
+	--font-sans: 'Inter Variable', sans-serif;
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+	html {
+		@apply font-sans;
+	}
+}
+
+/* --- Rendered Markdown (chat answers and the file viewer) ---
+   Moved out of Message.svelte so FileViewer can use the same class: a
+   component <style> scopes .answer-prose to that component, so the rules
+   silently did not apply anywhere else. */
+/* Typography for rendered answers. Scoped here rather than pulled in as a
+	   plugin: the answer shape is narrow and predictable (headings, lists, code,
+	   tables) and this keeps it aligned with the shadcn tokens. */
+	.answer-prose > * + * {
+		margin-top: 0.75em;
+	}
+	.answer-prose p {
+		margin: 0;
+	}
+	.answer-prose strong {
+		font-weight: 600;
+	}
+	.answer-prose ul,
+	.answer-prose ol {
+		margin: 0;
+		padding-left: 1.4em;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3em;
+	}
+	.answer-prose ul {
+		list-style: disc;
+	}
+	.answer-prose ol {
+		list-style: decimal;
+	}
+	.answer-prose h1,
+	.answer-prose h2,
+	.answer-prose h3 {
+		font-weight: 600;
+		line-height: 1.3;
+	}
+	.answer-prose h1 {
+		font-size: 1.15em;
+	}
+	.answer-prose h2 {
+		font-size: 1.08em;
+	}
+	.answer-prose h3 {
+		font-size: 1em;
+	}
+	.answer-prose a:not(.citation-chip) {
+		color: var(--primary);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	.answer-prose code {
+		background: var(--muted);
+		border-radius: 0.3rem;
+		padding: 0.12em 0.35em;
+		font-size: 0.87em;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	}
+	.answer-prose pre {
+		background: var(--muted);
+		border: 1px solid var(--border);
+		border-radius: 0.6rem;
+		padding: 0.85rem 1rem;
+		overflow-x: auto;
+	}
+	.answer-prose pre code {
+		background: transparent;
+		padding: 0;
+		font-size: 0.85em;
+	}
+	/* Wide tables scroll inside their own box rather than the page. */
+	.answer-prose table {
+		display: block;
+		overflow-x: auto;
+		border-collapse: collapse;
+		font-size: 0.9em;
+		max-width: 100%;
+	}
+	.answer-prose th,
+	.answer-prose td {
+		border: 1px solid var(--border);
+		padding: 0.4rem 0.7rem;
+		text-align: left;
+	}
+	.answer-prose th {
+		background: var(--muted);
+		font-weight: 600;
+	}
+	.answer-prose blockquote {
+		border-left: 3px solid var(--border);
+		padding-left: 0.9rem;
+		color: var(--muted-foreground);
+	}
+
+	/* Citation chip: superscript, tappable, unobtrusive until hovered. */
+	.answer-prose .citation-chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25em;
+		height: 1.25em;
+		margin-inline: 0.15em;
+		padding-inline: 0.25em;
+		border-radius: 0.3rem;
+		background: var(--secondary);
+		color: var(--secondary-foreground);
+		font-size: 0.7em;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		text-decoration: none;
+		vertical-align: super;
+		line-height: 1;
+		transition: background-color 0.15s;
+	}
+	.answer-prose .citation-chip:hover {
+		background: var(--primary);
+		color: var(--primary-foreground);
+	}
+
+/* PDF link inside an answer: looks like the link it replaces, but opens the
+   side-panel viewer rather than a new tab. */
+.answer-prose .citation-pdf {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3em;
+	color: var(--primary);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	background: none;
+	border: 0;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+}
+.answer-prose .citation-pdf:hover {
+	opacity: 0.85;
+}
+
+/* Shiki-highlighted block inside an answer. Colours come from inline styles on
+   the tokens, so only layout lives here. */
+.answer-prose .shiki-block {
+	margin: 0;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	padding: 0.85rem 1rem;
+	overflow-x: auto;
+}
+.answer-prose .shiki-block code {
+	background: transparent;
+	padding: 0;
+	font-size: 0.85em;
+}

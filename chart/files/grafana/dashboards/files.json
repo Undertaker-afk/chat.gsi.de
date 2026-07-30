@@ -1,0 +1,1873 @@
+{
+ "uid": "chatgsi-files",
+ "title": "chat.gsi.de \u2014 Files",
+ "description": "Uploaded files and assistant-generated files, side by side: counts, sizes, types, rejections, and the object storage under both.",
+ "tags": [
+  "chat-gsi",
+  "files",
+  "storage"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-7d",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "row",
+   "title": "Uploaded files",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Files",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_file_count{kind=\"upload\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Total bytes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_file_bytes{kind=\"upload\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Mean size",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_file_bytes_avg{kind=\"upload\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Largest",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_file_bytes_max{kind=\"upload\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Capped by UPLOAD_MAX_FILE_BYTES (10 MiB). Sitting exactly at the cap means people are hitting it.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Users with uploads",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_file_owners{kind=\"upload\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Accepted per hour",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "cph",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_uploads_stored_total[$__rate_interval]) * 3600) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 8,
+   "type": "piechart",
+   "title": "Upload bytes by type",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 0,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      }
+     },
+     "unit": "bytes"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_upload_bytes_by_mime",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{mime}}"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "pieType": "donut",
+    "displayLabels": [
+     "percent"
+    ],
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true,
+     "values": [
+      "value"
+     ]
+    },
+    "tooltip": {
+     "mode": "single",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "id": 9,
+   "type": "piechart",
+   "title": "Upload count by type",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 8,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      }
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_upload_files_by_mime",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{mime}}"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "pieType": "donut",
+    "displayLabels": [
+     "percent"
+    ],
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true,
+     "values": [
+      "value"
+     ]
+    },
+    "tooltip": {
+     "mode": "single",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Upload size distribution",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "bars",
+      "lineWidth": 1,
+      "fillOpacity": 60,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (le) (increase(chatgsi_upload_size_bytes_bucket[$__range]))",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "\u2264 {{le}} bytes"
+    }
+   ],
+   "description": "Cumulative buckets in bytes over the selected range. A crowded top bucket means UPLOAD_MAX_FILE_BYTES is the binding constraint.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Uploads accepted by type",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 8,
+    "x": 0,
+    "y": 13
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "cph"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (mime) (rate(chatgsi_uploads_stored_total[$__rate_interval]) * 3600)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{mime}}"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Uploads rejected",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 8,
+    "x": 8,
+    "y": 13
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "cph"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (reason) (rate(chatgsi_uploads_rejected_total[$__rate_interval]) * 3600)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{reason}}"
+    }
+   ],
+   "description": "quota, too_large and unsupported_type lead to three completely different fixes \u2014 raise the quota, raise the file cap, or extend ALLOWED_MIME.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Upload throughput",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 8,
+    "x": 16,
+    "y": 13
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     },
+     "unit": "Bps"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (direction) (rate(chatgsi_s3_bytes_total[$__rate_interval]))",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{direction}}"
+    }
+   ],
+   "description": "Server-side only. Downloads go browser-to-gateway via presigned links and never touch Node \u2014 that is the point of the scheme.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 14,
+   "type": "row",
+   "title": "Generated files",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 20
+   },
+   "panels": [
+    {
+     "id": 15,
+     "type": "stat",
+     "title": "Files",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 0,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"generated\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "description": "Files the assistant wrote and the user chose to keep. They deliberately survive deleting the conversation (migration 016).",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 16,
+     "type": "stat",
+     "title": "Total bytes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 4,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes{kind=\"generated\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "area",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 17,
+     "type": "stat",
+     "title": "Mean size",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 8,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes_avg{kind=\"generated\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 18,
+     "type": "stat",
+     "title": "Largest",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 12,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes_max{kind=\"generated\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 19,
+     "type": "stat",
+     "title": "Users with generated files",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 16,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_owners{kind=\"generated\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 20,
+     "type": "stat",
+     "title": "Generated per uploaded",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 20,
+      "y": 21
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"generated\"} / clamp_min(chatgsi_file_count{kind=\"upload\"}, 1)",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "description": "Above 1 means the assistant produces more files than people bring in \u2014 a usage signal, not a problem.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 21,
+     "type": "timeseries",
+     "title": "File counts over time",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 25
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"upload\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "uploaded"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"generated\"}",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "generated"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 22,
+     "type": "timeseries",
+     "title": "File bytes over time",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 25
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "bytes"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes{kind=\"upload\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "uploaded"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes{kind=\"generated\"}",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "generated"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 23,
+     "type": "piechart",
+     "title": "Uploaded vs generated, by bytes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 33
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "hideFrom": {
+         "legend": false,
+         "tooltip": false,
+         "viz": false
+        }
+       },
+       "unit": "bytes"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes{kind=\"upload\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "uploaded"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes{kind=\"generated\"}",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "generated"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "pieType": "donut",
+      "displayLabels": [
+       "percent"
+      ],
+      "legend": {
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true,
+       "values": [
+        "value"
+       ]
+      },
+      "tooltip": {
+       "mode": "single",
+       "sort": "none"
+      }
+     }
+    },
+    {
+     "id": 24,
+     "type": "bargauge",
+     "title": "Mean and max size by kind",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 33
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "min": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "blue",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes_avg",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "mean \u00b7 {{kind}}"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_bytes_max",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "max \u00b7 {{kind}}"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "displayMode": "gradient",
+      "orientation": "horizontal",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "sizing": "auto"
+     }
+    },
+    {
+     "id": 25,
+     "type": "timeseries",
+     "title": "Files per owner",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 33
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"upload\"} / clamp_min(chatgsi_file_owners{kind=\"upload\"}, 1)",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "uploaded per user"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_file_count{kind=\"generated\"} / clamp_min(chatgsi_file_owners{kind=\"generated\"}, 1)",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "generated per user"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 26,
+   "type": "row",
+   "title": "Object storage behind them",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 21
+   },
+   "panels": [
+    {
+     "id": 27,
+     "type": "timeseries",
+     "title": "S3 gateway operations",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "reqps"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (operation, outcome) (rate(chatgsi_s3_operations_total[$__rate_interval]))",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{operation}} {{outcome}}"
+      }
+     ],
+     "description": "not_found is a normal outcome for delete and a fault for get.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 28,
+     "type": "timeseries",
+     "title": "S3 latency p95",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "s"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(chatgsi_s3_operation_duration_seconds_bucket[$__rate_interval])))",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "{{operation}}"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 29,
+     "type": "timeseries",
+     "title": "Accounting gap: object store minus database",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 0,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "bytes"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum(chatgsi_object_storage_used_bytes) - sum(chatgsi_stored_bytes{kind=~\"upload|generated\"})",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "gap"
+      }
+     ],
+     "description": "Orphaned objects: bytes in S3 with no row, or rows deleted without the object following. Quota is enforced on the database side, so a growing gap means the disk fills faster than any quota says it can.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 30,
+     "type": "logs",
+     "title": "Upload and file activity",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 12,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=\"frontend\"} | json | __error__=\"\" | kind = \"access\" | path =~ \"/api/(uploads|files|media).*\"",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "description": "Access log lines for the file endpoints, from Loki.",
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1486 @@
+{
+ "uid": "chatgsi-cache",
+ "title": "chat.gsi.de \u2014 Caches",
+ "description": "The 7-day external document cache and the Valkey session store: how much they hold, how often they help, and what they cost.",
+ "tags": [
+  "chat-gsi",
+  "cache"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 31,
+   "type": "row",
+   "title": "External document cache",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 32,
+   "type": "stat",
+   "title": "Cached documents",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_cache_entries) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "7-day cache of public www.gsi.de PDFs fetched on a user's behalf (migration 014). Deliberately outside user quota \u2014 this dashboard is the only place its size is counted.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 33,
+   "type": "stat",
+   "title": "Cache size",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"total\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 34,
+   "type": "stat",
+   "title": "Fresh",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"fresh\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 35,
+   "type": "stat",
+   "title": "Expired, not yet swept",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 104857600
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"expired\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Past the 7-day TTL, so served to nobody, but still on disk until sweepExternalCache() runs. Growing means the sweep is not being called.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 36,
+   "type": "stat",
+   "title": "Mean document size",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_entry_bytes_avg",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 37,
+   "type": "stat",
+   "title": "Oldest entry",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_age_seconds{which=\"oldest\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 38,
+   "type": "gauge",
+   "title": "Hit rate",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 6,
+    "x": 0,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "percentunit",
+     "min": 0,
+     "max": 1,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 0.3
+       },
+       {
+        "color": "green",
+        "value": 0.6
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_external_cache_requests_total{result=\"hit\"}[$__rate_interval])) / clamp_min(sum(rate(chatgsi_external_cache_requests_total{result=~\"hit|miss\"}[$__rate_interval])), 0.0001)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "__auto"
+    }
+   ],
+   "description": "Every hit is a PDF www.gsi.de did not have to serve. A low rate is not necessarily wrong \u2014 it means people are opening different documents, not the same ones.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "showThresholdLabels": false,
+    "showThresholdMarkers": true,
+    "minVizWidth": 75,
+    "minVizHeight": 75,
+    "sizing": "auto"
+   }
+  },
+  {
+   "id": 39,
+   "type": "timeseries",
+   "title": "Cache lookups",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 10,
+    "x": 6,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "cpm"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (result) (rate(chatgsi_external_cache_requests_total[$__rate_interval]) * 60)",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{result}}"
+    }
+   ],
+   "description": "`error` is the cache being broken while the document still gets served. It is deliberately not folded into `miss`, which would hide a dead cache behind a healthy hit rate.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 40,
+   "type": "timeseries",
+   "title": "Time to serve a document",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     },
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le, result) (rate(chatgsi_external_cache_fetch_duration_seconds_bucket[$__rate_interval])))",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{result}} p95"
+    }
+   ],
+   "description": "The gap between the hit and miss lines is what the cache buys a reader.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 41,
+   "type": "timeseries",
+   "title": "Bytes served",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "Bps"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum by (result) (rate(chatgsi_external_cache_bytes_total[$__rate_interval]))",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{result}}"
+    }
+   ],
+   "description": "The `hit` line is bandwidth not spent on the public website.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 42,
+   "type": "piechart",
+   "title": "Cached bytes by type",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 12,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "hideFrom": {
+       "legend": false,
+       "tooltip": false,
+       "viz": false
+      }
+     },
+     "unit": "bytes"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes_by_mime",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "{{mime}}"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "pieType": "donut",
+    "displayLabels": [
+     "percent"
+    ],
+    "legend": {
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true,
+     "values": [
+      "value"
+     ]
+    },
+    "tooltip": {
+     "mode": "single",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "id": 43,
+   "type": "timeseries",
+   "title": "Cache size over time",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 18,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "bytes"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"fresh\"}",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "fresh"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"expired\"}",
+     "refId": "B",
+     "range": true,
+     "legendFormat": "expired"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 44,
+   "type": "row",
+   "title": "Session store (Valkey)",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 21
+   },
+   "panels": [
+    {
+     "id": 45,
+     "type": "stat",
+     "title": "Memory used",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 0,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"used\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "area",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 46,
+     "type": "stat",
+     "title": "Peak",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 4,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "bytes",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"peak\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 47,
+     "type": "stat",
+     "title": "Sessions",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 8,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_active_sessions{kind=\"session\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "area",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 48,
+     "type": "stat",
+     "title": "Pending logins",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 12,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_active_sessions{kind=\"pending_auth\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "description": "Half-finished OIDC flows. They expire after 10 minutes; a large number means people are abandoning login.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 49,
+     "type": "stat",
+     "title": "Connected clients",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 16,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "short",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_connected_clients",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 50,
+     "type": "stat",
+     "title": "Uptime",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 4,
+      "w": 4,
+      "x": 20,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "s",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_uptime_seconds",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "description": "Valkey runs with no persistence, so a restart logs everybody out. A low uptime explains a login spike.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 51,
+     "type": "gauge",
+     "title": "Keyspace hit ratio",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 6,
+      "x": 0,
+      "y": 26
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {},
+       "unit": "percentunit",
+       "min": 0,
+       "max": 1,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "#EAB839",
+          "value": 0.7
+         },
+         {
+          "color": "orange",
+          "value": 0.85
+         },
+         {
+          "color": "red",
+          "value": 0.95
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum(rate(chatgsi_valkey_keyspace_total{result=\"hit\"}[$__rate_interval])) / clamp_min(sum(rate(chatgsi_valkey_keyspace_total[$__rate_interval])), 0.0001)",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "__auto"
+      }
+     ],
+     "description": "Sessions are the only thing in Valkey, so a falling ratio means sessions are expiring faster than they are used \u2014 people being logged out, not a cache problem.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "showThresholdLabels": false,
+      "showThresholdMarkers": true,
+      "minVizWidth": 75,
+      "minVizHeight": 75,
+      "sizing": "auto"
+     }
+    },
+    {
+     "id": 52,
+     "type": "timeseries",
+     "title": "Valkey memory",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 10,
+      "x": 6,
+      "y": 26
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "bytes"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"used\"}",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "used"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"peak\"}",
+       "refId": "B",
+       "range": true,
+       "legendFormat": "peak"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 53,
+     "type": "timeseries",
+     "title": "Commands per second",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 26
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "rate(chatgsi_valkey_commands_total[$__rate_interval])",
+       "refId": "A",
+       "range": true,
+       "legendFormat": "commands/s"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

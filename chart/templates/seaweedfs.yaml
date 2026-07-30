@@ -1,0 +1,254 @@
+{{/* SeaweedFS. Master assigns writes across volume servers, so scaling the
+     volume StatefulSet (seaweedfs.volume.replicas) adds capacity with no app
+     change. The -ip flags must equal the Service names — that is the callback
+     address volume servers and the filer are told to use — so these names are
+     fixed, not release-prefixed. */}}
+{{- $sw := .Values.seaweedfs -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seaweed-master
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-master") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ $sw.master.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-master
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-master") | nindent 4 }}
+spec:
+  selector:
+    app: seaweed-master
+  ports:
+    - { name: http, port: 9333, targetPort: 9333 }
+    - { name: grpc, port: 19333, targetPort: 19333 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-master
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-master") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seaweed-master
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-master") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: master
+          image: {{ $sw.image }}
+          args: [master, -ip=seaweed-master, -ip.bind=0.0.0.0, -volumeSizeLimitMB=256]
+          ports:
+            - containerPort: 9333
+            - containerPort: 19333
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /cluster/status, port: 9333 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: seaweed-master
+---
+# Headless: every replica gets a stable DNS name, which is what lets a volume
+# server register an address the master and filer can dial back on.
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-volume
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-volume") | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: seaweed-volume
+  ports:
+    - { name: http, port: 8080, targetPort: 8080 }
+    - { name: grpc, port: 18080, targetPort: 18080 }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: seaweed-volume
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-volume") | nindent 4 }}
+spec:
+  serviceName: seaweed-volume
+  replicas: {{ $sw.volume.replicas }}
+  selector:
+    matchLabels:
+      app: seaweed-volume
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-volume") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: volume
+          image: {{ $sw.image }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          # $(POD_NAME) is expanded by the kubelet: each replica registers under
+          # its own stable hostname, which is what makes scaling work.
+          args:
+            - volume
+            - -mserver=seaweed-master:9333
+            - -ip=$(POD_NAME).seaweed-volume
+            - -ip.bind=0.0.0.0
+            - -port=8080
+            - -max=0
+            - -dir=/data
+          ports:
+            - containerPort: 8080
+            - containerPort: 18080
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /status, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- include "chat-gsi.storageClass" . | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ $sw.volume.persistence.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seaweed-filer
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-filer") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ $sw.filer.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-filer
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-filer") | nindent 4 }}
+spec:
+  selector:
+    app: seaweed-filer
+  ports:
+    - { name: http, port: 8888, targetPort: 8888 }
+    - { name: grpc, port: 18888, targetPort: 18888 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-filer
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-filer") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seaweed-filer
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-filer") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: filer
+          image: {{ $sw.image }}
+          args: [filer, -master=seaweed-master:9333, -ip=seaweed-filer, -ip.bind=0.0.0.0]
+          ports:
+            - containerPort: 8888
+            - containerPort: 18888
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /, port: 8888 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: seaweed-filer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-s3
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-s3") | nindent 4 }}
+spec:
+  selector:
+    app: seaweed-s3
+  ports:
+    - { name: http, port: 8333, targetPort: 8333 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-s3
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-s3") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seaweed-s3
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "seaweed-s3") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: s3
+          image: {{ $sw.image }}
+          args: [s3, -filer=seaweed-filer:8888, -ip.bind=0.0.0.0, -port=8333, -config=/etc/seaweedfs/s3.json]
+          ports:
+            - containerPort: 8333
+          volumeMounts:
+            - name: config
+              mountPath: /etc/seaweedfs
+              readOnly: true
+          readinessProbe:
+            # /healthz, not /: the root is an S3 ListBuckets call, which answers
+            # 403 to an unsigned request and would keep the pod NotReady forever.
+            httpGet: { path: /healthz, port: 8333 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+      volumes:
+        - name: config
+          configMap:
+            name: seaweed-s3-config

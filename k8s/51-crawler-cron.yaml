@@ -1,0 +1,78 @@
+# The scheduler tick.
+#
+# This CronJob is deliberately dumb: it runs `crawler tick` every five minutes,
+# and `tick` asks the DATABASE what is actually due. That is what makes the crawl
+# interval a value an admin sets in the UI (crawl_control.interval_minutes,
+# migration 018) rather than a schedule baked into this file — changing "weekly"
+# to "daily" is a dropdown, not a `kubectl apply`.
+#
+# Each tick does three things in order: reap runs whose crawler died, claim
+# queued admin requests, then start any source whose interval has come round.
+# With an empty queue and nothing due it exits in well under a second, which is
+# the normal case for 287 of every 288 daily runs.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: crawler-tick
+  namespace: chat-gsi
+spec:
+  schedule: "*/5 * * * *"
+  # A crawl can run for hours. Forbid means a tick that is still crawling blocks
+  # the next one instead of starting a second crawler against the same source --
+  # `tick` guards against that in SQL too, but two independent guards is the
+  # right number for something that could otherwise hammer wiki.gsi.de.
+  concurrencyPolicy: Forbid
+  # A node that was asleep should not wake up and replay every missed tick.
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      # Long enough for a full wiki crawl claimed from the queue. Beyond this the
+      # Job is killed and its run is left `running`; the NEXT tick reaps it (see
+      # stale_running_runs), which is why that reaper exists.
+      activeDeadlineSeconds: 21600
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: crawler
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: crawler
+              image: 192.168.50.112:5000/chat-gsi-crawler:dev
+              imagePullPolicy: Always
+              args: ["tick"]
+              envFrom:
+                - secretRef:
+                    name: chat-gsi-env
+              env:
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: chat-gsi-env
+                      key: POSTGRES_PASSWORD
+                - name: DATABASE_URL
+                  value: postgres://llmbot:$(POSTGRES_PASSWORD)@db:5432/llmbot
+                - name: VALKEY_URL
+                  value: redis://valkey:6379
+                - name: CORPUS_DIR
+                  value: /data/corpus
+                # JSON on stdout, so Promtail ships it to Loki with the same
+                # shape as the frontend's lines.
+                - name: LOG_FORMAT
+                  value: json
+              volumeMounts:
+                - name: corpus
+                  mountPath: /data/corpus
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+          volumes:
+            - name: corpus
+              persistentVolumeClaim:
+                claimName: corpus

@@ -1,0 +1,1428 @@
+Crawled website: https://virgo-docs.hpc.gsi.de/user-guide/
+Crawled at: Thu Jul 23 11:41:17 2026
+Pages included: 41
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/
+Title: User Guide – Virgo
+==============================================================================
+
+This guide covers all aspects of using the Virgo compute cluster at GSI.SectionDescriptionOverviewSoftware environment, hardware, and the Green Cube data centerAccessHow to connect to the cluster via SSH, including proxy jump and tunnelsStorage SystemsLustre shared storage and CVMFS software distributionClusterSlurm commands, resource allocation, partitions, and job schedulingExamplesStep-by-step examples from your first job to MPI and GPU workloadsContainersWorking with Apptainer containers and Virtual Application EnvironmentsAppendixArchitecture, configuration tools, and glossary
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/overview/index.html
+Title: Overview – Virgo
+==============================================================================
+
+General information about the Virgo cluster infrastructure.PageDescriptionCompute CenterThe Green IT Cube data center, its cooling system, and power distributionHardware EnvironmentCPU architectures, InfiniBand network, and GPU acceleratorsSoftware EnvironmentPrerequisites, Virtual Application Environments, and Spack packages
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/overview/green-cube.html
+Title: Compute Center – Virgo
+==============================================================================
+
+ConstructionThe Green Cube was inaugurated in January 2016 after a construction period of one year. The form of the Green Cube measures 27×30×22 m with six floors and an adjacent technical building including cooling towers. The floorspace of 4645 m² provides room for 768 standard 19” computer racks. In the final expansion the infrastructure enables a cooling capacity of 12 MW with a designed PUE 1 smaller than 1.07. In December 2015 a technical acceptance test with a simulated load up to 2.3 MW (using heating dummies in the racks) demonstrated an average PUE of 1.051. Waste heat is utilized for the nearby office building and canteen.The GreenCube is in the process of a multiple stages expansion after the initial start-up of the 5th and 6th floors. In 2022 the REACT-EU program 2 funded the next stage to prepare the infrastructure for the 3rd and 4th floor. In 2023 a significant part of the Virgo compute cluster moved into the 4th floor. Since then the cluster is distributed over all three floors of the Green Cube making full use of the three-dimensional architecture of the computing center for cabling the InfiniBand high-performance network. Cooling SystemThanks to a special cooling system the GreenCube is particularly energy and cost efficient. Instead of air, the compute racks are cooled with water. As a result, the energy used for cooling corresponds to less than seven percent of the electrical power used for computing. The water cooling solution is built into the backdoor of the computer cabinets and alleviates the need for room temperature regulation inside the GreenCube. The heat-exchanger in the rack backdoor is completely passive. The air-flow through the heat exchanger is created by the fans within the computer chassis. Since 2018 the GreenCube is certified with the Blue Angel Ecolabel 3 for energy efficiency. Figure 1: Cooling tower outside the Green Cube The outdoor cooling towers Figure 1 are positioned adjacent to the Green Cube and connect into the facility by huge pipes. These link the evaporation towers via the primary pumps with the heat-exchange and the internal water circuit within the Green Cube building. The container in the front left houses a water purification system connected to a reservoir used to replenish evaporated water lost by the cooling process. Right to the cooling towers in Figure 1 is the technical building for the water pumps and heat-exchange. Figure 2: Water pumps and heat-exchanges between the Green Cube and the cooling towers Figure 2 shows the pumping infrastructure for the 5th and 6th floor. In its final development the Green Cube will have three completely independent cooling systems each connected to two different floors. Basically three distinct computing centers in terms of cooling are stacked on top of each other. Figure 2 shows one of these cooling circuits built with a three line configuration for redundancy. The blue (primary) pumps on the right side connect the outdoor cooling towers to the heat-exchange. The heat-exchange are the big black blocks in the center of the picture. The (secondary) pumps on the left side connect with the internal water circuit supplying cold water to the compute cabinets. Typical operations conditions move 600 m³ of water per hour with a differential pressure of 150 millibar. The water temperature inside the Green Cube works within 16°C – 19°C. Power Distribution Figure 3: Single floor in the Green Cube The power supply for the Green Cube is completely redundant including connection to primary utility power. There is no necessity of additional UPS (uninterruptible power source) 4 facilities based on on-site generators or backup batteries. Figure 3 shows a single floor in the Green Cube to illustrate the power distribution to the individual racks. The power transformers used to convert high-voltage power into lower voltages are located on the left side. Each computer cabinet row on the right side has a dedicated pair of power distribution lines. Color coding, green and blue, are used to distinguish the redundant power sources. Each compute rack includes two PDUs (Power Distribution Units). One PDU for the green line and one PDU for the blue line. Hence the redundant PSUs (Power Supply Units) for each compute chassis need to be socketed properly to both PDUs to benefit from uninterruptible power supply.FootnotesPower usage effectiveness, Wikipediahttps://en.wikipedia.org/wiki/Power_usage_effectiveness↩︎REACT-EU, European Commissionhttps://commission.europa.eu/funding-tenders/find-funding/eu-funding-programmes/react-eu_en↩︎Blue Angel, German Federal Governmenthttps://www.blauer-engel.de/en↩︎Uninterruptible Power Source, Wikipediahttps://en.wikipedia.org/wiki/Uninterruptible_power_supply↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/overview/hardware.html
+Title: Hardware Environment – Virgo
+==============================================================================
+
+All CPUs on the cluster use x86-64 compatible 1 processor architectures like AMD EPYC 2 and Intel XEON 3. A typical compute node hosts two multi-core Processors in a dual socket configuration. Nodes may have a variation in core count, available main memory or the local storage device capacity. Use Slurm commands to print an overview of the hardware resources like available CPU cores, and main memory (RAM).>>> date ; sinfo -o "%40N %4c %6z %6m %5D %f"
+Sun May 10 09:15:42 PM CEST 2026
+NODELIST CPUS S:C:T MEMORY NODES AVAIL_FEATURES
+ccsub[0001-0006] 384 2:96:2 772000 6 amd,epyc,9654
+ccwks[0001-0010] 96 2:24:2 191000 10 intel,xeon,gold6248r
+ccexe[0327-0346,0348-0369] 256 2:64:2 103100 42 amd,epyc,7662,highmem
+ccexe[0001-0049,0056-0065,0068-0083,0090-0094] 384 2:96:2 772000 80 amd,epyc,9654,main_long
+ccexe[0233-0277,0280,0282-0326] 256 2:64:2 514000 91 amd,epyc,7713,main_long
+ccexe[0095-0191] 256 2:64:2 772000 97 amd,epyc,9555,main_long
+ccexe[0192-0199,0201-0232] 256 2:64:2 515000 40 amd,epyc,7713,gridFurther details are described in the resource-allocation section. Nodes typically have a list of associated features to distinguish different CPU types. Some nodes support a GPU indicated in the feature list as well.InfiniBand NetworkThe network connecting the cluster with its compute and storage nodes is built with an InfiniBand 4 interconnect. InfiniBand is a high-bandwidth and low-latency optimized High Performance Interconnect (HPI). It spreads network traffic across multiple parallel physical links (multipath) to scale the available bandwidth. The network topology is built like a fat-tree 5, with a 2 to 1 blocking factor on Virgo (over-subscription). This topology including its fault-tolerant routing allows optimal utilization of redundant network connections with high-throughput.The application interface to InfiniBand is developed by the OpenFabrics Alliance (OFA) 6 and distributed as the open-source software OpenFabrics Enterprise Distribution (OFED). OFED includes a Linux kernel-level driver for channel-oriented RDMA and send/receive operations. This driver is accompanied by the kernel and a user-level Application Programming Interface (API).In June 2023 the original network fabric based on InfiniBand FDR has been replaced with newer generation InfiniBand HDR equipment. The network is built from a combination of active and passive cables, both copper wires and optical fibers. Compute nodes are connected with so called splitter cables, optical breakout cables with a single port on the switch and to individual cables to edge nodes. Effectively this split the HDR 200Gbps bandwidth of a switch port into two 100Gbps uplinks for compute nodes. GPU AcceleratorsThe Virgo cluster hosts a selection of nodes with GPUs for scientific computing. The majority of GPUs are AMD Radeon Instinct 7 cards, and a small set of Nvidia Hopper 8 for testing. Please refer to the GPUs example section.GPUs (graphics processing units) in HPC offer a parallel architecture to speed up certain computing processes, especially those related to artificial intelligence (AI) and machine learning (ML) models. For suitable applications GPUs enable processing with higher efficiency and less power consumption, therefore at a lower cost. GPUs performance improves faster than CPUs driven by demand for the video game market. Furthermore the specialised architectures simplifies scaling of transistors counts in GPUs.Footnotesx86-64 (also known as AMD64), Wikipediahttps://en.wikipedia.org/wiki/X86-64↩︎AMD EPYC, Wikipediahttps://en.wikipedia.org/wiki/Epyc↩︎Intel XEON, Wikipediahttps://en.wikipedia.org/wiki/Xeon↩︎Infiniband, Wikipediahttps://en.wikipedia.org/wiki/InfiniBand↩︎Fat Tree, Wikipediahttps://en.wikipedia.org/wiki/Fat_tree↩︎OpenFabrics Alliancehttps://www.openfabrics.org↩︎AMD Radeon Instinct, Wikipediahttps://en.wikipedia.org/wiki/Radeon_Instinct↩︎Nvidia Hopper, Wikipediahttps://en.wikipedia.org/wiki/Hopper_(microarchitecture)↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/overview/software.html
+Title: Software Environment – Virgo
+==============================================================================
+
+PrerequisitesThe following material assumes your familiarity with the Linux command-line interface (CLI) 1 and a basic understanding of a command line shell 2 environment like Bash or Zsh. If this is new to you, we recommend to read the very beginner friendly introduction to this topic Effective Shell 3 by Dave Kerr and The Linux Command Line 4 by William Shotts. Shotts book is freely available under the Creative Commons license and has been translated into multiple languages. Furthermore it is recommended to know the basic usage of a text-editor like Vim or Emacs.Besides the already mentioned prerequisites there are more widely used tools for scientific computing environments. Your selection of these tools may vary depending on your use-case. One common denominator for most software projects in this environment is the use of the Git version control system 5. Most scientific software frameworks and libraries require the user to have a understanding of a programming language. In scientific computing Python and C++ are very popular. An excellent introduction into the methodologies and basic tools for scientific computing are available from the Software Carpentry Foundation 6. Depending on your scientific field you may find more specific introduction material from The Carpentries Community 7. Virtual Application EnvironmentThe Virgo cluster is built with the intent to align its software stack with the cluster computing infrastructure built by a majority of scientific research institutions. The underlying operating system is Rocky Linux8. Slurm is used as workload management system and supports the allocation of containers. All containerized applications use Apptainer 9 as container run-time engine. Multiple containerized application environments called Virtual Application Environment (VAE) provide a pre-build selection of software based on Debian10 userlands. Users access a specific VAE by login to a corresponding submit node:Virtual EnvironmentUserlandSupport UntilVAE’25Debian 122027VAE’26Debian 132028It is required to use SSH key-authentication in order to logon to a submit node of the Virgo cluster. Make sure to use a supported default-shell, otherwise SSH login will not work.Login to a VAE will print the absolute path to the container launched for reference.» ssh vae25.hpc.gsi.de
+Slurm Cluster – Virgo 4.0 Submit Node
+Container launched: /cvmfs/vae.gsi.de/vae25/containers/vae25-user_container.sifContainers will be transparently started for your login sessions as well as for your jobs executed on the cluster. Note that each login runs in a dedicated container. If you need multiple terminal sessions, which are also known as shells, it is recommend to use a terminal-multiplexer.VAEs allow decoupling of the user application environments from the underling system software stack used to operate on the compute hardware. This allows great options for cluster administrators to utilize the most optimal software components to support the hardware and to update/upgrade the infrastructure as required. Furthermore VAEs do enable multiple distinct application environments tailored to specific use-cases to coexist on the same infrastructure. These VAEs can be continuously developed with minimal dependencies to the underlying systems software stack. Environment variables describing the VAE container:VariableDescriptionAPPTAINER_CONTAINERAbsolute path to the container imageAPPTAINER_NAMEName of the container image Spack PackagesSoftware is made available on the Virgo compute cluster using the Spack 11 package manager. Spack builds software packages with optimisation for multiple computer microarchitectures 12 like AMD Zen or Intel Broadwell. List available software in a virtual application environment (VAE) using following command:# list packages
+spack find
+
+# detailed information about a package (i.e openmpi)
+spack find -v openmpiThis prints all packages with their respective microarchitecture and compiler 13, e.g. GCC from the GNU Compiler Collection 14. Print the location’s absolute path of a package:spack location -i openmpi target=$(spack arch -t)
+
+# note that following command evaluates to the
+# microarchitecture of your current host
+spack arch -tLoad a package into the current environment. If multiple versions of a specific package are available, it is required to provide a version for loading the package:spack load openmpi target=$(spack arch -t)
+
+# load a specific version
+spack load openmpi@3.1.0 target=$(spack arch -t)Remove a package from your environment:# list loaded packages
+spack find --loaded
+
+# remove a package
+spack unload openmpi
+
+# remove all packages
+spack unload --allspack unload --all also removes the Slurm command-line tools (sinfo, sbatch, squeue, etc.) from your environment. To restore them run:spack load slurm How to request software installation Request the installation of additional software with a Software Installation Request (SIR) in a GitLab issue.FootnotesCommand-line Interface, Wikipediahttps://en.wikipedia.org/wiki/Command-line_interface↩︎Shell (Computing), Wikipediahttps://en.wikipedia.org/wiki/Shell_(computing)↩︎Effective Shell, Dave Kerrhttps://effective-shell.comhttps://github.com/dwmkerr/effective-shell↩︎The Linux Command Line, William Shottshttp://www.linuxcommand.org/tlcl.php↩︎Version Control, Wikipediahttps://en.wikipedia.org/wiki/Version_control↩︎Software Carpentry Lessons Software Carpentry Foundationhttps://software-carpentry.org/lessons↩︎The Carpentries Community Developed Lessons Carpentries Community https://carpentries.org/community-lessons↩︎Rocky Linux, RESF Projecthttps://rockylinux.org↩︎Apptainer Documentation, Linux Foundationhttps://apptainer.org/docs/user/latest/↩︎Debian projecthttps://debian.org↩︎Basic Usage, Spack Documentation https://spack.readthedocs.io/en/latest/basic_usage.html↩︎Computer microarchitecture, Wikipediahttps://en.wikipedia.org/wiki/Microarchitecture↩︎Compiler, Wikipediahttps://en.wikipedia.org/wiki/Compiler↩︎GNU Compiler Collection, GNU Projecthttps://gcc.gnu.org/↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/quickstart.html
+Title: Quickstart – Virgo
+==============================================================================
+
+This page is a shortcut, not a substitute. The sections linked below contain important details on security, storage, and job configuration that are essential for productive use of the cluster.Get a GSI Linux Account – Request an account through the GSI account registration. Processing may take multiple days, so plan ahead.Request a Slurm Account Association – Contact your account coordinator or fill out a user access request. If no coordinator exists for your group, specify default as the requested account.Set Up SSH Key Authentication – The cluster requires key-based login. Generate a key pair and install it on the login nodes. See Key Authentication.Configure SSH Proxy Jump – If connecting from outside GSI, set up a proxy jump through lxlogin.gsi.de. See Proxy Jump.Log In to a Submit Node – Connect to a VAE submit node, e.g. ssh vae25.hpc.gsi.de. See Submit Nodes for the full list.Identify Your Lustre Working Directory – Your home directory (/u/$USER) is not available on compute nodes. All job data must reside on Lustre shared storage. Ask your account coordinator for the path. The typical convention is:export LUSTRE_HOME=/lustre/$(id -g -n)/$USERSubmit Your First Job – Create a test script and submit it:cat > $LUSTRE_HOME/hello.sh <<'EOF'
+#!/bin/bash
+hostname ; date ; sleep 30
+EOF
+chmod +x $LUSTRE_HOME/hello.sh
+sbatch --chdir $LUSTRE_HOME -- $LUSTRE_HOME/hello.sh
+squeue --meFor a detailed walkthrough including job monitoring, error handling, and wrapper scripts see First Job.
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/index.html
+Title: Access – Virgo
+==============================================================================
+
+How to connect to the Virgo cluster and transfer data.PageDescriptionSubmit NodesSubmit node overview, login pools, security advice, and SSH configurationKey AuthenticationSetting up SSH key pairs for password-less loginProxy JumpConnecting from outside GSI via SSH proxy jumpNetwork TunnelTunneling into the GSI network with sshuttleMount Cluster StorageMounting cluster file systems on your local machineContainer LoginLogging into custom containers instead of the default VAE
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/submit-nodes.html
+Title: Submit Nodes – Virgo
+==============================================================================
+
+OverviewThe HPC infrastructure is only accessible from within the GSI’s internal networks.Virgo is located in a dedicated high-speed InfiniBand network shielded from external access by a firewall and network gateways. Login to a cluster submit node from outside the GSI networks is facilitated by a pool of login nodes used as SSH proxies. Submit nodes in the Virgo cluster support different software environments described in more detail in the Virtual Application Environment (VAE) section. Login to the cluster uses the SSH application. Password authentication is disabled on submit nodes, use of SSH key-authentication is required.# Example of access to a VAE using the login pool as SSH proxy 
+ssh -J lxlogin.gsi.de vae25.hpc.gsi.deFollowing is a list of login addresses to the Virgo cluster. Note that these addresses provide access over a load-balancer service, which redirects to a pool of submit nodes:Submit NodesVAESupport EOLRecommendedvirgo.hpc.gsi.deNo-vae25.hpc.gsi.deYes2027vae26.hpc.gsi.deYes2028YesLogin to one of the VAEs using the corresponding host alias vae*.hpc.gsi.deThe host alias virgo.hpc.gsi.de provides login to the bare-metal environment. These are typically used for building and using custom containers.Individual experiments and user groups distribute software using CVMFS. Consult the list of software repositories for further information. Submit nodes are not used as workstations! Submit nodes are not intended to be used as continuous interactive working environment. We strongly discourage the execution of an application directly on submit nodes for a long period of time (e.g. several hours). The expected usage of submit nodes is code compilation, a short test for execution and subsequent job submission. Security AdviceA fully functional access to a Linux user login on a large computer cluster over SSH is a very valuable resource for malicious activities. Therefore, it is very important to pay attention to security. Unfortunately, most of the security-settings cannot be technically enforced or only at a great cost to usability. Therefore your engagement is important!Please make sure to comply with the following recommendations:Use strong passwords for your Linux account (16+ random characters) and your SSH private key (cf. key-authentication).Never use unencrypted private keys!If possible do not use SSH agent-forwarding, since this exposes your credentials on a remote computer. Instead use the mechanism described in proxy jump.Only use X11-forwarding if necessary. Secure SHellAccess the infrastructure using a Secure SHell (SSH)1. The following list includes all commands and configuration files we recommend to get familiar with:ssh # login to a remote server
+scp # copy files from/to a remote server
+rsync # ^^ (delta sync.)
+ssh-keygen # generate an ssh public/private key pair
+ssh-copy-id # copy a public key to a server
+ssh-agent # daemon temporarily storing the private key
+ssh-add # add a private key to an SSH agent
+ssh-keyscan # manage host fingerprints
+sshuttle # private network tunnel over SSH
+sshfs # mount remote file-systems over SSH
+~/.ssh/config # client configuration
+~/.ssh/authorized_keys # authorized keys on a server
+~/.ssh/known_hosts # list of server fingerprint for authenticationThe OpenSSH2 tool is pre-installed on nearly all Linux distributions, as well as Apple Mac OS X. On Windows users have to access the SSH tools from the Windows Subsystem for Linux3 using the Windows Terminal4. As reference documentation we recommend the excellent manual pages from the OpenSSH5 project.Login NodesLogin PoolDescriptionlxlogin.gsi.deMinimal environment, user home-directory /u/$USER not available, supposed to be used as SSH proxy jump for all connections from outside GSI.lxpool.gsi.deUser environment includes access to the network storage for example the user home-directory (/u/$USER). Only accessible from within GSI or by proxy jumping through lxlogin.The GSI provides a pool of public Linux login nodes lxlogin.gsi.de that serve as an entry point to systems behind the GSI firewall. Before you continue make sure that you can access these nodes using your personal GSI Linux user name. If you do not have your user name and password yet, follow the instructions under request access. Establish a remote terminal session to the login nodes using the ssh command with following arguments:ArgumentsDescription[user@]hostname[.domain]hostname of the login node for example lxlogindomain of GSI gsi.de prefixed by your Linux user nameLogin with a command similar to:# `$user` is your GSI Linux user name
+ssh $user@lxlogin.gsi.de The system will ask you to accept the remote computer into the list of known hosts. Type in your password before you can login. Use exit to logout from the remote computer and end the SSH session. Close hanging SSH connections using an escape sequence ~. Host VerificationThe first connection to a submit node includes a process to check for the authenticity of the remote server6. The user will need to compare a server fingerprint (derived from the server host key) with the fingerprints listed in the table below. The following fingerprints are used by all submit nodes, including nodes providing virtual application environments:TypeBitsFingerprintRSA2048SHA256:gxQDZLUauwIusOl906+oobSUgIYG2s8jrIXiupf9aYcECDSA256SHA256:l8NadOR4W07iATwuzlIzsQ208za43YY22RqcnpocGq0ED25519256SHA256:IryzZCRhtt7BhymAiyh/Scy/w/6dd2/8zl+uit2S+zcAccepting a fingerprint adds it to the ~/.ssh/known_hosts file on your local computer. The client automatically checks the fingerprint on each future login and warns about a divergence. Differing fingerprints indicate a potential man-in-the-middle attack, in which case you should get in contact with the cluster support by following instructions report issues.User login into a Submit Node will use one of multiple available nodes. By default SSH clients associate a host key to a specific host IP address. This behavior may lead to a conflicting host key - IP address pair when submit nodes get added or removed from a pool. Users may configure their SSH client to not check IP addresses with the option CheckHostIP=no. The examples in the proxy-jump section illustrate this in more details.You can display the fingerprint of a submit node using the ssh-keyscan and ssh-keygen7 commands in combination:» ssh-keyscan -t rsa virgo.hpc.gsi.de | ssh-keygen -lf -
+2048 SHA256:gxQDZLUauwIusOl906+oobSUgIYG2s8jrIXiupf9aYc virgo.hpc.gsi.de (RSA) Default ShellSupported login shells are /bin/bash and /bin/zsh.You can determine your default shell on the login nodes. Please refer to the FAQ How to change my Linux user account configuration? for instructions on how to change the default shell. Note that we recommend users to use the default Bash shell8. TroubleshootingProblemLikely CauseSolutionPermission denied (publickey)SSH key not installed or wrong key typeFollow Key Authentication to set up your key pairConnection timed outNot on GSI network and no proxy jump configuredSet up Proxy Jump through lxlogin.gsi.deLogin hangs or drops immediatelyUnsupported default shellVerify your shell is /bin/bash or /bin/zsh (see FAQ)For diagnosing connection problems, run SSH with verbose logging:ssh -vvv vae25.hpc.gsi.de Copy FilesUse SSH to copy files from/to a remote computer with the scp command:scp [[user@]host1:]file1 … [[user@]host2:]file2Copy a local file to a remote computer:scp /path/to/data* user@virgo.hpc.gsi.de:/lustre/home/path/...The most common option to the scp command is -r to recursively copy an entire directory tree.Relative paths start from the $HOME home-directory.The rsync 9 file synchronization program is described in its dedicated documentation 10. It is much more efficient when working with incrementally changing files, since it only copies differences between a source and destination.FootnotesSecure Shell, Wikipediahttps://en.wikipedia.org/wiki/Secure_Shell↩︎OpenSSH, OpenBSD Foundationhttp://www.openssh.com↩︎Windows Subsystem for Linux, Microsofthttps://docs.microsoft.com/en-us/windows/wsl↩︎Windows Terminal, Microsofthttps://docs.microsoft.com/en-us/windows/terminal↩︎OpenSSH Manual Pages, OpenBSD Foundationhttp://www.openssh.com/manual.html↩︎OpenSSH remote login client - Verifying Host Keys OpenBSD Foundationhttps://man.openbsd.org/ssh#VERIFYING_HOST_KEYS↩︎OpenSSH Manual Pages, OpenBSD Foundationhttp://www.openssh.com/manual.html↩︎GNU Bash Manualhttps://www.gnu.org/software/bash/manual/↩︎Rsync Project, Samba Teamhttps://rsync.samba.org↩︎Rsync Documentation, Samba Teamhttps://rsync.samba.org/documentation.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/key-authentication.html
+Title: Key Authentication – Virgo
+==============================================================================
+
+Password based authentication to the compute cluster is not supported! It is required to use an SSH key in order to log in to a submit node of the Virgo cluster.Authentication keys enable password-less login to the Virgo cluster.An SSH authentication key pair is comprised of the following parts:A public key that is copied to the login-nodesA private key that remains with the user (aka. identity key).Security policies require the use of a strong passphrase for the private key. The private key needs to be kept as secret and is not allowed to be shared with other individuals or co-workers (cf. security-advice)Key Self-ProvisioningThe following files are involved in the configuration of public-private key based authentication:FilesDescription~/.ssh/id_ed25519Private key protected with passphrase.~/.ssh/id_ed25519.pubPublic key copied to the login-nodes~/.ssh/authorized_keysStores authorized public keys on the login-nodes.Users can self-provision a key pair with the ssh-keygen 1 command:# generate a key pair in ~/.ssh
+ssh-keygen -q -t ed25519 -f ~/.ssh/id_ed25519During key generation you will be prompted to enter a strong passphrase.The passphrase will be required when the private key is used.Change the passphrase of a private key with the ssh-keygen command:ssh-keygen -f ~/.ssh/id_ed25519 -p Authorized KeysAccess to submit-nodes using an SSH key is granted by storing your public key in the ~/.ssh/authorized_keys file on a login node. Note that this configuration file stored in your home-directory is shared between GSI login nodes and the Virgo cluster submit nodes.Copy your public key to a login node with the ssh-copy-id command:ssh-copy-id $USER@lxpool.gsi.de
+# writes to ~/.ssh/authorized_keysIf you are performing these steps from outside the GSI network, then in order to connect to lxpool you will need to include a proxy jump over one of the lxlogin nodes in your ssh-copy-id command:ssh-copy-id -o ProxyJump=$USER@lxlogin.gsi.de $USER@lxpool.gsi.de
+# writes to ~/.ssh/authorized_keys on lxpool after jumping through lxloginAlternatively use scp to copy a public key to a login node, and append it to the authorized keys file:# copy your public key
+scp ~/.ssh/id_ed25519.pub $USER@lxpool.gsi.de:.ssh/
+# login
+ssh $USER@lxpool.gsi.de
+# append the key to the authorized_keys file
+cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keysThe ~/.ssh/authorized_keys requires specific access permissions in order to be accepted by the ssh command. Use chmod to ensure correct access rights:chmod 700 $HOME/.ssh
+chmod 600 $HOME/.ssh/authorized_keys Key Agentssh-agent 2 stores private keys used for SSH public key authentication. Through use of environment variables the agent can be located and automatically used for authentication when logging in to other machines using ssh. The SSH agent prints the required environment variables needed for connection to standard output when started. Executing it in conjunction with the eval command will load those variables into the current shell environment:eval $(ssh-agent)The ssh-add 3 command loads a private key into a running SSH agent and prompts the user for the passphrase protecting the private key:OptionDescription-lLists fingerprints of all identities currently represented by the agent.# add a private key to the SSH agent
+ssh-add ~/.ssh/id_ed25519
+# list private keys known by the SSH agent
+ssh-add -lThe ssh command supports forwarding the connection to a local SSH agent from a login on a remote computer. However avoid this option if possible as described in security advice section:OptionDescription-AEnables forwarding of the authentication agent connection.Agent forwarding exposes your private key to the remote host administrator. Only use this option if you trust the remote host and understand the risks.# forward your SSH agent over a jump host
+ssh -A -J lxpool virgo.hpc Key Agent Session GNOME Keyring, KDE Wallet Manager & Mac OSX Keychain Depending on your client platform you may already use a program providing functionality similar to the one described in this section.Commonly used applications to store private keys for SSH public key authentication are the GNOME Keyring 4 or KDE Wallet Manager 5 on Linux and Keychain 6 on Apple MacOS X. Windows users should follow the instructions about OpenSSH key management 7 in the official documentation from Microsoft.Typically users have multiple parallel shells. Therefore, it will be very convenient to be able to connect with a single ssh-agent from any shell instances. The ssh-agent-session 8 shell script provides this functionality.FileDescription~/.ssh/agent-sessionStores agent connection information.# start the ssh-agent (if not running)
+» source ssh-agent-session
+ssh-agent startedIf the ssh-agent is running already, then the connection information will automatically loaded into the current shell environment:» source ssh-agent-session
+ssh-agent running with process ID 19264Source this script within your shell profile to immediately use a shared SSH agent on all newly started shells:echo "source ~/bin/ssh-agent-session" >> ~/.bashrcFootnotesManual page ssh-keygen, OpenBSD Foundationhttps://man.openbsd.org/ssh-keygen↩︎Manual page ssh-agent, OpenBSD Foundationhttps://man.openbsd.org/ssh-agent↩︎Manual page ssh-add, OpenBSD Foundationhttps://man.openbsd.org/ssh-add↩︎GNOME Keyring, GNOME Projecthttps://wiki.gnome.org/Projects/GnomeKeyring↩︎KDE Wallet Manager, KDE Projecthttps://utils.kde.org/projects/kwalletmanager↩︎Keychain Access User Guide, Apple Supporthttps://support.apple.com/guide/keychain-access↩︎OpenSSH key management, Microsoft User Documentationhttps://docs.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement↩︎Shell script ssh-agent-session, GitHubhttps://github.com/vpenso/scripts/blob/master/bin/ssh-agent-session↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/proxy-jump.html
+Title: Proxy Jump – Virgo
+==============================================================================
+
+Overview Requires at least OpenSSH version 7.3 Proxy jump is supported from OpenSSH 7.31 forward. Check the version of your local SSH client with option -V. Alternatives to the proxy jump option are described in the OpenSSH Cookbook - Proxies and Jump Hosts2.OptionDescription-J <node>Connect to the target host by first making an ssh connection to the jump host described by destination and then establishing a TCP forwarding to the ultimate destination from there. This is a shortcut to specify a ProxyJump configuration directive.Example of using lxlogin to SSH into a submit node:1ssh -J $USER@lxlogin.gsi.de virgo.hpc.gsi.de1Connect to the target host by first making a ssh connection to the jump host. Use the login-nodes as jump host to access the HPC infrastructure. The ssh command supports the proxy jump option -J to connect with a submit node Configuration FileFollowing command will append a custom configuration for the login nodes to be used as jump hosts to your local SSH client configuration file ~/.ssh/config (details are described in the ssh_config3 manual):1cat <<EOF >> ~/.ssh/config
+Host login
+User $USER
+Hostname lxlogin.gsi.de
+CheckHostIP no
+EOF
+
+2ssh -J login virgo.hpc.gsi.de1Append a configuration for a login pool to the user SSH configuration. This example uses the lxlogin.gsi.de pool. CheckHostIP is disabled since the load-balancing service will distribute users over different nodes with individual IP-addresses.2Connect to a submit node using the pool name login defined in the user SSH configuration.Further extend your SSH configuration with login for a required virtual application environment (VAE) available on the cluster:cat <<EOF >> ~/.ssh/config
+host vae26
+ProxyJump login
+User $USER
+Hostname vae26.hpc.gsi.de
+CheckHostIP no
+EOFWith the configuration above login becomes as simple as ssh vae26. Copy FilesSimilarly, the scp command is able to copy files using a jump host by adding the SSH argument to the scp command with option -o4, specifically set a jump host with ProxyJump=:# copy a file using a proxy jump
+scp -o ProxyJump=login /path/to/data* files.hpc.gsi.de:/lustre/...FootnotesOpenSSH 7.3 Release Noteshttp://www.openssh.com/txt/release-7.3↩︎OpenSSH Cookbook - Proxies and Jump Hosts, Wikibookshttps://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts↩︎Manual page ssh_config, OpenBSD Foundationhttps://man.openbsd.org/ssh_config↩︎Manual Page scp, OpenBSD Foundationhttps://man.openbsd.org/scp↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/network-tunnel.html
+Title: Network Tunnel – Virgo
+==============================================================================
+
+sshuttle 1 creates a transparent tunnel to a remote network using SSH. This is similar in connectivity to a Virtual Private Network (VPN) 2 based technology. Sshuttle enables users to work as if their computer is located within the GSI network. Practically this allows to access all GSI internal service including the HPC infrastructure. The sshuttle requires root access on your local computer in order to modify the system firewall to tunnel all traffic through an SSH connection.ConnectStart a tunnel over the Internet to the GSI internal network through one of the login nodes with the following command, where $user is your GSI Linux username:sshuttle --daemon --pidfile=/tmp/sshuttle.pid --dns --remote $user@lxlogin.gsi.de 140.181.0.0/16 10.0.0.0/8The subnets above cover GSI’s Intranet (140.181.0.0/16, 10.0.0.0/8).The /tmp/sshuttle.pid stores the process ID of the sshuttle instance for later use. This connection will route traffic to GSI networks including DNS requests transparently through an SSH connection. Using the sshuttle command will prompt for the sudo 3 password and then for the SSH login password. DisconnectUse the process ID stored in /tmp/sshuttle.pid to disconnect:# stop the tunnel
+kill $(cat /tmp/sshuttle.pid)Alternatively you can run pkill sshuttle 4, which will kill all active sshuttle instances running. ConfigurationIt is recommended to use a configuration file 5 to store all connection options for repeated logins. The following example illustrates a configuration to connect to the lxlogin.gsi.de nodes from the Internet:# Create a configuration file
+cat > lxlogin.conf <<EOF
+140.181.0.0/16
+10.0.0.0/8
+--remote
+lxlogin.gsi.de
+--dns
+--disable-ipv6
+--daemon
+--pidfile
+/tmp/sshuttle.pid
+--exclude
+140.181.60.0/24
+EOFArguments read from a file must be one per line, as shown above. Pass the name of the configuration file preceded by the @ character to the Sshuttle command:# ...and pass the configuration file as argument to Sshuttle
+sshuttle @lxlogin.confFootnotesSshuttle, GitHubhttps://github.com/apenwarr/sshuttle↩︎Virtual Private Network, Wikipediahttps://en.wikipedia.org/wiki/Virtual_private_network↩︎Sudo Manual Pageshttps://www.sudo.ws/man.html↩︎pkill Manual Pagehttps://manpages.org/pkill↩︎Configuration File, Sshuttle Documentationhttps://sshuttle.readthedocs.io/en/stable/manpage.html#configuration-file↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/mount-cluster-storage.html
+Title: Mount Cluster Storage – Virgo
+==============================================================================
+
+SSHFS 1 is a FUSE-based file-system 2 used to mount remote directories over an SSH connection.sshfs allows users to transparently access files available on the storage systems connected to the Virgo cluster. It is in particular useful to work with development tools installed on your local computer while accessing files and data stored on Lustre shared storage.Most Linux distributions provide a package called sshfs for installation. Apple users may want to work with the FUSE for MacOS Project 3, which provides an sshfs client as well. Similar for Windows users a client is provided by the WinFsp project 4.The following example mounts the GSI user home-directory from a login node:mnt=/tmp/u/$USER
+mkdir -p $mnt
+sshfs $USER@lxpool: $mntMount Lustre from the files.hpc.gsi.de nodes using a proxy jump over a login node:mnt=/tmp/lustre
+mkdir $mnt
+sshfs -o ProxyJump=lxlogin.gsi.de files.hpc.gsi.de:/lustre $mnt
+
+# Remove a mount on your local node with the `fusermount` command:
+fusermount -u $mntIt is recommended to read the very comprehensive documentation from the ArchLinux project 5 about SSHFS for further details.FootnotesSSHFS Project (Linux), GitHubhttps://github.com/libfuse/sshfs↩︎Filesystems in the Linux kernel, The Linux Kernelhttps://www.kernel.org/doc/html/latest/filesystems/fuse.html↩︎FUSE for MacOS, GitHubhttps://github.com/osxfuse/osxfuse↩︎SSHFS for Windows, GitHubhttps://winfsp.dev/https://github.com/winfsp/sshfs-win↩︎SSHFS, ArchLinux Wikihttps://wiki.archlinux.org/index.php/SSHFS↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/access/container-login.html
+Title: Container Login – Virgo
+==============================================================================
+
+OverviewContainerized application environments are called Virtual Application Environment (VAE) and provide a pre-build selection of software. Typically users will directly login into a VAE by selecting an appropriate submit node for example vae24.hpc.gsi.de. This section provides information for users to deviate from the pre-configured VAEs and configure login to a custom build container. This is useful for users to pre-configure their own software environment and automate the login configuration to access it. UsageContainerized login is configured by environment variable, for example:# specify the path to your container image on the Virgo cluster
+export APPTAINER_CONTAINER=/absolute/path/container.sif
+
+# login to the cluster and propagate the environment variable
+ssh -o SendEnv=APPTAINER_CONTAINER virgo.hpc.gsi.deUsers need to make sure to propagate the APPTAINER_CONTAINER environment variable to the server using the SendEnv configuration option (from the ssh_config manual):SendEnvSpecifies what variables from the local environ(7) should be sent to the server. […] Variables are specified by name, which may contain wildcard characters. Multiple environment variables may be separated by whitespace or spread across multiple SendEnv directives. The default is not to send any environment variables. ConfigurationFor convenience add a configuration similar to the following to your SSH configuration:cat >> ~/.ssh/config <<EOF
+Host *.hpc.gsi.de
+SendEnv APPTAINER_CONTAINER
+EOFThe APPTAINER_CONTAINER environment variable supports following values other then an absolute path to a container image:# disables container launch
+1APPTAINER_CONTAINER=none
+
+# unset, empty or blank
+2APPTAINER_CONTAINER=
+
+# selection menu
+3APPTAINER_CONTAINER=menu1This forces VAE submit nodes to disable containerized login. Effectively allowing the user bare-metal login on submit nodes like vae*.hpc.gsi.de.2Unset, empty of blank will launch the default configuration set on the submit node.3Presents the user an interactive selection menu with a list of pre-configured VAEs.
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/storage.html
+Title: Storage Systems – Virgo
+==============================================================================
+
+OverviewThe compute cluster is connected to multiple storage facilities listed in the following table:NamePathDescriptionHome-directory/u/$USER/The private user home-directories are available on all login- and submit-nodes, and not on the cluster compute nodes. More details are described in the home-directory section below.CVMFS/cvmfs/Experiment and working group specific software is available via CVMFS.Shared Storage (Lustre)/lustre/The Lustre parallel file-system provides shared storage to all computing nodes. Find the documentation in the Shared Storage section. It is the primary storage for permanent data.Scratch/scratch/Central volatile scratch storage for software development. Space is limited by quota (per group). No backup. Read-write access through nodes in the work partition (read-only on submit and batch worker nodes).Temporary Storage/tmp/Each compute node provides local volatile scratch storage in the /tmp directory. Use this storage for intermediate data during job execution only. Warning Both /scratch/ and /tmp/ are volatile storage, and therefore no backup in any form. Files in /tmp are cleaned automatically based on age and capacity.Do not rely on these locations for persistent data. Home DirectoryNo home-directory on Compute nodes!Network home-directories /u/$USER/ are only accessible on interactive nodes like the submit nodes. This means users can not start an application from their home-directory when a job is submitted to the cluster. Output from a job can not be stored in the home-directory.Network home-directories are provided by NFS 1 servers and therefore have limitations in performance when accessed from many nodes at once. The execution nodes in the cluster do not mount the home-directories in order to prevent the GSI NFS servers from being overloaded by user access.To improve the work effectiveness on the cluster, e.g. using a local text editor or modifying files directly, it is recommended to mount your GSI network home-directory to your local computer.FootnotesNetwork File System, Wikipediahttps://en.wikipedia.org/wiki/Network_File_System↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/storage/cvmfs.html
+Title: CVMFS Repositories – Virgo
+==============================================================================
+
+Software RepositoriesMultiple software repositories are provided using CernVM-FS 1. A software repository hosts custom build software for an experiment or working group affiliated to GSI or FAIR. Follow instructions in the FAQ to request a new CVMFS repository. All cluster nodes mount software repositories in the directory /cvmfs/.Every sub-directory in /cvmfs uses an @fqrn@ a Full Qualified Repository Name (FQRN) for example vae.gsi.de (cf. Virtual Application Environments). Sub-directories in /cvmfs/@fqrn@ will be automatically mounted on demand as soon as they are accessed. This means directories are visible when listing with the ls command only if they are mounted already.Please contact your account coordinator to inquire about more details of the available software landscape. Following is a list of the repositories available on the compute cluster:Repository (@fqrn@)Contactaph.gsi.deAdrian Oeftigercbm.gsi.deFlorian Uhligeel.gsi.deJoern Adamczewski-Muschfairsoft.gsi.deDmytro Kresanhadessoft.gsi.deJochen Markerthtit.gsi.deMatthias Lutzpanda.gsi.dePaul Buehlerphelix.gsi.deDenis Bertiniradprot.gsi.deEkaterina Kozlovatheory.gsi.deThomas Neff Client ConfigurationIn case you want to mount one or more cvmfs repositories on your machine, proceed with the following four steps. Install cvmfs using your distribution’s package manager, and copy the following master public key to /etc/cvmfs/keys/masterkey.gsi.de.pub:-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwK1G5ScR02rvc7nZCo4m
+wGyKnSUyDVJUVjKjOm6+ftBb+KAUNfHdsXgq8nx8WYjpEowWEuvr36pohmuDpLby
+/FKchIHO89MrJtLNmbLG7+/BI0B0E/W4UznCFrYnD+dgcMKkXLDZTtEpLD6veSYC
+XKi9p9yjMxjHecRYVfOum5qWsYAfQ9p9AxbrnkUdiP6B9TQ0BVriPtXU5UybydH1
+Otby08DRD7YTXTiG+59hExzcEZEsx1qIX/1fdV0PnNFowlnw5rc+02v2a0C+FnV/
+mbjzEAWz28q0jbw9vkaMOOO1fe+jrHziuxfvL7Qlj2kx7cIHvbyca0O5OEU/ajZv
+wwIDAQAB
+-----END PUBLIC KEY-----Place the repository-specific configuration file to /etc/cvmfs/config.d/cvmfstest.gsi.de.conf. Users inside the GSI networks use the internal Stratum 1 (an HTTP proxy is usually used automatically on centrally managed GSI machines).CVMFS_SERVER_URL="http://cvmfs-s1.gsi.de/cvmfs/cvmfstest.gsi.de"
+CVMFS_HTTP_PROXY="DIRECT"
+CVMFS_PUBLIC_KEY="/etc/cvmfs/keys/masterkey.gsi.de.pub"Users outside the GSI networks use the publicly reachable repositories provided by the external Stratum 1:CVMFS_SERVER_URL="http://cvmfs-s1-int.gsi.de/cvmfs/cvmfstest.gsi.de"
+CVMFS_HTTP_PROXY="DIRECT"
+CVMFS_PUBLIC_KEY="/etc/cvmfs/keys/masterkey.gsi.de.pub"Instead of duplicating the repo name in the CVMFS_SERVER_URL, you can also use @fqrn@ there like this: CVMFS_SERVER_URL="http://cvmfs-s1-int.gsi.de/cvmfs/@fqrn@". Mount the desired repository through any of the available mechanisms. Example for a Systemd unit file cvmfs-cvmfstest.gsi.de.mount:[Unit]
+Description=Mount /cvmfs/cvmfstest.gsi.de
+After=network.target
+
+[Mount]
+What=cvmfstest.gsi.de
+Where=/cvmfs/cvmfstest.gsi.de
+Type=cvmfs
+
+[Install]
+WantedBy=multi-user.targetFootnotesCernVM-FS Project, CERNhttp://cernvm.cern.ch/portal/filesystem↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/storage/lustre.html
+Title: Lustre Shared Storage – Virgo
+==============================================================================
+
+Shared StorageAccess shared storage in the directory /lustre on all nodes.Lustre 1 is a distributed and parallel file system. The GSI Lustre installation manages hundreds of millions of files and petabytes of data, certain common practices in handling I/O on smaller network file systems do not apply to Lustre. In order to understand these boundary conditions for Lustre, users have to understand how data access is established.Storage in /lustre has no automatic backup!Risk of data loss is reduced by storing data on RAID arrays. However, this does not guarantee the safety of data and it does not protect against errors of RAID controllers, silent data corruption and other sources of data loss. The namespace metadata is copied in regular intervals. This may help in case of total destruction of a Meta Data Server (MDS). Success of recovering metadata on the production scale has not been shown. Any file operations more recent than the last backup copy of the namespace metadata would be lost.Why should You care?It would be much more convenient if it were possible to hide all the particularities of a highly complex system like Lustre from users. However, applications performance and to some degree Lustre’s serviceability depend on basic understanding of Lustre architecture. Simple changes to your application code or runtime environment may have a big impact on reliability and performance of Lustre file systems.The difficulty in implementing parallel I/O workloads for scientists is based on the difference between data representation from the scientific point of view, e.g. particles, cells, etc. and the conditions of a physical data storage. Furthermore, software layers like Lustre in between applications and physical devices are complex and varying. Nevertheless, simple insides as described in “Best Practices” here will optimize application performance with a moderate amount of work. How does Lustre I/O work?With reference to Lustre architecture following paragraph describes the basic IO mechanism of Lustre with clients on compute nodes that run jobs and process files by first sending a request to the MDS. Using its local metadata, the MDS determines the location and structural distribution of a file. Second, the MDS redirects the client to the Object Store Server (OSS) that manages multiple Object Store Targets (OST), where OST(s) store the requested file objects. Once a client has established a network connection to the target OSS, the MDS is no longer involved in the I/O process. Third, the actual data access of clients goes directly over the OSS(s) to the OST(s) performing operations like file locking, disk allocation and so forth. Where are the limits?Since Lustre enforces coherence in case of multiple clients accessing the same file at the same time, a distributed file lock management is required to guarantee consistency for all clients. A Lustre system is limited in the number of operations it can do per second. Therefore, it is strongly recommended to keep the amount of file-open and file-lock operations in parallel as small as possible to reduce contention. QuotaLustre enforces storage quotas on disk usage and file count. Check your current usage and limits with the lfs quota command:# quota for your primary group
+lfs quota -g $(id -g -n) /lustre
+
+# quota for your user
+lfs quota -u $USER /lustre ArchitectureCommunication may refer to certain Lustre machine types without giving explanations, so here they are:The Metadata Server (MDS) stores namespace metadata such as file and directory names or access permissions. This single service directs each file request to a corresponding server storing data. Once the file is opened, the MDS is not longer involved.The Object Storage Servers (OSS) typically manage several Object Storage Targets (OST) by controlling I/O accesses and handling network requests. OSTs are storage devices that store your files and consist of physical disks in a RAID configuration. File data is stored in one or more objects, where each object is distributed to a different OST. The capacity of a Lustre file system is the sum of the capacities provided by all OSTs.Clients normally used as compute nodes in a cluster access file data. Lustre presents a single namespace to users, visible like a usual network file system via a mounted path in the local directory tree, which is standard POSIX compliant. It allows concurrent and coherent read and write access to the distributed file system.The Configuration Management Server (MGS) is the central point of contact providing configuration information about Lustre file systems and the entry point for Lustre communication, e.g. for a client intending to mount a Lustre file system. The MGS is usually co-located to the MDT on one machine. Best PracticesLustre is a system shared among all users of the compute cluster:Due to the architecture of Lustre, users have a significant impact on the overall performance depending on their methods of working with data stored on the file system.Optimizing the I/O performance for each application utilizing distributed storage will decrease the overall load on Lustre and hence improve the user experience for everyone. Following are some general advices for I/O activities on Lustre.Keep in mind that misused access on Lustre multiplies with the number of jobs submitted to the compute cluster. Many of the topics discussed further down will unfold with severity depending on the scale of cluster applications.Avoid flooding the MDSCommands that access file metadata like ls, find, du, or df can flood the MDS with huge number of requests, especially if they descend into a deep directory tree structure with many files.Metadata information such as ownership or permissions are stored in the MDS, whereas a file size is only available from the respective OST. For example, ls -lR issues a request to the MDS and to an OST for each file or directory. Similarly, recursive scanning of directory trees with find is very expensive and takes a long time to complete.Avoid as far as possible searching for input/output files in jobs. If you need to check for the existence of a file, for instance with ls, omit unnecessary command options reading irrelevant metadata, e.g. -l or --color. Should you not need sorted output for ls, use option -U which will improve the response time for listing.Likewise, if you use rsync to move data between Lustre and execution nodes make sure to copy only absolutely relevant files and do not use --exclude PATTERN options. Generally, wild-cards for commands like tar or rm for huge lists of files should be avoided. For example, executing rm -rf /path/to/files/* with millions of files will never finish, since the expansion of the wild-card * will have highly negative impact on the responsiveness of Lustre overall. Don’t store too many files in a directoryConcurrent access to several files in the same directory creates contention, because Lustre has to maintain a lock to the directory. Therefore, make sure to use subdirectories and keep the number of files per directory within thousands. Avoid many small filesThe optimal access strategy for handling I/O activities of a single job would be to have exactly one file containing input data and to write exactly one output file. Neither input nor output files should be shared with another jobs respective process.Naturally, in many applications this is impossible or very difficult due to the nature of the executed computation itself. Nevertheless, the number of files accessed by your application should be as small as possible.For this reason we recommend file sizes bigger than 1 GB for input data if feasible. If your experiment data consists of many small files, consider to merge the data once before your execute several processing applications on significantly bigger data files. The number of output files needs to be very limited too. Remember that log files are output files as well. For example, separating standard out and standard error should be avoided, as well as writing additional log streams from child processes. Don’t write one file from many processesLogical concurrence of file access is a burden for Lustre. In case of massively parallel computations with a large number of processes or threads contention has to be taken into account. Instead of allowing all processes to do the I/O operations, choose just a few processes to do this. For writes, a couple of processes should collect the data from other processes and merge it before writing to storage. Keep files open and buffer dataEach file-open is a metadata request to the MDS followed by a redirection to an OSS. Keep file handles open during the execution of your application. Make sure to buffer output as long as possible, e.g. 1MB or more, before you flush it to the storage. Generally, aggregate small read and write operations into the larger ones for instance with MPI-IO Collective Buffering. Don’t install software in LustreThe IT department provides a dedicated [infrastructure for software deployment][D2jRt] on the compute cluster. Please contact the software coordinator of your experiment/working group for support.Avoid installing software frameworks and libraries in Lustre, because they usually contain lots of very small files. When many jobs start to initialize applications with library dependencies inside a Lustre file system, the MDS will be flooded with requests.Do not compile software in Lustre! Since the build process generates plenty of compile artifacts and temporary files, it floods the MDS with requests. If you absolutely need to deploy binaries on Lustre, compile them in a temporary directory on the interactive machines and install them afterwards. Beware of executables in LustreLustre clients can block on I/O operations in case of high load in Lustre, since Lustre comes with a “strong” client/server coupling to enable connection recovery after infrastructure failures. Usually, in such cases programs crash when instructions are loaded from an inaccessible executable into memory. It is possible to submit binaries as jobs with the cluster management system, but we recommend to copy the executable into the temporary scratch space local at the execution node before executing it. Furthermore, executables suffer from a performance penalty due to the network latency when executed from Lustre. FootnotesLustre File System, Wikipediahttps://en.wikipedia.org/wiki/Lustre_(file_system)↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/index.html
+Title: Cluster – Virgo
+==============================================================================
+
+IntroductionThink of an HPC cluster like a shared supercomputer that many people use at the same time. A scheduler like Slurm1 is the system that decides who gets to use which part of the computer, when, and for how long. The basic idea is: You don’t run programs directly like on your laptop. Instead, you ask the scheduler for resources, and it runs your job when those resources are available.Following illustrates a step-by-step workflow:Login — You connect via SSH to a submit node.Batch script — Write a batch job script that defines what program to run, which resources (CPUs, RAM) are required, and how long it will execute.Submit job — You send the script to Slurm, and your job goes into a queue.Waiting in the queue — Slurm keeps all user jobs in a queue and starts them on free resources when available.Job runs — Slurm assigns compute resources and your job is started using the batch script.Access output — After the job finished access output data and log-files. OverviewOverview of sections in this chapterPageDescriptionEnvironmentSlurm commands, meta-commands, working directory, I/O redirectionPartitionsAvailable partitions and their resource limitsResource AllocationInteractive jobs, batch jobs, and recurring jobs with scrontabResource ConstrainsRuntime, memory, CPU, and feature constraintsScheduler QueueJob states and job queue priorityMonitoring & EfficiencyMonitor resource usage, analyse job failures and efficiencyAccountsSlurm accounts, coordinators, and fair-shareReservationsRequesting and using resource reservationsFootnotesSlurm Overview, SchedMD Documentationhttps://slurm.schedmd.com/overview.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/environment.html
+Title: Environment – Virgo
+==============================================================================
+
+Following is a list of commands available to users to interact with the workload management system:CommandDescriptionsinfoInformation on cluster partitions and nodessqueueOverview of jobs and their statesscontrolView configuration, states, (un-)suspending jobssrunRun executable as job (blocks until the job is scheduled)sallocSubmit an interactive job. (blocks until prompt appears)sbatchSubmit a job script for batch schedulingscancelCancels a running or pending jobHelp & VerbositySupport documentation for all commands above is available with the command options……--usage for a brief overview, for example sinfo --usage…--help lists all options, for example srun --helpComplete documentation for all command is available in the corresponding man-pages 1, for example man sbatch During execution of a command the option -v enables logging, and -vvv increases verbosity of the log output. Arguments & OptionsUse the double dash (--) to separate Slurm options (left side) from the user application and its arguments (right side): ┌─── Slurm resource allocation with options
+│
+┌──────────────────┤
+sbatch -p debug -N 1 -- root.exe -b /path/to/macro.C
+├──────────────────────────┘
+│
+└─── User application with options Environment VariablesMost of the options to the salloc, srun, and sbatch commands can be set by so called input environment 2 variables. These variables are read during command execution; thus, they are an alternative to command-line options and meta-commands.The following example uses the SALLOC_PARTITION environment variable instead of the command option --partition (Note that you can use the export 3 command to mark an environment variable to be visible with any newly forked child processes):» SALLOC_PARTITION=debug salloc env | grep SLURM
+salloc: Granted job allocation 118
+SLURM_SUBMIT_DIR=/lustre/hpc/<username>
+SLURM_JOB_NODELIST=ccsub0004
+SLURM_JOB_PARTITION=debug
+[...]As you can see in the example above, Slurm defines another set of output environment variables available during runtime to be consumed by the user applications. These include detailed information about the allocated resource, for example SLURM_JOB_CPUS_PER_NODE providing the number of usable CPUs for the application on a particular node. Make sure to read the manual pages for a complete list of input and output environment variables.OptionDescription--exportIdentifies which environment variables from the submission environment are propagated to the launched application.Recommended use for the --export option to set environment variables:sbatch --export=ALL,VAR=val #...By default (option not set) all environment variables will be propagated.--export=<environment_variables> will only export the variables defined by the option. Note that this prevents the required propagation of environment variables used to launch containers.--export=ALL,<environment_variables>. If “ALL” is specified, then all user environment variables will be loaded and will take precedence over any explicitly given environment variables. Meta CommandsMeta commands allow users to set Slurm configuration options in the header of a batch-script. These commands are ignored by the shell and interpreted as comments:All meta-commands need to be placed at the top before any other shell command.Prefix a meta-command with #SBATCH followed by a Slurm option with argument.Multiple options require one meta-command per option.Consider following example:sleep.sh#!/bin/bash
+#SBATCH -J sleep
+#SBATCH -o sleep-%j.log
+
+function puts() {
+echo \[$(date +%Y/%m/%dT%H:%M:%S)\] "$@"
+}
+
+puts START $(whoami)@$(hostname):$(pwd) \
+$SLURM_CLUSTER_NAME:$SLURM_JOB_PARTITION\
+$SLURM_JOB_NAME-$SLURM_JOB_ID \
+$SLURM_JOB_CPUS_PER_NODE:$SLURM_TASKS_PER_NODE $SLURM_MEM_PER_CPU
+
+sec=${1:-30}
+puts Sleep for $sec seconds
+sleep $sec
+
+# Propagate last signal to the system
+state=$?
+puts EXIT $state
+exit $stateAbove meta-commands set the job name sleep and define the file name for I/O redirection:# submit the job script above
+export SLURM_WORKING_DIR=$LUSTRE_HOME
+sbatch -- $LUSTRE_HOME/sleep.sh
+
+# list only jobs with the sleep label
+squeue -n sleep
+
+# check the path to the output stream
+scontrol show job $(squeue -ho %A -n sleep) | grep StdOutSlurm does not interpolate shell environment variables in meta-commands. It is not possible to use #SBATCH -D $LUSTRE_HOME to configure the working directory. Make use of a Slurm environment variable instead, for example SLURM_WORKING_DIR above. Working DirectoryThe working directory 4 is an absolute path in the file system directory tree used to execute your application program during the runtime of your job. Typically you want to have a working directory on the cluster shared storage. Jobs inherit the submit directory as working directory by default, if it is not explicitly specified.Your network home-directory is only available on the submit node and not accessible from any compute node.# change into a directory on the cluster file system
+» cd /lustre/$(id -g -n)/$USER && pwd
+/lustre/hpc/<username>
+
+# execute a job and print working directory
+» srun -- pwd
+/lustre/hpc/<username>Not all working groups follow this naming convention for the directory structure. Adjust your path accordingly. Execute a job in a non-existing directory falls back to /tmp/:# executing a job in the users home-directory
+» srun -- pwd
+slurmstepd: error: couldn't chdir to `/u/<username>': […]
+/tmpSpecify a working directory by command option:OptionDescription-D <path>,--chdir=<path>Sets the working directory for jobs, otherwise the default is the current working directory.» export LUSTRE_HOME=/lustre/$(id -g -n)/$USER
+/lustre/hpc/<username>
+
+# ...determine your current working directory with the `pwd` command
+» srun -D $LUSTRE_HOME -- pwd
+/lustre/hpc/<username>VariableDescriptionSLURM_SUBMIT_DIRDirectory from which a job has been submitted.SLURM_WORKING_DIRDirectory where the job will be executed.Within your job runtime environment the two Slurm output environment variables above are available to read the directory configuration:# set the working directory with a Slurm input
+# environment variable
+» export SLURM_WORKING_DIR=$LUSTRE_HOME
+
+# the job is submitted from the user home-directory 
+# not available on the compute nodes
+» srun --pty \
+-- /bin/bash -c 'env | grep "SLURM_[A-Z]*_DIR"'
+SLURM_SUBMIT_DIR=/u/<username>
+SLURM_WORKING_DIR=/lustre/hpc/<username> I/O RedirectionCommand-line options to redirect I/OOptionDescription-o,--output=Relative or absolute path to stdout.-e,--error=Relative or absolute path to stderr, send to stdout by default.-i,--input=Relative or absolute path to stdin.The filename pattern may contain following specifiersOptionDescription%j or %JCurrent jobid or jobid.stepid.%N, %nHostname, and node identifier (numerical) relative to current job.%A, %aArray master job allocation number, array ID (index) number.%tTask identifier (rank) relative to current job.%xJob nameExamples:# use the job ID as filename
+sbatch --output='%j.log' --error='%j.err.log' #…
+
+# custom "name" with array master job and index
+sbatch --output='name-%A_%a.log' #… Mail NotificationReceive notifications by mailOptionDescription--mail-type=Notify at a selection of following events: BEGIN,END,FAIL,REQUEUE,ALL.--mail-user=Set the receivers email address.[…] --mail-type=FAIL --mail-type=REQUEUE --mail-user=<username>@gsi.de […] Job NameA job name is part of the meta data associated to a job. It allows users to identify a compute job by an information different to the unique job identification number (JOBID). It is very convenient to use job names to distinguish between different applications running at the same time.OptionDescription-J <name>,--job-name=<name>Name of the job (24 characters maximum).Multiple jobs can share a common name. The job name can be set by input environment variable:VariableDescriptionSLURM_JOB_NAMEInterpreted by the srun command.SBATCH_JOB_NAMEInterpreted by the sbatch command.In addition each compute job can have a comment string attached to further distinguish individual runs of a repeated execution of the same application with a different configuration.OptionDescription--comment '<string>'Attach a comment to the job.The squeue command supports the -n option to limit the list to job allocation of a given name, for example:# print job ID, name, and comment
+» squeue -o '%25A %10j %10k' -n sleep
+JOBID NAME COMMENT
+1908264 sleep run-3
+1908262 sleep run-1
+1908263 sleep run-2FootnotesMan Page, Wikipediahttps://en.wikipedia.org/wiki/Man_page↩︎Environment, Bash Reference Manual, GNU Projecthttps://www.gnu.org/software/bash/manual/bash.html#Environment↩︎Bourne Shell Builtins, Bash Reference Manual, GNU Projecthttps://www.gnu.org/software/bash/manual/bash.html#Bourne-Shell-Builtins↩︎Working Directory, Wikipediahttps://en.wikipedia.org/wiki/Working_directory↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/partitions.html
+Title: Partitions – Virgo
+==============================================================================
+
+What is a Partition?In Slurm, a partition is essentially a named group of compute nodes that acts like a queue you submit jobs to, and from a user’s perspective it defines both where your job can run and under what conditions. When you submit a job, you specify a partition (for example with --partition=long), and instead of choosing a specific machine, you are telling Slurm to run your job on any available node within that group.Each partition is configured with its own rules and characteristics, such as maximum runtime limits, available hardware (like CPUs, GPUs, or high-memory nodes), job priority, and sometimes access restrictions based on user groups. This means partitions are often organized by purpose—for example, a debug partition for quick test jobs, a long partition for extended computations.From a practical standpoint, choosing the right partition is important because it affects how long your job can run, how quickly it may start, and what resources it can use, but you do not need to worry about the exact node your job runs on, since Slurm automatically handles that selection within the chosen partition. Table 1: List of available partitions PartitionUse whendebugTesting job scripts, quick experiments (max 30 min)mainStandard production jobs up to 8 hourslongJobs that need more than 8 hours (up to 7 days)highmemJobs requiring higher memory capacity per CPU than available in main Available PartitionsWhen in doubt, start with debug to verify your job works, then move to main or long for production runs. If you can estimate how long your job will run, set that value increased with some reasonable margin with the option --time to improve the chances for it to start quickly and to let the scheduler optimize the allocation of resources.The sinfo 1 command lists partitions and their states:OptionDescription-s, --summarizeLists only a partition state summary with no node state details.-o, --formatSpecifies the output columns to print, please refer to the manual page for more details.Following show an example of overall resource allocation on partitions. The column “NODES(A/I/O/T)” indicates resource state, capital letter are abbreviations for Available, Idle, Other and Total:>>> sinfo -s
+PARTITION AVAIL TIMELIMIT NODES(A/I/O/T) NODELIST
+debug up 30:00 0/6/0/6 ccsub[0001-0006]
+work up 8:00:00 0/10/0/10 ccwks[0001-0010]
+highmem up 7-00:00:00 35/4/3/42 ccexe[0327-0346,0348-0369]
+main* up 8:00:00 245/20/3/268 ccexe[0001-0049,0056-0065,0068-0083,0090-0191,0233-0277,0280,0282-0326]
+long up 7-00:00:00 245/20/3/268 ccexe[0001-0049,0056-0065,0068-0083,0090-0191,0233-0277,0280,0282-0326]
+grid up 3-00:00:00 8/25/7/40 ccexe[0192-0199,0201-0232]Show default runtime with limits:>>> sinfo -o "%9P %6g %11L %10l %5D %20C" 
+PARTITION GROUPS DEFAULTTIME TIMELIMIT NODES CPUS(A/I/O/T) 
+debug all 10:00 30:00 6 1044/1260/0/2304 
+work all 2:00:00 8:00:00 10 0/960/0/960 
+highmem all 1:00:00 7-00:00:00 42 2306/7422/1024/10752
+main* all 2:00:00 8:00:00 268 48390/27202/3256/788
+long all 2:00:00 7-00:00:00 268 48390/27202/3256/788
+grid all 2:00:00 3-00:00:00 40 2048/6400/1792/10240List CPUs configuration and memory per node:>>> sinfo -o "%9P %6g %4c %10z %8m %5D %20C"
+PARTITION GROUPS CPUS S:C:T MEMORY NODES CPUS(A/I/O/T) 
+debug all 384 2:96:2 772000 6 520/1784/0/2304 
+work all 96 2:24:2 191000 10 0/960/0/960 
+highmem all 256 2:64:2 1031000 42 2306/7422/1024/10752
+main* all 256+ 2:64+:2 514000+ 268 48234/27358/3256/788
+long all 256+ 2:64+:2 514000+ 268 48234/27358/3256/788
+grid all 256 2:64:2 515000 40 2048/6400/1792/10240Print a comprehensive list of idle nodes including available resources:sinfo -Nel -t idleAn asterisk as suffix ‘*’ indicates the default partition. Compute jobs will be send to the default partition unless a different partition is selected by option.It is recommended to test your application launch in the debug partition first. This partition has a very short runtime and therefore allows a very quick resource allocation, which prevents long waiting times in the scheduler queue. Select a Partitionsalloc, srun, and sbatch support the following command options to select a partition, which is typically used in conjunction with other options related to resource allocation:OptionDescription-p, --partitionRequest a specific partition for the resource allocation.For example to request allocating resources from the debug partition:sbatch --partition=debug ...You can also overwrite the default partition configuration with the following environment variables:VariableDescriptionSLURM_PARTITIONInterpreted by the srun commandSALLOC_PARTITIONInterpreted by the salloc commandSBATCH_PARTITIONInterpreted by the sbatch commandFootnotessinfo manual page, SchedMDhttps://slurm.schedmd.com/sinfo.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/resource-allocation.html
+Title: Resource Allocation – Virgo
+==============================================================================
+
+AllocationsUsers request the allocation of computing resources on behalf of their associated accounts using the salloc 1, srun 2 or sbatch 3 commands:CommandInteractiveBlockingDescriptionsallocyesyesAllocate resources and launches a shell.srunyesyesAllocate resources and starts an application.sbatchnonoQueues an application for later execution.A resource allocation specifies a set of resources, e.g. nodes, CPUs, RAM, etc., possibly with some set of constraints, e.g. number of processors per node, maximum runtime and so on. All three commands accept the same set of parameters for resource allocation.A significant difference is that salloc and srun are interactive & blocking. This means that both are linked to your terminal session, hence bound to your connection to the submit node. Output is directed to your interactive shell running in the terminal session. Losing the connection to the submit node might kill the job.The sbatch command in contrast transfers complete control to the cluster controller, and allows you to disconnect from the submit node.InteractiveThe following example uses salloc to request a set of default resources from one of the partitions. The command blocks until resources are allocated:# start an interactive command interpreter
+» salloc --partition=debug
+salloc: Granted job allocation 2964352salloc launches an interactive shell, after resources have been granted by the cluster controller:# execute an arbitrary command
+» cat /proc/cpuinfo | grep 'model name' | sort | uniq
+model name : AMD EPYC 7551 32-Core Processor
+
+# investigate the job configuration
+» scontrol show job $SLURM_JOB_ID | grep Time
+RunTime=00:00:51 TimeLimit=00:05:00 TimeMin=N/A
+SubmitTime=2020-08-27T07:23:14 EligibleTime=2020-08-27T07:23:14
+AccrueTime=Unknown
+StartTime=2020-08-27T07:23:14 EndTime=2020-08-27T07:28:14 Deadline=N/A
+PreemptTime=None SuspendTime=None SecsPreSuspend=0Use the exit command to stop the interactive shell and release all allocated resources:» exit
+exit
+salloc: Relinquishing job allocation 2964352srun within a job allocation launches in parallel across all allocated nodes. The execution environment is inherited by all launched processes:» salloc --partition=debug --nodes=2 --chdir=/tmp -- bash
+salloc: Granted job allocation 2964433
+# run a command on the node hosting the interactive shell
+» hostname
+ccsub0001
+# run a command on all allocated nodes (in parallel)
+» srun hostname
+ccsub0001
+ccsub0002
+# run another command
+» srun uptime
+07:37:04 up 56 days, 14:26, 27 users, load average: 0.28, 0.18, 0.15
+07:37:04 up 56 days, 14:26, 4 users, load average: 0.03, 0.07, 0.13
+# release the resources
+» exit
+exit
+salloc: Relinquishing job allocation 2964433Each invocation of srun within a job is known as a step. A (compute) job consists of one or more steps, each consisting of one or more tasks, each using one or more processors. Real TimeUsing srun outside of a job allocation from salloc, requests resources specified by command options and waits until resource allocation. As soon as resource are available it automatically launches the specified application.» srun --partition=debug --nodes=5 --chdir=/tmp -- hostname
+ccsub0001
+ccsub0002
+ccsub0005
+ccsub0004
+ccsub0003Once the specified application has finished, resources are relinquished automatically.The command above is basically is short notation for:» salloc --partition=debug --nodes=5 \
+srun --chdir=/tmp -- hostname
+salloc: Granted job allocation 138
+ccsub0001
+ccsub0002
+ccsub0005
+ccsub0004
+ccsub0003
+salloc: Relinquishing job allocation 138 Batch Jobssbatch is used to submit a compute job to the scheduler-queue for later execution. The command exits immediately after the controller has assigned a unique JOBID, and the job is queued by the scheduler. Batch jobs wait in the queue of pending jobs until resources become available.The compute job is copied to a compute node as soon as resources have been granted by the scheduler. The job is typically launched by a batch script with the resource allocation and resource constrains specified by meta-commands.A compute job submitted with sbatch has at least one implicit job step, the start of the executable provided as argument to the command.Following is a very simple example of a batch job executing a simple shell-script:# simple script executing a couple of commands
+cat > $LUSTRE_HOME/sleep.sh <<EOF
+#!/usr/bin/env bash
+hostname ; uptime ; sleep 180 ; uname -a
+EOF
+# submit the script above, with the job name "sleep"
+sbatch --output='%j.log' --chdir=$LUSTRE_HOME \
+--job-name=sleep -- $LUSTRE_HOME/sleep.shCheck if the state of the job using the squeue command:» squeue --format='%6A %8T %8N %9L %o' --name=sleep
+JOBID STATE NODELIST TIME_LEFT COMMAND
+18 RUNNING ccexe0103 1:57:40 /lustre/hpc/<username>/sleep.sh
+
+# read the stdout of the job
+» cat $LUSTRE_HOME/$(squeue -ho %A -n sleep).log
+ccexe0103
+13:08:12 up 11 days, 1:43, 0 users, load average: 5.71, 6.10, 6.33
+Linux ccexe0103 5.14.0-611.49.1.el9_7.x86_64 #1 SMP PREEMPT_DYNAMIC [...] Attach to JobFrom a submit node you may attach an interactive debugging shell to your running job with the following command:srun --jobid <running-jobid> [-w <hostname>] -O --pty bashOptionDescription--jobid=<jobid>Initiate a job step under an already allocated job with given id.-O, --overcommitThe instantiated job step and task for the debugging shell do not demand additional resources from the existing allocation (which is usually already used up).--ptyExecute task zero in pseudo terminal mode. Implicitly sets --unbuffered. Implicitly sets --error and --output to /dev/null for all tasks except task zero, which may cause those tasks to exit immediately (e.g. shells will typically exit immediately in that situation). This option applies to step allocations.-w, --nodelist=<hostname>Request a specific host. Useful if job allocation spans multiple nodes. Array JobsAn array job is a way to submit multiple tasks using one batch script to execute any number of independent jobs. Each task in an array job is assigned a unique index, making it easier to scale computations and manage many tasks without needing to submit them individually.OptionDescription--array=<indexes>The indexes specification identifies what array index values should be used. For example: --array=0-15, --array=0,6,16-32 or --array=0-15:4 using a step function with a suffix containing a colon and numbersleep.sh#!/usr/bin/env bash
+#SBATCH --array=0-2
+#SBATCH --job-name=sleep
+#SBATCH --output='%x-%A_%a.log'
+
+function puts() {
+echo \[$(date +%Y/%m/%dT%H:%M:%S)\] "$@"
+}
+
+puts START $(whoami)@$(hostname):$(pwd) \
+$SLURM_CLUSTER_NAME:$SLURM_JOB_PARTITION\
+$SLURM_JOB_NAME:$SLURM_JOB_ID-$SLURM_ARRAY_TASK_ID \
+
+arg=${1:-30}
+sec=$(($arg + $SLURM_ARRAY_TASK_ID))
+puts Sleep for $sec seconds
+sleep $sec
+
+# Propagate last signal to the system
+state=$?
+puts EXIT $state
+exit $stateTerminal# submit the script above to the cluster:
+sbatch --chdir=$LUSTRE_HOME -- $LUSTRE_HOME/sleep.shThe environment variable SLURM_ARRAY_TASK_ID is an important feature when working with job arrays. It helps to run multiple task, where each task can behave differently based on its index. It allows to reference specific tasks within the array, enabling efficient handling of many independent jobs that share the same script but require different inputs or configurations.SLURM_ARRAY_TASK_ID is set automatically to a unique index value for each task within the job array. This index starts from the first specified value and increments for each subsequent task in the array.Use the value of SLURM_ARRAY_TASK_ID to process different input data, work on different datasets, apply different parameters or save output to distinct files for each task.VariableDescription$SLURM_ARRAY_TASK_IDJob array ID (index) number$SLURM_ARRAY_TASK_COUNTTotal number of tasks in a job arrayList each array job individually with squeue>>> squeue -o '%10j %10i %10K %8T %N' -n sleep
+NAME JOBID ARRAY_TASK STATE NODELIST
+sleep 93_0 0 RUNNING ccdev0004
+sleep 93_1 1 RUNNING ccdev0004
+sleep 93_2 2 RUNNING ccdev0004 Job DependenciesSlurm supports job dependencies through the --dependency option of sbatch. A dependent job is submitted immediately but remains in a deferred state until its dependency conditions are satisfied. This allows you to chain jobs without manual intervention or external scripting.# submit the first job
+sbatch --job-name=step1 step1.sh
+#Submitted batch job 1001
+
+# submit a second job that runs only after job 1001 succeeds
+sbatch --dependency=afterok:1001 --job-name=step2 step2.sh
+#Submitted batch job 1002Multiple dependencies can be combined using separators:SeparatorLogic,All listed dependencies must be satisfied (AND)?Any one of the listed dependencies is sufficient (OR)# wait for both job 1001 AND job 1002 to finish successfully
+sbatch --dependency=afterok:1001,afterok:1002 step3.sh
+
+# run as soon as EITHER job 1003 OR job 1004 finishes (any state)
+sbatch --dependency=afterany:1003?afterany:1004 step4.shTypesThe following table lists a subset of the dependency types from the sbatch manual pageTypeDescriptionafter:<jobid>Start after the specified jobs begin execution or are cancelledafterany:<jobid>Start after the specified jobs terminate (any state). Default type.afterok:<jobid>Start after the specified jobs complete successfully (exit code 0)aftercorr:<jobid>An array task starts after the corresponding task in the specified array job completed successfullyafternotok:<jobid>Start after the specified jobs fail (non-zero exit code, timeout, node failure, etc.)singletonAfter any previously launched jobs with the same name and user terminatedafterok and afternotok have a time window constraint: the dependent job must be submitted while the referenced job is still active or within MinJobAge seconds after it ended. If the referenced job is not found, the dependency is marked as failed and the dependent job will never run. Use CasesLinear PipelineThe simplest case is a sequence of steps where each depends on the previous one succeeding. Useful when later stages require output produced by earlier stages.J1=$(sbatch --parsable step1.sh)
+J2=$(sbatch --parsable --dependency=afterok:$J1 step2.sh)
+J3=$(sbatch --parsable --dependency=afterok:$J2 step3.sh)If any step fails, all downstream jobs are cancelled automatically — no wasted compute time and no stale intermediate results being consumed. Fan-Out / Fan-InSplit work into independent parallel tasks, then merge results once all complete:# single preparation step
+PREP=$(sbatch --parsable prepare.sh)
+
+# fan-out: three independent tasks all depend on preparation
+T1=$(sbatch --parsable --dependency=afterok:$PREP task_a.sh)
+T2=$(sbatch --parsable --dependency=afterok:$PREP task_b.sh)
+T3=$(sbatch --parsable --dependency=afterok:$PREP task_c.sh)
+
+# fan-in: merge waits for ALL three tasks to succeed
+MERGE=$(sbatch --parsable --dependency=afterok:$T1,afterok:$T2,afterok:$T3 merge.sh)This creates a diamond-shaped workflow. The three tasks run concurrently as soon as preparation finishes, and the merge step does not start until all three have completed successfully. Automatic Retry on FailureUse afternotok to trigger a recovery or retry job only when the original job fails:MAIN=$(sbatch --parsable long_simulation.sh)
+RETRY=$(sbatch --parsable --dependency=afternotok:$MAIN retry_with_more_memory.sh)Here retry_with_more_memory.sh would re-run the simulation with increased resource requests. If the original job succeeds, the retry is never launched.The afternotok dependency must be submitted while the referenced job is still active or within MinJobAge seconds after it ended. Submitting both jobs together from the same shell satisfies this constraint. Preventing Concurrent Runs (Singleton)The singleton dependency ensures only one instance of a given job name per user is running at a time. This prevents accidental duplicate submissions from consuming resources or corrupting shared output:# if a previous "daily-report" job is still running, this one waits
+sbatch --dependency=singleton --job-name=daily-report generate_report.shCombined with recurring jobs, this guards against overlapping executions when a scheduled run takes longer than its interval. Cross-Array DependenciesWhen an array job feeds into a subsequent step, use aftercorr to match individual array tasks to dependent jobs by index:# submit an array that processes 10 datasets
+ARR=$(sbatch --parsable --array=0-9 process_dataset.sh)
+
+# each analysis job waits for its corresponding array task
+for i in $(seq 0 9); do
+sbatch --dependency=aftercorr:$ARR analyze_dataset_$i.sh
+doneTask analyze_dataset_3.sh will wait specifically for array index 3 of job $ARR, rather than waiting for the entire array to finish. Best-Effort OR LogicUse the ? separator when any one of several upstream jobs is sufficient to proceed. Useful when multiple approaches are attempted in parallel and you only need one to succeed:# try two different parameter sets; proceed as soon as either finishes
+A=$(sbatch --parsable params_v1.sh)
+B=$(sbatch --parsable params_v2.sh)
+sbatch --parsable --dependency=afterok:$A?afterok:$B continue_with_results.sh Recurring Jobsscrontab schedules recurring jobs on the cluster. It provides a cluster based equivalent to crontab (short for “cron table”), a system that specifies scheduled tasks to be run by the cron daemon4 on Unix-like systems. scrontab is used to configure Slurm to execute commands at specified intervals, allowing users to automate repetitive tasks.All users can have their own scrontab file, allowing for personalized job scheduling without interfering with other users. Users can define jobs directly in the scrontab file, specifying the command to run, the schedule, and any Slurm options (like resource requests).FormatThe scrontab configuration format works similar to the traditional cron format, allowing users to specify when and how often jobs should be executed. The configuration can have several crontab entries (jobs).# create a simple example for scrontab
+>>> cat > sleep.scrontab <<EOF
+#SCRON --time=00:02:00
+#SCRON --job-name=sleep-scrontab
+#SCRON --chdir=/lustre/hpc/<username>
+#SCRON --output=sleep-scrontab-%j.log
+#SCRON --open-mode=append
+*/10 * * * * date && sleep 30
+EOF
+
+# install a new scrontab from a file
+>>> scrontab sleep.scrontab
+
+# check the queue
+>>> squeue --me -O Jobid,EligibleTime,Name,State
+JOBID ELIGIBLE_TIME NAME STATE 
+14938318 2024-10-31T10:20:00 sleep-scrontab PENDING Time FieldsThe first five fields specify the schedule for the job, and they represent from left to right:FieldDescriptionMinute (0-59)The minute of the hour when the job should be scheduledHour (0-23)The hour of the day when the job should be scheduledDay of the Month (1-31)The specific day of the month when the job should runMonth (1-12)The month when the job should runDay of the Week (0-7)The day of the week when the job should run (0 and 7 both represent Sunday).Special characters are used to define more complex schedules:CharacterDescriptionAsterisk (*)Represents “every” unit of time. For example, an asterisk in the minute field means the job will run every minute.Comma (,)Used to specify multiple values. For example, 1,15 in the minute field means the job will run at the 1st and 15th minute of the hour.Dash (-)Specifies a range of values. For example, 1-5 in the day of the week field means the job will run from Monday to Friday.Slash (/)Specifies increments. For example, */5 in the minute field means the job will run every 5 minutes.Some users may find it convenient to us a web-site based crontab generator5 to prepare a custom configuration. ShortcutsShortcuts to specify some common time intervalsShortcutDescription@annuallyJob will become eligible at 00:00 Jan 01 each year@monthlyJob will become eligible at 00:00 on the first day of each month@weeklyJob will become eligible at 00:00 Sunday of each week@dailyJob will become eligible at 00:00 each day@hourlyJob will become eligible at the first minute of each hour. Meta-CommandsLines starting with #SCRON allow users to set Slurm options for the single following crontab entry. This means each crontab entry needs its own list of #SCRON meta-commands, for example:#SCRON --job-name=sleep-scrontab
+#SCRON --chdir /lustre/hpc/<username>
+@daily path/to/sleep.sh > sleep-$(date +%Y%m%dT%H%M).logOptions include most of those available to the sbatch command (make sure to read the manual pages for more details). In order to write output of a recurring job into a single file use following option:OptionsDescription--open-modeAppends output to an existing log-file (instead of overwrite)#SCRON --job-name=sleep-scrontab
+#SCRON --chdir /lustre/hpc/<username>
+#SCRON --output=sleep-scrontab-%j.log
+#SCRON --open-mode=append
+0 8 * * * path/to/sleep.sh UsageUsers can configure their scrontab in multiple ways:# modify the configuration with your preferred text-editor
+1EDITOR=vim scrontab -e
+# read the configuration from a file
+2scrontab path/to/file
+
+# print the configuration
+3scrontab -l
+
+# clear the configuration
+4scrontab -r1Modify the configuration with an text-editor using option -e.2Apply a configuration by passing a file as argument.3Option -l print the configuration to the terminal4Option -r removes the entire configuration (jobs continue to run, but won’t longer recur).Jobs have the same Job ID for every run (until the next time the configuration is modified).# list jobs with 
+1squeue --me -O Jobid,EligibleTime,Name,State
+
+# list all recurring jobs in the past
+2sacct --duplicates --jobs $job_id
+
+# skip next run
+3scontrol requeue $job_id
+
+# disable a cron job
+4scancel --cron $job_id1List when cronjobs will be eligible for next execution. Note that jobs are not guaranteed to execute at the preferred time.2List all recurring executions of the cronjob from the accounting.3Skip next execution of a cronjob with scontrol and reschedule the job to the upcoming available time.4Request to cancel a job submitted by crontab with scancel. The job in the crontab will be preceded by the comment #DISABLED Footnotessalloc manual page, SchedMDhttps://slurm.schedmd.com/salloc.html↩︎srun manual page, SchedMDhttps://slurm.schedmd.com/srun.html↩︎sbatch manual page, SchedMDhttps://slurm.schedmd.com/sbatch.html↩︎cron, Wikipediahttps://en.wikipedia.org/wiki/Cron↩︎Crontab Generatorhttps://crontab-generator.org↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/resource-constrains.html
+Title: Resource Constrains – Virgo
+==============================================================================
+
+LimitsUse the sinfo command to overview resource limits for nodes in their corresponding partitions:» sinfo -o "%9P %6g %11L %10l %10m %5D %7X %5Y %7Z"
+PARTITION GROUPS DEFAULTTIME TIMELIMIT MEMORY NODES SOCKETS CORES THREADS
+debug all 10:00 30:00 772000 6 2 96 2 
+work all 2:00:00 8:00:00 191000 10 2 24 2 
+highmem all 1:00:00 7-00:00:00 1031000 42 2 64 2 
+main* all 2:00:00 8:00:00 514000+ 268 2 64+ 2 
+long all 2:00:00 7-00:00:00 514000+ 268 2 64+ 2 
+grid all 2:00:00 3-00:00:00 515000 40 2 64 2Resource constrains define the execution boundary of an application. By defining resource requirements like maximum runtime and allocatable memory, users ensure to not unintentionally consume more resources than planned.This is in particular important for the runtime, since a software bug 1 or an issue with access to the input data, for instance on shared storage, can increase execution time tremendously for your application. Keep in mind that run-time is one of the main factors accounted for by the cluster controller and is charged to your associated accounts for fair-share priority calculation. RuntimeUse the sinfo command to list runtime limits:sinfo -o "%9P %6g %11L %10l %5D %20C"The output will include following columns:ColumnDescriptionTIMELIMITMaximum runtime of a job in a given partition.DEFAULTTIMEDefault runtime if not specified by user.If a user does not explicitly specify a runtime limit, then the cluster controller will apply the default runtime defined for the partitions the compute job is executed in.SpecificationCommand-line options to specify a maximum runtime:OptionDescription-t, --timeLimit on the total runtime of the job allocationThe time format to specify a runtime limit is the following:minutes
+minutes:seconds
+hours:minutes:seconds
+days-hours
+days-hours:minutes
+days-hours:minutes:secondsIf the requested time limit exceeds the partitions time limit, it will be rejected:# time limit configuration of the debug partition
+» sinfo -o "%11L %10l" -p debug
+DEFAULTTIME TIMELIMIT 
+10:00 30:00
+
+# request a job with a time limit exceeding the partition's configuration
+» salloc -p debug -t 02:00:00
+salloc: error: Job submit/allocate failed: Requested time limit is invalid...A runtime limit can be set by an environment variable:VariableDescriptionSBATCH_TIMELIMITLimit on the total runtime of the job allocation.» SBATCH_TIMELIMIT=05:00 sbatch $LUSTRE_HOME/sleep.sh
+» scontrol show job=$(squeue -ho %A -n sleep) | grep TimeLimit
+RunTime=00:00:43 TimeLimit=00:05:00 TimeMin=N/A Limit ReachedWhen the time limit is reached, SIGTERM followed by SIGKILL is sent to each task in each job step:# submit a job with a 1 minute time limit
+» sbatch -p debug -t 1 sleep.sh 360
+
+# show the configuration of the job
+» scontrol show job=$(squeue -ho %A -n sleep) | grep Time
+RunTime=00:00:23 TimeLimit=00:01:00 TimeMin=N/A
+SubmitTime=2026-05-11T14:53:29 EligibleTime=2026-05-11T14:53:30
+AccrueTime=2026-05-11T14:53:30
+StartTime=2026-05-11T14:53:30 EndTime=2026-05-11T14:54:30 Deadline=N/A
+SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-05-11T14:53:30 Scheduler=Main
+
+# job is killed after reaching its limit
+» cat $LUSTRE_HOME/$(squeue -ho %A -n sleep).log 
+[2026/05/11T14:48:41] START <username>@ccsub0003:/lustre/[...]/sleep virgo:debug sleep:1929583-0
+[2026/05/11T14:48:41] Sleep for 360 seconds
+[2026-05-11T14:49:58.032] error: *** JOB 1929583 ON ccsub0003 CANCELLED AT 2026-05-11T14:49:58 DUE TO TIME LIMIT ***
+
+» sacct -j 1929582
+JobID JobName Partition Account AllocCPUS State ExitCode 
+------------ ---------- ---------- ---------- ---------- ---------- -------- 
+1929582_0 sleep debug hpc 2 TIMEOUT 0:0 
+1929582_0.b+ batch hpc 2 CANCELLED 0:15 MemoryThe job submission commands support the following options for users to specify the required amount of real memory. If the job exceeds the allocated memory it will be stopped by the out-of-memory handler.OptionDescription--memSpecify memory required per node.--mem-per-cpuMinimum memory required per allocated CPU.Memory is specified in the format size[units] with the unit suffix [K|M|G|T]. If the final amount of memory requested by a job can’t be satisfied by any of the nodes configured in the partition, then the job will be rejected.Memory/CPU RatioGlobal configuration for memory per CPU:» scontrol show config | grep MemPer
+DefMemPerCPU = 2048
+MaxMemPerCPU = 4096Requesting memory beyond DefMemPerCPU will automatically allocate additional CPUs to compensate:» sbatch --ntasks=1 --mem=64G -- $LUSTRE_HOME/sleep.sh
+
+» scontrol show job=$(squeue -ho %A -n sleep) | grep -e CPUs -e Memory
+NumNodes=1 NumCPUs=32 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:*
+MinCPUsNode=16 MinMemoryNode=64G MinTmpDiskNode=0
+
+» sbatch --ntasks=1 --mem-per-cpu=8G -- $LUSTRE_HOME/sleep.sh
+
+» scontrol show job=$(squeue -ho %A -n sleep) | grep -e CPUs -e Memory
+NumNodes=1 NumCPUs=2 NumTasks=1 CPUs/Task=2 ReqB:S:C:T=0:0:*:*
+MinCPUsNode=1 MinMemoryCPU=4G MinTmpDiskNode=0 Out-of-MemoryJobs allocating memory beyond their limits will be killed:# request 128MB of RAM
+» salloc -p debug --mem-per-cpu=128M
+
+# allocate RAM above the requested limit
+» srun -- stress -v -t 3 -m 1 --vm-hang 3 --vm-bytes 256M
+...
+stress: dbug: [57638] allocating 268435456 bytes ...
+stress: dbug: [57638] touching bytes in strides of 4096 bytes ...
+stress: FAIL: [57637] (415) <-- worker 57638 got signal 9
+...
+slurmstepd: error: Detected 1 oom-kill event(s) in step 106.0 cgroup. Some of
+your processes may have been killed by the cgroup out-of-memory handler.
+srun: error: lxbk0595: task 0: Out Of Memory CoresA typical compute node is built with support for multiple CPU sockets 2 on its motherboard. Each socket hosts a group of Central Processing Units (CPUs) 3 , where each CPU provides multiple cores 4. Each core can execute two threads in parallel. Details are described in Support for Multi-core/Multi-thread Architectures 5 in the Slurm documentation. AMD EPYC compute nodes are built with multi-chip modules (MCMs) 6 where each chiplet represents its own socket from the perspective of the cluster controller.Print the number of sockets, cores and threads with sinfo. The -e, --exact option list all available node configurations explicitly:sinfo -e -o '%9P %4c %8z %8X %8Y %8Z %5D %N'TasksWithin a compute job a task represents a unit of work (your application instance) and the corresponding resources required to be executed. The number of tasks per jobs is configurable by the user. Following list contains a subset of options for the salloc, srun and sbatch commands, to request a specific number of tasks:OptionDescription-n, --ntasks=Number of tasks to start (default=1)--ntasks-per-node=Number of tasks to invoke on each node (default=1)--ntasks-per-socket=Number of tasks to invoke on each socket--ntasks-per-core=Number of tasks to invoke on each coreEach task is distributed to only one node, but more than one task may be distributed to each node. The number of tasks distributed to a node is constrained by the number of CPUs allocated on the node and the number of CPUs per task.From the perspective of Linux (the host operating system) each execution thread from a CPU core is represented as an individual CPU. Therefore it is important to evaluate the term CPU depending on its context: a physical CPU (hardware) is not necessarily the same as a logical CPU.The cluster controller is very flexible in the distribution of tasks to nodes depending on the command-line options provided by the user. For example the following command executes a single job with 12 tasks:» srun --partition=debug --ntasks=12 \
+-- hostname | sort | uniq -c 
+12 ccsub0001A user can control how tasks are distributed over nodes, motherboards sockets on a node, and the number of tasks per core (physical CPU). The following example starts a single job with four tasks distributed over two nodes:» srun --partition=debug --ntasks-per-node=2 --ntasks=4 \
+-- hostname | sort | uniq -c
+2 ccsub0001
+2 ccsub0002 Logical CPUsBy default a task allocates two logical CPUs (on a single physical CPU core). This is due to the support of modern CPUs for multi-threading 7. The locality of the memory hierarchy on modern compute hardware, as well as the limited capabilities of a second thread on a single core, makes it inefficient to execute two completely independent programs in parallel on the same core. Therefore users will get the full performance of a physical CPU core, and have the option to execute two threads in parallel if desired.# two logical CPUs by default
+» srun --partition=debug --ntasks=1 \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 0,192
+
+# the same as specifically requesting two logical CPUs
+» srun --partition=debug --ntasks=1 --cpus-per-task=2 \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 0,192Users have the capability to configure the number of logical CPUs per task with a command-line option:OptionDescription-c, --cpus-per-task=Number of CPUs per process (default=2)I.e. a single job with a single task requesting 4 logical CPUs executed on two physical CPU cores:» srun --partition=debug --ntasks=1 --cpus-per-task=4 \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 0-1,192-193 Task AffinityTask affinity is a mechanism for the user to control how tasks are distributed over the physical CPU cores. The command line option --hint controls distribution methods for the allocation of logical CPUs:» srun --hint=help
+Application hint options:
+--hint= Bind tasks according to application hints
+compute_bound use all cores in each socket
+memory_bound use only one core in each socket
+[no]multithread [don't] use extra threads with in-core multi-threading
+help show this help messageBy default compute bound will allocate complete physical core:» srun -p debug -n 1 -c 1 --hint=compute_bound \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1,65
+
+» srun -p debug -n 1 -c 2 --hint=compute_bound \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1-2,65-66
+
+» srun -p debug -n 1 -c 3 --hint=compute_bound \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1-3,65-67User have the option to use --hint=multithread to explicitly control how execution threads are allocated:# single task with a single logical CPU
+» srun -p debug -n 1 -c 1 --hint=multithread \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1
+
+# single task with two logical CPUs
+» srun -p debug -n 1 -c 2 --hint=multithread \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1,65
+
+# single task with three logical CPUs
+» srun -p debug -n 1 -c 3 --hint=multithread \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1-2,65
+
+# two task with a single logical CPU each
+» srun -p debug -n 2 -c 1 --hint=multithread \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 1
+Cpus_allowed_list: 65
+
+# three tasks with a single logical CPU each
+» srun -p debug -n 3 -c 1 --hint=multithread \
+-- cat /proc/self/status | grep Cpus_allowed_list
+Cpus_allowed_list: 65
+Cpus_allowed_list: 1
+Cpus_allowed_list: 8 FeaturesNodes can have features assigned to them by the Slurm administrator. Users can specify which of these features are required by their job using the constraint option.Print a list of available features with the sinfo command:» date ; sinfo -o "%30N %f"
+Mon May 11 06:16:19 PM CEST 2026
+NODELIST AVAIL_FEATURES
+ccsub[0001-0006] amd,epyc,9654
+ccwks[0001-0010] intel,xeon,gold6248r
+ccexe[0327-0346,0348-0369] amd,epyc,7662,highmem
+ccexe[0001-0049,0056-0065,0068 amd,epyc,9654,main_long
+ccexe[0233-0277,0280,0282-0326 amd,epyc,7713,main_long
+ccexe[0095-0191] amd,epyc,9555,main_long
+ccexe[0192-0199,0201-0232] amd,epyc,7713,gridUse an argument to the salloc, srun or sbatch commands to request specific features:OptionDescription-C, --constraintMultiple constraints may be specified with the and operator &, or the or operator |. (Further details are described in the corresponding manual pages.)Following examples request specific CPU types:# require a specific CPU type
+» srun --constraint=intel \
+-- cat /proc/cpuinfo | grep 'model name' | sort | uniq
+model name : Intel(R) Xeon(R) Gold 6248R CPU @ 3.00GHz
+
+» srun --constraint=amd \
+-- cat /proc/cpuinfo | grep 'model name' | sort | uniq
+model name : AMD EPYC 7551 32-Core Processor
+
+# request nodes with multiple features (AND operator)
+» srun --constraint='intel&e52680' \
+-- cat /proc/cpuinfo | grep 'model name' | sort | uniq
+model name : Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHzWhen srun is executed from within salloc or sbatch, the constraint value can only contain a single feature name. None of the other operators are currently supported for job steps.FootnotesSoftware bug, Wikipediahttps://en.wikipedia.org/wiki/Software_bug↩︎CPU socket, Wikipediahttps://en.wikipedia.org/wiki/CPU_socket↩︎Central processing unit, Wikipediahttps://en.wikipedia.org/wiki/Central_processing_unit↩︎Multi-core processor, Wikipediahttps://en.wikipedia.org/wiki/Multi-core_processor↩︎Support for Multi-core/Multi-thread Architectures, SchedMDhttps://slurm.schedmd.com/mc_support.html↩︎Multi-chip module, Wikipediahttps://en.wikipedia.org/wiki/Multi-chip_module↩︎CPU Management User and Administrator Guide, SchedMDhttps://slurm.schedmd.com/cpu_management.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/scheduler-queue.html
+Title: Scheduler Queue – Virgo
+==============================================================================
+
+Queue StateList jobs in the scheduler queue with the squeue 1 command. By default squeue list all jobs in the scheduler queue. In order to limit the length of the list multiple command line options can be applied, for example:OptionDescription-u <user_list>,--user=<user_list>List jobs from a comma separated list of users.-A <account_list>,--account=<account_list>List jobs associated to Slurm accounts.# list jobs for your Linux user name
+squeue -u $USER
+
+# similar using an environment variable
+export SQUEUE_USERS=$USER
+squeueVariableDescriptionSQUEUE_ACCOUNTList jobs for a list of accounts.SQUEUE_USERSList jobs for a list of Linux users.List jobs in order of expected start time with the option:OptionDescription--startReport the expected start time and resources to be allocated for pending jobs.squeue --start Where to the Monitoring of Cluster Utilization? Information about the utilization of the Virgo cluster and the associated storage systems are made available to users with multiple monitoring dashboards. Job StateThe following list presents the most common job states:StateAbb.DescriptionpendingPDJob is awaiting resource allocation.runningRJob currently has an allocation.timeoutTOJob terminated upon reaching its time limit.canceledCAJob canceled by the user or system administrator.failedFJob terminated with non-zero exit code.completedCDJob has terminated all processes on all nodes.The squeue command is very customizable in order to limit the output to a specific set of jobs in the system, for example:# list running jobs by start time
+squeue \
+--states running \
+--format '%20S %11M %9P %8u %6g %10T %11l' \
+| sort -k 1 \
+| uniq -f 2 -c \
+| tac
+# accumulate similar jobs with a counter in the first columnPendingReasonDescriptionBadConstraintJob resource constrains can not be satisfied.ResourcesRequired resources are in use.PriorityResources being reserved for higher priority jobs.DependencyJob dependencies not yet satisfied.ReservationWaiting for advanced reservation.The scheduler queue specifies job reason codes, which identify the reason that a job is waiting for execution. A job may be waiting for more than one reason, in which case only one of those reasons is displayed. Above is an incomplete, but most common list of reasons for jobs waiting in the queue. Refer to the squeue manual page for a complete list of job reason codes. PriorityOptionDescription-P, --priorityList pending jobs sorted by priority.Many factors are weighted in order to calculate a priority individually for each job. The scheduler queue sorts jobs in priority order and allocates resources as efficient as possible among the jobs with highest priority. In order to optimize overall system utilization jobs are scheduled depending on resource requirements and user define resource limits. Produce a list of pending jobs in the same order considered for scheduling with the squeue command using following option: Footnotessqueue manual page, SchedMDhttps://slurm.schedmd.com/squeue.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/job-monitoring.html
+Title: Monitoring & Efficiency – Virgo
+==============================================================================
+
+CommandsstatsacctseffJob stateRunning (only)Running & CompletedCompletedData freshnessReal-timeHistoricalHistoricalUse caseMonitoringState AnalysisEfficiencyBest PracticesBest practice is proactive logging and instrumentation. Users should design their job scripts to produce meaningful progress indicators—such as timestamps, iteration counters, or checkpoint messages—written to standard output. This allows for quick assessment of whether a job is progressing normally. For long-running workflows, implementing checkpointing mechanisms can be especially valuable, enabling jobs to resume from intermediate states rather than restarting from scratch after failure.Understanding job efficiency is equally important. After completion, users should review accounting data (e.g., via sacct) to evaluate CPU and memory utilization. Jobs that consistently underutilize resources can be tuned to request fewer resources, improving cluster fairness and reducing queue times. Conversely, jobs that hit memory or time limits may require adjustments to resource requests or code optimization.Finally, effective monitoring involves automation and notification strategies. Users can configure email alerts for job state changes, or integrate lightweight scripts that periodically query job status and summarize key metrics. This is particularly useful in environments where users manage multiple concurrent jobs or complex pipelines. State AnalysisThe sacct1 allows analysis of jobs after these are finished. It queries the accounting database and provides detailed information about completed (and sometimes running) jobs.# View all jobs from today…
+sacct --starttime=today
+
+# …or define a custom time range
+sacct --starttime=2026-03-25 --endtime=2026-03-26To check the status of a specific job:sacct -j <jobid>Output FormatBy default, sacct output is limited. You can request more useful fields:Define the output format with option:OptionDescription--formatComma separated list of fields# show the list of available fields
+sacct --helpformat
+
+# example for a custom output format
+sacct --format=JobID,JobName,Partition,State,ExitCode,ElapsedFor a permanent change of the default output format use:VariableDescriptionSACCT_FORMATOverride the default output format Exit CodesThe exit code reported by sacct is an important clues for understanding why a job finished the way it did. For example:sacct --format=JobID,State,ExitCodeThe output looks similar to the following:#…
+182520 COMPLETED 0:0 
+182521 FAILED 17:0 
+182522 RUNNING 0:0 
+182524 FAILED 255:0 
+182529 CANCELLED 0:9
+#…The ExitCode (last column) has two parts: <exit_status>:<signal>The exit status (first number) is the return value from your application or script. It follows standard Unix conventions: 0 — Execution successfulnon-zero — Error (application-defined meaning)The signal (second number) indicates whether the job was terminated by a system signal: 0 — No signalnon-zero — Job was killed by a signalSome exit code examples:StateExitCodeSignalMeaningCOMPLETED0:0-SuccessFAILED1:0-Application errorFAILED0:9SIGKILLKilled (often memory)CANCELLED0:9SIGKILLUser/system stopped jobTIMEOUT0:15SIGTERMHit walltime MonitoringThe sstat2 is used to monitor resource usage of running jobs or job steps in real time. It’s especially to track CPU, memory, or I/O usage while your simulation or analysis is still running.To check the status of a specific job:sstat -j <job_id>
+
+# look at job steps
+sstat -j <job_id>.batch # batch script step
+sstat -j <job_id>.[0-9]* # individual job steps/taskssstat supports configuration of the output format like sacct.Commonly used options are:sstat --format=JobID,MaxRSS,AveCPU,AveRSS -j <job_id> EfficiencyUse the seff command (“Slurm efficiency”) to check how a completed job used the resources requested. The command helps users to adjust resource constrains of future jobs more efficiently.After a job is finishes run:seff <job_id>
+
+# for an individual jobs step
+seff <job_id>.<job_step>seff reports CPU resources, CPU time and Memory utilization:>>> seff 169761
+Job ID: 169761
+Cluster: virgo
+User/Group: #…
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 8
+CPU Utilized: 4-13:28:42
+CPU Efficiency: 96.40% of 4-17:33:44 core-walltime
+Job Wall-clock time: 14:11:43
+Memory Utilized: 8.71 GB
+Memory Efficiency: 54.44% of 16.00 GB (2.00 GB/core)CPU Efficiency — How much of the allocated CPU time was actually used. If the percentage is low to many CPUs have been requested or the program is not parallelized well.Memory Efficiency — The fraction of memory used in percent used. If the percentage is low, more memory was available then needed. Note that CPUs are allocated with a fixed memory to CPU ratioRemember that clusters are shared systems, and users are required to contribute to make efficient utilization possible. Configuring the resource requirements of a jobs correctly prevents wasting resources and improves queue wait times.Footnotessacct Manual Page, SchedMD Documentationhttps://slurm.schedmd.com/sacct.html↩︎sstat Manual Page, SchedMD Documentationhttps://slurm.schedmd.com/sstat.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/accounts.html
+Title: Accounts – Virgo
+==============================================================================
+
+Default AccountOptionDescription-A, --accountAccount name used for job allocationUsers need to request resources on behalf of a specified account. Users have a defined default account, if it is not overwritten by a configuration. The following command lists all accounts associated with a Linux username including default account:sacctmgr show user withassoc format=account,user,defaultaccount where user=$USERIn order to specify the account for a single job use option -A with the account name as value. Alternatively overwrite the default account with environment variables listed in the table below. Note that these variables have precedence over account settings defined with meta-commands.VariableDescriptionSLURM_ACCOUNTInterpreted by srun commandSALLOC_ACCOUNTInterpreted by salloc commandSBATCH_ACCOUNTInterpreted by sbatch commandUser can change their default account configuration with following command:# this example sets the default account to "none"
+sacctmgr modify user where user=$USER set defaultaccount=none CoordinatorsCollaborations and experiments associated to GSI/FAIR can apply for a Slurm account. Print a list for all accounts with their corresponding coordinators using the sacctmgr command:# list all accounts with their respective coordinators
+sacctmgr list account format=acc%10,coo%30 withco
+
+# list users for a specific account
+sacctmgr list account format=acc,us withas where account=$nameCoordinators can manage all jobs associated to their account with the scancel and scontrol 1 commands:scontrol hold # prevent a pending job from being started
+scontrol release # Release a previously held job to begin execution
+scontrol requeue # Requeue a batch job into pending state
+scontrol show job # Print details of a specific job
+scontrol update job # Change a job configuration
+scontrol show step # Print details of a specific job step
+scontrol update step # Change a job step configuration
+scancel # Terminate jobsIn the following common uses of the sacctmgr 2 command are shown to work with Slurm user accounts. The name= field requires to be the Linux account name of a particular user:# list all association for given user name
+sacctmgr show user withassoc format=account,user,defaultaccount where user=$user
+
+# associate a user to an account
+sacctmgr add user account=$name names=$user[,$user]
+
+# modify a user association
+sacctmgr modify user where user=$name set $key=$value
+
+# remove a users account association
+sacctmgr delete user name=$name account=$accountAn account coordinator can promote a user to be coordinator:# list coordinators for a given account
+sacctmgr list account withcoordinator where account=$account
+
+# add coordinator(s) to account
+sacctmgr add coordinator account=$account names=$name,... Account LimitsLimitDescriptionGrpCPUMinsHard limit of CPU minutes.GrpCPUsTotal count of CPUs able to be used.GrpJobsTotal number of jobs able to run at any given time.GrpMemoryTotal amount of memory (MB) able to be used.GrpNodesTotal count of nodes able to be used at any given time.GrpSubmitJobsTotal number of jobs able to be submitted.GrpWallCumulative wall clock time limit for all running jobs of the association.Resource limits 3 allow a more finer-grained restriction of allocatable resources for a given association (typically for a user). Parent association limits are inherited by children, unless dedicated limits have been set. Whereas, children can have higher limits then their parents. Coordinators configure limits with the sacctmgr command:# set the maximum number of jobs for a user
+sacctmgr modify user $name set GrpJobs=1000
+
+# clear a resource limit with a negative value
+sacctmgr modify user $name set GrpCPUs=-1 Fair-ShareFairshare essentially defines the accumulated amount of resources a user can allocate on the cluster within a defined time-frame. In other words fairshare limits users to a configured fraction of the system, based on a score calculated from the accounted resource usage in the users past. Based on the fairshare score users are assigned a priority in order to fulfill a configured share equilibrium between all users of the system in the long run.While Fairshare may seem complex and confusing, it is actually quite logical once you think about it. The scheduler needs some way to adjudicate who gets what resources. Different groups on the cluster have been granted different resources for various reasons. In order to serve the great variety of groups and needs on the cluster a method of fairly adjudicating job priority is required. This is the goal of Fairshare. Fairshare allows those users who have not fully used their resource grant to get higher priority for their jobs on the cluster, while making sure that those groups that have used more than their resource grant do not overuse the cluster. The cluster is a limited resource and Fairshare allows us to ensure everyone gets a fair opportunity to use it regardless of how big or small the group is. 4sshare 5 lists shares of associations in a cluster:sshare -u $USER # for a specific user
+sshare -a -A $account # all user of a specific accountThe FairShare column show the fairshare score for an account/user, which is a value between 1.0 and 0 interpreted like:ValueDescription1.0Unused1.0 > v > 0.5Underutilization0.5Average utilization0.5 > v > 0Over-utilization0No share leftThe above value is the indicator to understand how much resources an account/user has consumed in relation to its total granted share.Since the usage of the cluster varies, the schedule does not stop Accounts from using more than their granted Share. Instead, the scheduler wants to fill idle cycles, so it will take whatever jobs it has available. Thus an Account is essentially borrowing computing resource time in the future to use now. This will continue to drive down the Account’s Fairshare score, but allow jobs for the Account to still start. Eventually, another Account with a higher Fairshare score will start submitting jobs and that labs jobs will have a higher priority because they have not used their granted Share. Fairshare only recovers as a lab reduces the workload to allow other Accounts to run. The half-life helps to expedite this recovery.Use sprio 6 to inspect how the scheduler calculates the priority of your pending jobs:sprio -u $USERQuery the cluster’s priority configuration 7 with:scontrol show config | grep -i priorityFootnotesscontrol Manual Page, SchedMDhttps://slurm.schedmd.com/scontrol.html↩︎sacctmgr Manual Page, SchedMDhttps://slurm.schedmd.com/sacctmgr.html↩︎Resource Limits, SchedMD Slurm Documentationhttps://slurm.schedmd.com/resource_limits.html↩︎Fairshare and Job Accounting, Harvard University, FAS Research Computinghttps://docs.rc.fas.harvard.edu/kb/fairshare/↩︎sshare Manual Pages, SchedMDhttps://slurm.schedmd.com/sshare.html↩︎sprio Manual Page, SchedMDhttps://slurm.schedmd.com/sprio.html↩︎Multifactor Priority Plugin, SchedMDhttps://slurm.schedmd.com/priority_multifactor.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/cluster/reservations.html
+Title: Reservations – Virgo
+==============================================================================
+
+Please refer to How to Request a Resource Reservation? in the FAQ section.OptionDescription-r, --reservationAllocate resources for the job from the specified reservation-p, --partitionNote that if a resource reservation provides nodes from multiple partitions it is required to use the partition option as well. Otherwise the schedule will not be able to determine which resources to useReference a resource reservation with salloc, srun, and sbatch:# request a specific reservation for allocation
+sbatch --reservation=$name ...Alternatively use following input environment variables:Environment VariableDescriptionSLURM_RESERVATIONUse a reservation with srunSALLOC_RESERVATIONUse a reservation with sallocSBATCH_RESERVATIONUse a reservation with sbatchReservations in Slurm allow operators to book resources for accounts at a particular point in time. This is useful to guarantee the availability of resources ahead of time. Thus, allows experiments and working groups to plan the execution of a future work-load. List available reservations with the scontrol 1 command:The output field ReservationName= shows the identifier used to allocate resources from the reservation.The Users= and Accounts= fields show the corresponding access privileges associated to a reservation.# list all reservation in the system
+scontrol show reservationsFootnotesscontrol Manual Page, SchedMDhttps://slurm.schedmd.com/scontrol.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/examples/index.html
+Title: Examples – Virgo
+==============================================================================
+
+Step-by-step examples for running compute jobs on the Virgo cluster.PageDescriptionFirst JobSubmit your first batch job and learn the basics of job monitoringOpenMPCompile and run multi-threaded programs with OpenMPOpenMPIRun distributed applications across multiple nodes with MPIGPUsAllocate and use GPU accelerators for compute jobs
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/examples/first-job.html
+Title: First Job – Virgo
+==============================================================================
+
+Before You BeginMake sure you have completed the following steps before continuing:You can log in to a submit node via SSHYou have a Slurm account association (see Accounts)You know the path to your Lustre working directory (see Lustre)Display an overview of the allocatable resources from the debug partitions with the sinfo 1 command:sinfo -lN -p debug SetupThe examples on this page use the following environment variables. Adjust LUSTRE_HOME to match your group’s directory on shared storage:# shared storage on the cluster (adjust to your group's path)
+export LUSTRE_HOME=/lustre/$(id -g -n)/$USER
+
+# use the debug partition for quick allocation times in this tutorial
+export SBATCH_PARTITION=debug
+export SALLOC_PARTITION=debug First JobIn case you are interested in more elaborate examples how to run applications on the cluster, we would like to draw your attention to The Virgo Blog. The cluster group plans to continually publish articles illustrating common use-cases and best practices.Let’s move you through the steps required to execute your first application (cf. batch jobs) on the cluster. Slurm expects an executable as argument to the sbatch command. Typically this is a wrapper-script including Slurm meta-commands setting runtime configuration options for Slurm and all the specifics to launch a user application.Following is a very simplistic wrapper script that identifies the compute node executing the job. Create it in your $LUSTRE_HOME working directory:cat > $LUSTRE_HOME/sleep.sh <<'EOF'
+#!/bin/bash
+#SBATCH --output %j_%N.out
+hostname ; sleep ${1:-30} # first positional argument, default: 30
+EOF
+chmod +x $LUSTRE_HOME/sleep.shOnce you have created the file above, submit it to the Slurm workload management system using the sbatch command. In order to simplify monitoring of this job, specify a job name with the command line option --job-name. We will use your $LUSTRE_HOME as working-directory:# submit a job to sleep for 300 seconds
+sbatch --job-name sleep --chdir $LUSTRE_HOME -- $LUSTRE_HOME/sleep.sh 300The system answers with the JOBID, if it has been accepted. The job label can be used as an option to the squeue command, which prints the state of the scheduling queue:# list all jobs with a given name
+squeue --name sleepIn the debug queue, the job-state should quickly become R for running. Of course it is possible to submit multiple jobs with the same label, but each will be identifiable by its unique JOBID. Go on and submit some more jobs with different sleep times. The scontrol command can be used to show details about the runtime configuration of a job. Jobs can be removed from the system using scancel 2.# show the runtime configuration of the latest sleep job
+scontrol show job $(squeue -h -o %A -n sleep | tail -n1)Once a job disappears from squeue, it has finished. Use sacct to check completed jobs and their exit status:# show recent jobs for your user
+sacct --starttime now-1hour --format=JobID,JobName,State,ExitCode,ElapsedThe output file specified by #SBATCH --output (in this example %j_%N.out) will be written to the working directory. First IssueIn case of a failure during job execution, it is important to distinguish between a problem internal to the application and an issue of the job execution. In case you want to report a problem with the runtime environment on the cluster, follow the guidelines in report-issues. For this example, we will work with a “broken” program called segfaulter, which is a variant of the famous “Hello World” program.// segfaulter.c
+int main(void)
+{
+char *s = "hello world";
+*s = 'H';
+}The following commands use $LUSTRE_HOME/bin and $LUSTRE_HOME/src:export PATH=$LUSTRE_HOME/bin:$PATH
+mkdir -p $LUSTRE_HOME/bin $LUSTRE_HOME/srcBuild an executable binary from this small C program using following commands. Execution of this program yields a segmentation fault 3 with non zero program exit code:# Compile the program...
+» gcc -g $LUSTRE_HOME/src/segfaulter.c -o $LUSTRE_HOME/bin/segfaulter
+
+# ...and execute it
+» $LUSTRE_HOME/bin/segfaulter ; echo $?
+zsh: segmentation fault $LUSTRE_HOME/bin/segfaulter
+139 # <-- exit codeIn the execution environment of a compute cluster, it is important to monitor the runtime requirements of an application as well as the runtime behavior of the application itself. This information will help to determine problems occurring during job execution. Users can implement environment checks and basic application monitoring within an application wrapper script.#!/bin/bash
+
+function puts() {
+echo \[$(date +%Y/%m/%dT%H:%M:%S)\] "$@"
+}
+
+uid=$(id -u)
+
+puts JOB CONFIGURATION ----------------------
+scontrol show job -d -o $SLURM_JOB_ID
+puts JOB CONFIGURATION END ------------------
+puts JOB ENVIRONMENT ------------------------
+env | grep ^SLURM_
+puts JOB ENVIRONMENT END --------------------
+puts NUMA CONFIGURATION ----------------------
+lscpu | grep -e '^Model name' -e '^NUMA node[0-9]'
+puts NUMA CONFIGURATION END ------------------
+
+#####################################################
+## APPLICATION
+#####################################################
+
+# Generate defined load on the execution node
+command="srun -- $@"
+
+#####################################################
+
+puts EXEC $command
+$command &
+
+# The process ID of the last spawned child process
+child=$!
+sleep 1 # wait for start-up
+puts PROCESSES -------------------------------
+ps -u $USER -o user,pid,cpuid,args -H
+puts PROCESSES END ---------------------------
+
+puts WAIT PID $child
+wait $child
+# Exit signal of the child process
+state=$?
+puts EXIT $state
+# Propagate last signal to the system
+exit $stateFor the following example, we store the code above in a file called generic-wrapper and use it to monitor the segfaulter program during execution. The segfaulter program is passed as first argument to the generic-wrapper, which will execute it using srun 4.# make the wrapper script executable
+chmod +x $LUSTRE_HOME/generic-wrapper
+
+# use the wrapper script to launch the segfaulter program
+sbatch --partition debug \
+--job-name segfaulter \
+--chdir $LUSTRE_HOME \
+--no-requeue \
+-- $LUSTRE_HOME/generic-wrapper \
+$LUSTRE_HOME/bin/segfaulterIn the job standard output (cf. I/O redirection) you will find following information:The runtime configuration of the job in Slurm including: Submit node and submit timeSlurm job id with partition and account detailsStart time, working directory, output streamsResource allocation details, including execution node(s)The Slurm environment variables available during job executionThe hardware NUMA architectureThe application launch command executedThe application process ID, and a process tree during runtimeExit code of the programThe information described above will be instrumental to report-issues to the cluster support group.Footnotessinfo Manual Page, SchedMDhttps://slurm.schedmd.com/sinfo.html↩︎scancel Manual Page, SchedMDhttps://slurm.schedmd.com/scancel.html↩︎Segmentation Fault, Wikipediahttps://en.wikipedia.org/wiki/Segmentation_fault↩︎srun Manual Page, SchedMDhttps://slurm.schedmd.com/srun.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/examples/openmp.html
+Title: OpenMP – Virgo
+==============================================================================
+
+Hello WorldThis example uses a simple OpenMP 1 hello-world program for illustration. The following C code exemplifies a basic program utilizing OpenMP to parallelize a code block with a directive #pragma omp parallel 2:// omp-hello.c
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+printf ( "OMP_GET_NUM_THREADS=%d\n", omp_get_num_procs ( ) );
+printf ( "OMP_GET_MAX_THREADS=%d\n", omp_get_max_threads ( ) );
+// parallel region with default number of threads
+#pragma omp parallel
+{
+// library function to return a thread ID
+int id = omp_get_thread_num();
+printf("Hello from thread %d\n", id);
+}
+// end of parallel region
+}Compile an executable using the gcc compiler, option -fopenmp enables handling of OpenMP directives #pragma omp by the gcc compiler 3.# compile a program with OpenMP support
+gcc -fopenmp $LUSTRE_HOME/src/omp-hello.c -o $LUSTRE_HOME/bin/omp-helloVariableDescriptionOMP_NUM_THREADSSpecifies number of threads to use in parallel regionsOMP_PROC_BIND=TRUEThreads should not be moved between processors (thread affinity policy)The above OpenMP environment variables are used for initialization:# execute the program with two threads
+OMP_NUM_THREADS=2 $LUSTRE_HOME/bin/omp-hello Batch JobIn order to start an OpenMP program on the cluster, it is required to specify the level of parallelism using a command option to sbatch. In this particular case --cpus-per-task defines the number of cores to allocate for a job. Use one of the output environment-variables e.g. $SLURM_JOB_CPUS_PER_NODE, which is set by Slurm to initialize OpenMP. Store this code in a file called omp-wrapper. Remove the $OMP_DISPLAY_ENV in case you want less verbose output.#!/bin/bash
+
+#SBATCH -J omp
+#SBATCH -o %j.log
+
+if [ -n "$SLURM_JOB_CPUS_PER_NODE" ]; then
+omp_threads=$SLURM_JOB_CPUS_PER_NODE
+else
+omp_threads=1
+fi
+export OMP_NUM_THREADS=$omp_threads
+export OMP_PROC_BIND=TRUE
+# print out at runtime OpenMP specification
+export OMP_DISPLAY_ENV=true
+
+srun -- $@Submit the OpenMP program with the wrapper script:sbatch --partition debug \
+--job-name omp_hello \
+--chdir $LUSTRE_HOME \
+--no-requeue \
+--ntasks 1 \
+--cpus-per-task 8 \
+-- $LUSTRE_HOME/omp-wrapper \
+$LUSTRE_HOME/bin/omp-helloYou should find an output similar to the following in the log-file (cf. io-redirection):OPENMP DISPLAY ENVIRONMENT BEGIN
+_OPENMP = '201511'
+OMP_DYNAMIC = 'FALSE'
+OMP_NESTED = 'FALSE'
+OMP_NUM_THREADS = '8'
+OMP_SCHEDULE = 'DYNAMIC'
+OMP_PROC_BIND = 'TRUE'
+OMP_PLACES = '{1},{65},{2},{66},{3},{67},{4},{68}'
+OMP_STACKSIZE = '0'
+OMP_WAIT_POLICY = 'PASSIVE'
+OMP_THREAD_LIMIT = '4294967295'
+OMP_MAX_ACTIVE_LEVELS = '2147483647'
+OMP_CANCELLATION = 'FALSE'
+OMP_DEFAULT_DEVICE = '0'
+OMP_MAX_TASK_PRIORITY = '0'
+OPENMP DISPLAY ENVIRONMENT END
+OMP_GET_NUM_THREADS=8
+OMP_GET_MAX_THREADS=8
+Hello from thread 0
+Hello from thread 1
+Hello from thread 2
+Hello from thread 7
+Hello from thread 6
+Hello from thread 4
+Hello from thread 3
+Hello from thread 5FootnotesOpenMP Projecthttps://www.openmp.org↩︎OpenMP 4.5 API C/C++ Syntax Reference Guide, OpenMP Projecthttps://www.openmp.org/wp-content/uploads/OpenMP-4.5-1115-CPP-web.pdf↩︎Options Controlling C Dialect, GCC, GNU Projecthttps://gcc.gnu.org/onlinedocs/gcc/C-Dialect-Options.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/examples/openmpi.html
+Title: OpenMPI – Virgo
+==============================================================================
+
+PrerequisitesUse the spack command to load OpenMPI into your environment:# list available OpenMPI versions
+spack find mpi
+
+# load a specific version
+spack load openmpi@5.0.1%gcc@12.3.0 arch=linux-debian11-x86_64
+
+# check if the compiler is available
+mpicc --version Process ManagerSlurm supports the Process Management Interface (PMI), specifically PMIx 1. PMI provides a common abstraction to HPC process managers, to decouple process management from the underlying process manager. The process manager has following functions:Handle start/stop of processesAggregation of I/O channels std{in|out|err}Environment and signal propagationCentral coordination point of parallel processesPMI is used by most MPI libraries to interact with any compliant system e.g. Slurm to fulfill following roles:Requests the PM to start processes on the nodes of a parallel machinePropagate startup data with PMI out-of-band communicationProcesses use out-of-band communication to setup MPI communication Launch ModesSlurm supports multiple modes to launch MPI process:Slurm launches tasks, and PMI initializes communication (default)Slurm allocates resources, mpirun launches tasks (using Slurm)Slurm allocates resources, mpirun launches tasks with a mechanism outside the control of Slurm (no CPU task binding, nor task accounting)List the supported MPI launch modes with:srun --mpi=listThe launch mode can be selected using an environment variable or by command-line option for the srun and sbatch commands:# set the launch mode with an env. variable
+SLURM_MPI_TYPE=$mode
+# set launch mode with an option
+{srun|sbatch} --mpi=$mode ... Show the default mode for launching MPI applications by printing the Slurm system configuration with scontrol:scontrol show config | grep MpiDefault Example ProgramFollowing C code exemplifies a basic “Hello World” MPI program:// mpi-hello.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "mpi.h"
+
+int main(int argc,char ** argv )
+{
+int rank;
+int size;
+char hostname[1024];
+MPI_Init( &argc, &argv );
+MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+MPI_Comm_size( MPI_COMM_WORLD, &size );
+pid_t pid = getpid();
+gethostname(hostname, 1024);
+printf( "Hello world %s.%d [%d/%d]\n",hostname , pid, rank, size);
+MPI_Finalize();
+return 0;
+}Compile the program using mpicc:mpicc $LUSTRE_HOME/src/mpi-hello.c -o $LUSTRE_HOME/bin/mpi-hello Execute the program with mpiexec specifying the number of parallel processes using the option -n <numproc>:# run the program with four parallel process
+mpiexec -n 4 $LUSTRE_HOME/bin/mpi-helloOnce you have verified that the program works as expected, you can continue to launch it on the resources of the compute cluster. Slurm JobAmong many options to specific the parallelism of a program, Slurm supports the following two:OptionDescription--nodes=<number>Number of nodes to allocate--ntasks-per-node=<ntasks>Number of tasks per nodeFollowing example request resources using the salloc command, specifying a requirement of 6 nodes with 60 processes per node:>>> salloc --partition=debug --chdir=/tmp --nodes=2 --ntasks-per-node=2 bash
+salloc: Pending job allocation 502707
+salloc: job 502707 queued and waiting for resources
+salloc: job 502707 has been allocated resources
+salloc: Granted job allocation 502707
+
+# print environment variables for the allocation
+>>> env | egrep 'SLURM_(NTASKS|NNODES|NPROCS|NODELIST|DIST)'
+SLURM_NTASKS=4
+SLURM_NODELIST=ccsub[0001-0002]
+SLURM_NPROCS=4
+SLURM_NNODES=2
+SLURM_NTASKS_PER_NODE=2Once the system has granted the resources, start your MPI program using the srun command:# run your MPI program
+>>> srun $LUSTRE_HOME/bin/mpi-hello
+Start Singularity container /cvmfs/vae.gsi.de/vae24/containers/vae24-user_container_20240418T1037.sif
+Start Singularity container /cvmfs/vae.gsi.de/vae24/containers/vae24-user_container_20240418T1037.sif
+Start Singularity container /cvmfs/vae.gsi.de/vae24/containers/vae24-user_container_20240418T1037.sif
+Start Singularity container /cvmfs/vae.gsi.de/vae24/containers/vae24-user_container_20240418T1037.sif
+Hello world ccsub0001.40528 [1/4]
+Hello world ccsub0002.164848 [2/4]
+Hello world ccsub0001.40529 [0/4]
+Hello world ccsub0002.164849 [3/4]
+
+# relinquish the job allocation
+>>> exitFootnotesProcess Management Interface - Exascale, PMIx Communityhttps://pmix.org/↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/examples/gpus.html
+Title: GPUs – Virgo
+==============================================================================
+
+Hydra GPU clusterDecoupling of GPU resources: from 1st of May 2026, all GPUs resources previously available on the Virgo cluster are now integrated into a new cluster called Hydra. Login NodesBare metal environment is available at hydra.hpc.gsi.deNo VAEs are made available for the GPU cluster. Host VerificationThe first connection to a submit node includes a process to check for the authenticity of the remote server. The user will need to compare a server fingerprint (derived from the server host key) with the fingerprints listed in the table below. The following fingerprints are used by all submit nodes:TypeBitsFingerprintRSA4096SHA256:1vDjStKAsOSMrY5bnsukubUe6boADYKBaW1hwxwuS6oECDSA521SHA256:jfJlPSfcAwzqzI5kUqqGOfHZU18NrOBMai/VWpFlAIYED25519256SHA256:ty3omtvxDtgGuCe1Fu44UXGmQq9R4nLC/DzGcsNoa9QYou can display the fingerprint of a submit node using the ssh-keyscan and ssh-keygen7 commands in combination:>> ssh-keyscan -t ed25519 hydra.hpc.gsi.de | ssh-keygen -lf -
+256 SHA256:nv6GnfSFhh+SZXZAZMGsRpLHWQx9uCoGl6WQSfZFFBs hydra.hpc.gsi.de (ED25519) Hardware Environment~$ date ; sinfo -o "%20N %4c %6z %6m %5D %f"
+Fri May 8 03:35:24 PM CEST 2026
+NODELIST CPUS S:C:T MEMORY NODES AVAIL_FEATURES
+ccdev[0021-0022] 96 2:24:2 191000 2 intel,xeon,gold6248r
+ccgpu[0002-0005] 256 2:128: 154711 4 amd,epyc,9755,h200
+ccgpu[0006-0051] 96 2:24:2 515000 46 amd,epyc,7413,mi100 Partitions~$ sinfo
+PARTITION AVAIL TIMELIMIT NODES STATE NODELIST
+debug up 30:00 2 idle ccdev[0021-0022]
+nvidia_gpu up 7-00:00:00 4 idle ccgpu[0002-0005]
+amd_gpu up 7-00:00:00 46 idle ccgpu[0006-0051] ResourcesNodesGPUMemorySlurm FeatureGRES TypeNotesccgpu00[02-05]NVIDIA H200 1141 GBh200nvidia_h200ccgpu00[06-51]AMD Radeon Instinct MI100 232 GBmi100cdnaCompute nodes equipped with GPUs have the required drivers and runtime libraries installed. The table above lists nodes by GPU type and corresponding Slurm feature. Generic Resource (GRES) 3 options for the sbatch and srun commands allow allocation of GPUs for a job:OptionDescription--constraint=<list>Select the variant of GPU hardware to use, for example mi100 (see table above).--gres=gpu[[:type]:count]The count is the number of GPUS with a default value of 1. The specified resources will be allocated to the job on each node.type is optional and defines the GRES type of the resources.Compute jobs usually use an option like --mem to specify the amount of real memory required (per node). This affects only RAM not the dedicated memory of the GPU. If necessary set a memory requirement (per allocated GPU) with option --mem-per-gpu. Note that --mem, --mem-per-cpu and --mem-per-gpu options are mutually exclusive. MonitoringPlease refer to the following blog entry for a list of terminal user interfaces for monitoring NVIDIA/AMD GPUs. AMD ROCmAMD provides ready to use container images for ROCm available on AMD Infinity Hub 4 and a corresponding ROCm page on DockerHub 5.AMD GPU PartitionAMD MI100 GPUs are accessible via a dedicated partition called gpu. Use following options allocate a node with eight GPUs:sbatch -p amd_gpu --gres=gpu:8 --constraint=mi100 #…AMD Radeon Instinct GPU hardware uses the ROCm 6 (programming-language) runtime environment. A simple test will be based on a Singularity container equipped with a TensorFlow installation.# prepare the container:
+mkdir $LUSTRE_HOME/rocm
+cd $LUSTRE_HOME/rocm
+apptainer pull docker://rocm/tensorflow:latestAt the end of the pull request, a file named tensorflow_latest.sif should be available. Following python script will be used as an Hello World example:#!/usr/bin/env ipython
+
+from __future__ import print_function
+
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
+# Simple hello world using TensorFlow
+
+# Create a Constant op
+# The op is added as a node to the default graph.
+#
+# The value returned by the constructor represents the output
+# of the Constant op.
+hello = tf.constant('Hello, TensorFlow!')
+
+# Start tf session
+sess = tf.Session()
+
+# Run the op
+print(sess.run(hello))Following example shows a batch-script used to allocate a GPU:>> cat submit_rocm.sh
+#!/bin/bash
+#SBATCH -J apptainer_rocm_test
+#SBATCH --partition amd_gpu
+#SBATCH --gres=gpu:1
+#SBATCH -t 0-00:30
+#SBATCH -N 1
+#SBATCH -c 1
+#SBATCH --mem=8000
+
+apptainer exec \
+--bind /cvmfs \
+--rocm $LUSTRE_HOME/rocm/tensorflow_latest.sif \
+$LUSTRE_HOME/rocm/ts_hworld.pySubmit your ROCm container to the cluster selecting a partition and a GPU typesbatch -p amd_gpu --constraint="mi100" submit_rocm.sh Advice for correctly allocating GPUs when gres<8NOTE: due to a bug in the current version of the Slurm scheduler on Virgo, it’s highly recommended to modify your submission script as follows:#SBATCH --gres=gpu:1
+#SBATCH (...)
+
+export ROCR_VISIBLE_DEVICES="$SLURM_STEP_GPUS"
+unset CUDA_VISIBLE_DEVICES
+
+apptainer exec (...)Without the environment variables exported as above, multiple jobs asking for one/two GPUs on the same node may ended up using always the same GPU.This behavior is not visible when checking for allocated resources, since the Slurm scheduler properly set the corresponding environment variables, as shown below:~$ srun -p amd_gpu --gres=gpu:2 --pty apptainer exec --rocm $MY_CONTAINER bash -l
+(...)
+Apptainer> env | grep -iE '(cuda_|rocr_|gpu_dev|slurm_step_gpu)'
+SLURM_STEP_GPUS=0,1
+ROCR_VISIBLE_DEVICES=0,1
+CUDA_VISIBLE_DEVICES=0,1
+GPU_DEVICE_ORDINAL=0,1It’s worth to highlight that for every new allocation, the assigned device IDs will always restart from zero, although the accounting will take note that different GPU cards are assigned. Nvidia CUDACurrently we do not provide a dedicated submit node with support for Nvidia GPUs. User are required to build and execute a custom container supporting the run-time environment for Nvidia. Note that it is mandatory to login to a submit node with access to the container run-time. The CUDA environment installed is based on version 13.0, please refer to the official CUDA documentation 7. The official CUDA container images 8 are available in three variants:base includes the CUDA runtime (cudart).runtime builds on the base image and includes the CUDA math libraries, NCCL, and cuDNN.devel builds on the runtime images and includes headers and development tools for building CUDA images (These images are particularly useful for multi-stage builds)The Dockerfile for the images are open-source and licensed under 3-clause BSD.# grab a CUDA development environment and run it through Apptainer:
+mkdir $LUSTRE_HOME/cuda
+cd $LUSTRE_HOME/cuda
+apptainer pull docker://nvidia/cuda:13.0.0-cudnn-devel-rockylinux9At the end of the pull request, a file named cuda_13.0.0-cudnn-devel-rockylinux9.sif should be available.# test the CUDA development environment on localhost
+cd $HOME/my_src
+git clone https://github.com/NVIDIA/cuda-samples.git
+apptainer shell $LUSTRE_HOME/cuda/cuda_13.0.0-cudnn-devel-rockylinux8.sif
+cd cuda-samples
+make
+exitThe binaries will be saved under $HOME/my_src/cuda-samples/bin/x86_64/linux/release. Then just move or copy the compiled files under $LUSTRE_HOME/cuda/samples or any other directory as you saw fit. Create a batch job:>> cat submit_nvidia.sh
+#!/bin/bash
+#SBATCH -J apptainer_nv_test
+#SBATCH --gres=gpu:1
+#SBATCH -p nvidia_gpu
+#SBATCH -t 0-00:30
+#SBATCH -N 1
+#SBATCH -c 1
+#SBATCH --mem=8000
+
+apptainer exec --bind /cvmfs \
+--nv $SINGULARITY_CONTAINERS/nvidia/cuda/cuda_13.0.0-cudnn-devel-rockylinux8.sif \
+$LUSTRE_HOME/cuda/cuda-samples/bin/x86_64/linux/release/deviceQuerySubmit your CUDA container to Hydra:sbatch -p nvidia_gpu --constraint="h200" submit_nvidia.shFootnotesNvidia H200 Tensor Core GPUhttps://www.nvidia.com/en-us/data-center/h200/↩︎AMD Radeon Instinct™ MI100 Acceleratorhttps://www.amd.com/de/products/accelerators/instinct/mi100.html↩︎Slurm Generic Resource (GRES) Schedulinghttps://slurm.schedmd.com/gres.html↩︎AMD Infinity Hubhttps://www.amd.com/en/developer/resources/infinity-hub.html↩︎AMD ROCm, DockerHubhttps://hub.docker.com/u/rocm↩︎AMD ROCm™ Information Portalhttps://rocmdocs.amd.com/en/latest/↩︎CUDA Documentation, Nvidiahttps://docs.nvidia.com/cuda↩︎CUDA Container Images, DockerHubhttps://hub.docker.com/r/nvidia/cuda↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers.html
+Title: Containers – Virgo
+==============================================================================
+
+OverviewIt is very difficult to provide application dependencies for all possible use-cases of a compute cluster within a single environment. Linux container technology1 allows the infrastructure provider to overcome this limitation. Containers are in many ways the next logical progression from virtual machines and implement operating system-level virtualization2 to encapsulate a software environment (typically called software stack). They enable multiple users/groups to execute and build their own instance of an application environment.Containers make it possible to better decouple user application software from the host platform. Which gives cluster administrators more freedom to migrate the underlying platform running the hardware. This is not only relevant for security patch management. But even more important to support a broad scope of hardware, including accelerators like GPUs with software drivers bound to specific Linux kernel versions.In context of containers a custom environment to execute a program is called an application (run-time) environment. These application environments are executed by a container run-time engine (CRE) like Apptainer3. Typically CREs load the application environment from a container image, which is a single binary file storing the file-system tree including all applications dependencies.LimitationsLinux containers have limitations concerning portability and abstraction:Containers are built for a specific machine architecture in binary format. For instance, a container built for Intel x86_64 will not run on any different platform.Containers rely on the Linux kernel Application Binary Interface (ABI), which is not necessarily uniform across all Linux distributions. In particular older kernels may not have all required capabilities.Containers need to support hardware used by applications. This includes network devices interconnects like InfiniBand and hardware accelerator devices like GPUs.Multiple different formats for container images are available. Some of them are interchangeable or have means to convert between different formats.The Virtual Application Environments (VAEs) provided by IT department are built and tested specifically for the Virgo cluster and relieve the users from the necessity of dealing with hardware support and optimization. Container ImagesBasically all HPC container run-time engines are in some way compatible to Docker 4. Container images built with Docker follow the container format specification of the Open Container Initiative (OCI) 5, which makes these run-time agnostic and to a certain extend future proof.However, using a standardized container image format does not necessarily imply independence of a run-time infrastructure as described in the previous section about container limitations. Apptainer uses the SIF (Singularity Image Format) as a container image format to improve on the support of scientific computing application on HPC infrastructure. If you are interested in the relation and compatibility to Docker read the support for Docker and OCI 6 section in the Apptainer User Guide. Related blog posts Building Apptainer Containers for the Virgo ClusterHow to use JupyterLab on the Virgo Cluster FootnotesList of Linux Containers, Wikipediahttps://en.wikipedia.org/wiki/List_of_Linux_containers↩︎OS Level Virtualization, Wikipediahttps://en.wikipedia.org/wiki/OS-level_virtualization↩︎Apptainer Project, Linux Foundationhttps://apptainer.org/↩︎Docker Software, Wikipediahttps://en.wikipedia.org/wiki/Docker_(software)↩︎Open Container Initiativehttps://opencontainers.org↩︎Support for Docker and OCI Containers, Apptainer User Guide https://apptainer.org/docs/user/latest/docker_and_oci.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/run-time.html
+Title: Run-Time Engine – Virgo
+==============================================================================
+
+Submit NodeSubmit NodeCREPlatformSupport Untilvirgo.hpc.gsi.deApptainerRockyLinuxTBDThe cluster can execute any number of containers. Users build containers will be treated as black-boxes by the cluster support, hence any container internals are under the responsibility of the user. The cluster uses Apptainer 1 as Container Run-time Engine (CRE), which is a container technology designed to support scientific computing. Login to virgo.hpc.gsi.de to access the host environment including the command-line interface to the CRE.Note that the CRE version is subject to change depending on the necessities of the cluster. This includes upgrades to newer versions due to security concerns as well as requirements in supporting the VAEs. We do not guarantee any backwards compatibility!A detailed introduction to the functionality of Apptainer is described in the command line section of the Apptainer User Guide 2. Examples in the following will use these environment variables to define common paths: EnvironmentVariableFile SuffixDescriptionAPPTAINER_DEFINITIONS.defDefinition Files 3APPTAINER_CONTAINERS.sifContainers Images 4In order to use containers on the cluster store them on shared storage, i.e.:# path to the container artifacts on shared storage
+export APPTAINER_CONTAINERS=$LUSTRE_HOME/containers
+export APPTAINER_DEFINITIONS=$APPTAINER_CONTAINERS/definitionsConcerning the compatibility of Apptainer with Singularity 5:Default metadata within SIF images and their filesystems will retain the singularity name without change. This will ensure that containers built with Apptainer will continue to work with installations of Singularity.Apptainer respects environment variables with the SINGULARITY_ and SINGULARITYENV_ prefixes when their respective APPTAINER_ and APPTAINERENV_ counterparts are not set.Apptainer will look for a ~/.singularity directory when the ~/.apptainer directory is being created and will migrate user configuration files and keyrings automatically.FootnotesApptainer Documentationhttp://apptainer.org/docs/↩︎https://apptainer.org/docs/user/main/↩︎Apptainer User Guide - Definition Fileshttp://apptainer.org/docs/user/main/definition_files.html↩︎Apptainer User Guide - Build a Containerhttp://apptainer.org/docs/user/main/build_a_container.html↩︎Apptainer User Guide - Singularity Compatibilityhttps://apptainer.org/docs/user/main/singularity_compatibility.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/registry.html
+Title: Image Registry – Virgo
+==============================================================================
+
+This section illustrates the use of a container registry with two common examples from the user community. A registry is a repository for storing container images. A container image encapsulates an application. In the simplest case, users can download pre-build containers from the developer of the software they want to use. About Docker pull-rate limits… The most commonly used container registry is Docker Hub 1. Unfortunately frequent downloading container images from the GSI HPC infrastructure by users may reach rate limits applied by Docker Inc. with an error message similar to the following:FATAL: While making image from oci registry:...
+toomanyrequests: You have reached your pull rate limit. The entirety of the HPC network is seen as a single source of requests to the Docker infrastructure, hence rate limiting 2 can prevent anonymous access. Regular users of the Docker registry can overcome this limitation using a Docker account 3. Note that Apptainer support authentication with Docker 4 when pulling container images.PythonUse the official images from the Python developer community 5 with the pull sub-command to download a pre-build container from Docker Hub with the latest Python version. The exec sub-command executes a custom command within a container:# download the latest version of a Python container from Docker Hub
+apptainer pull $APPTAINER_CONTAINERS/python.sif docker://python:latest
+
+# check the version of Python by launching the container:
+apptainer exec $APPTAINER_CONTAINERS/python.sif python --versionTypically users will execute a Python-script passing it as argument to Apptainer, following a simple hello-world:# a simple hello world Python script
+cat > $LUSTRE_HOME/hello_world.py <<EOF
+#!/usr/bin/env python
+print("hello world")
+EOF
+chmod +x $LUSTRE_HOME/hello_world.py
+
+# run the script in the container environment
+apptainer exec $APPTAINER_CONTAINERS/python.sif $LUSTRE_HOME/hello_world.pyThe run sub-command executes the Python container with the default application. In this case the interactive Python interpreter is started for an interactive session (type exit to leave the container):» apptainer run $APPTAINER_CONTAINERS/python.sif
+Python 3.7.4 (default, Jul 13 2019, 14:04:11)
+[GCC 8.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> quit() ROOTAnother example is to compile your own binary executable using a pre-build container from a registry. In order to illustrate this we will employ the container of the ROOT Data Analysis Framework 6 widely use in the HEP community. An official ROOT container 7 is available on Docker Hub and includes a recent version of the GNU C++ Compiler:# download the latest ROOT container from Docker Hub
+apptainer pull $APPTAINER_CONTAINERS/root.sif docker://rootproject/root
+
+# show the version information for the GNU C++ compiler
+apptainer exec $APPTAINER_CONTAINERS/root.sif g++ --version | head -n1
+g++ (GCC) 9.1.1 20190503 (Red Hat 9.1.1-1)The container includes the GNU C++ compiler, which we use with the following simple hello world program:cat > $LUSTRE_HOME/src/hello.cpp <<EOF
+#include <iostream>
+
+int main()
+{
+std::cout << "Hello World!" << std::endl;
+}
+EOF
+
+# compile the hello world program
+apptainer exec $APPTAINER_CONTAINERS/root.sif \
+g++ $LUSTRE_HOME/src/hello.cpp -o $LUSTRE_HOME/bin/hello
+
+# execute the compiled binary with the container environment
+apptainer exec $APPTAINER_CONTAINERS/root.sif \
+$LUSTRE_HOME/bin/helloFootnotesContainer Image Search, Docker Hubhttps://hub.docker.com/search↩︎Understanding Docker Hub Rate Limitinghttps://www.docker.com/increase-rate-limits/↩︎Docker Account Signuphttps://hub.docker.com/signup↩︎Apptainer User Manual - Docker CLI Authenticationhttp://apptainer.org/docs/user/main/docker_and_oci.html#docker-cli-authentication↩︎Official Python Container Images, Docker Hubhttps://hub.docker.com/_/python↩︎ROOT Data Analysis Frameworkhttps://root.cern.ch↩︎Official ROOT Container Images, Docker Hubhttps://hub.docker.com/u/rootproject↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/environment.html
+Title: Environment – Virgo
+==============================================================================
+
+VariablesApptainer provides multiple methods to set environment variables in the container, details are described in the Apptainer User Guide 1. A container introduces an additional layer of indirection which does not inherit automatically environment variables set in the command execution environment used to launch the container. Hence it is up to the user to specify environment variables which require to be set in a container. There are two possible ways to do this, either by using command-line options for the apptainer command or by exporting environment variables with a specific prefix.APPTAINERENV_Env. VariableDescriptionAPPTAINERENV_*Environment variables prefixed with APPTAINERENV_ will be set in the containerAPPTAINERENV_APPEND_PATHAppend (added to the end) a colon separated list of paths to the PATH variable in the containerAPPTAINERENV_PREPEND_PATHPrepended (added to the start) a colon separated list of paths to the PATH variable in the containerApptainer reads environment variables prefixed with APPTAINERENV_ from the execution environment and exports these in the container. The generic prefix can be used to set any number of environment variables. Within the containerized environment the prefix is removed from the environment variable name. For example a variable specified with the name APPTAINERENV_LUSTRE_HOME will be called LUSTRE_HOME within the container.# use the generic prefix to set an environment variable for the container
+» export APPTAINERENV_LUSTRE_HOME=$LUSTRE_HOME
+
+# run the container an read the environment variables
+» apptainer exec $APPTAINER_CONTAINERS/debian11.sif env | grep ^LUSTRE
+LUSTRE_HOME=/lustre/hpc/<username>The PATH environment variable is a special case. Users have the option to overwrite the variable in the container using the generic prefix or to either append or prepend to the existing PATH.Note that in particular when using virtual application environments the use if the generic prefix is very useful in order to export LD_LIBRARY_PATH to the container:export APPTAINERENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+export APPTAINERENV_PREPEND_PATH=$LUSTRE_HOME/bin Command OptionsOptionDescription--env NAME=VALUE[,NAME=VALUE,...]Specify a comma separated list of environment variables as NAME=VALUE pairs--env-file <file>Provide a file that contains environment variables as NAME=VALUE pairsThe command-line options listed set environment variables in a container:# Path to the container image...
+container=$APPTAINER_CONTAINERS/debian.sif
+
+# ...download the official Debian container image
+apptainer pull $container docker://debian:latest
+
+# Set an environment variable LUSTRE_HOME...
+apptainer exec --env LUSTRE_HOME=$LUSTRE_HOME $container env | grep ^LUSTRE
+# ...check visibility of the variable during container executionUsers of an VAE can set the Slurm command line option --singularity-args to to specify environment variables. (Note that this is supported with meta-commands in batch scripts as well.)srun ... --singularity-args="--env-file job.env" ... Bind MountsOptionDescription--bind=src[:dest]Specify bind paths, where src and dest are paths outside and inside of the container respectively.The container run-time allows to bind mount directories from the host system. The bind path and mounts section in the Apptainer User Guide 2 describes this in detail. Paths like $HOME, $PWD, /tmp and /lustre are mounted by default. Users define additional mounts with the following option:# download the official Debian 10 container
+apptainer pull $APPTAINER_CONTAINERS/debian10.sif docker://debian:10
+
+# bind-mount the CernVM-FS repositories available on the cluster
+apptainer exec --bind /cvmfs $APPTAINER_CONTAINERS/debian10.sifThis is particularly useful to access the CVMFS repositories available on the cluster. Image CacheEnvironment VariableDescriptionAPPTAINER_CACHEDIRCache folder for images from a container registry.APPTAINER_TMPDIRTemporary directory to build container file-systems.By default the container build cache is located in $HOME/.apptainer. Details about the container build environment are available in the Apptainer User Guide 3. Pay attention to the storage consumed by the container cache, since the amount of available space is limited by a quota on your network home-directory.# show storage capacity used by the cache
+apptainer cache list
+
+# clean up everything
+apptainer cache cleanThe environment variable listed in the table on top are used to configure the paths to the container caches. Following example store all container artifacts on volatile storage in the /tmp directory by setting both variables:# create a user specific directory in /tmp
+tmp=$(mktemp -d /tmp/$USER-apptainer-XXXXXX)
+export APPTAINER_TMPDIR=$tmp
+export APPTAINER_CACHEDIR=$tmpFootnotesApptainer User Guide - Environment and Metadatahttp://apptainer.org/docs/user/main/environment_and_metadata.html↩︎Apptainer User Guide - Bind Paths and Mountshttp://apptainer.org/docs/user/main/bind_paths_and_mounts.html↩︎Apptainer User Guide - Build Environmenthttp://apptainer.org/docs/user/main/build_env.html#cache-folders↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/execution.html
+Title: Execution – Virgo
+==============================================================================
+
+InteractiveStart an interactive shell in a container image:# this example uses the Python container
+apptainer pull $APPTAINER_CONTAINERS/python.sif docker://python:latest
+
+# start a shell within the container environment
+apptainer shell $APPTAINER_CONTAINERS/python.sifUse srun to allocate an interactive shell (cf. real time allocation):» srun -p debug --pty -- apptainer shell $APPTAINER_CONTAINERS/python.sif
+apptainer> which python
+/usr/local/bin/python
+apptainer> python --version
+Python 3.8.3 Command OptionsOptionDescription--singularity-containerPath to the container image (Apptainer). The option name uses the legacy Singularity naming.Instead of invoking the apptainer command yourself, it is possible to specify the container via command option.srun -p debug \
+--singularity-container=$APPTAINER_CONTAINERS/python.sif \
+--pty /bin/bash Environment VariableEnvironment VariableDescriptionSLURM_SINGULARITY_CONTAINERPath to the Singularity containerAlternatively export an environment variable to set the absolute path to a container image. The PATH environment variable from your local shell is used for path resolution. Unless a path is the same on the host and the container, it is required to use an absolute path to start an executable:# Set the path to the container image...
+export SLURM_SINGULARITY_CONTAINER=$APPTAINER_CONTAINERS/python.sif
+
+# ...use absolute path the application (in this example the Python interpreter)
+» srun -p debug --pty -- /usr/local/bin/python --version
+Python 3.8.3 Batch JobThe simple batch script created below prints information about its runtime environment and the available Python interpreter:# simple script executing a couple of commands
+cat > $LUSTRE_HOME/bin/batch.sh <<EOF
+#!/usr/bin/env bash
+uname -nr
+cat /etc/os-release | head -2
+which python
+python \${1:-'--version'}
+EOF
+# make it executable
+chmod +x $LUSTRE_HOME/bin/batch.shExecuting this script on a submit node will print the Virgo host platform:» $LUSTRE_HOME/bin/batch.sh 
+lxbk0595 3.10.0-1127.18.2.el7.x86_64
+NAME="CentOS Linux"
+VERSION="7 (Core)"
+/usr/bin/python
+Python 2.7.5Execution of the same script in a container prints the container applications environment.# run the script in the official Python container
+» apptainer exec $APPTAINER_CONTAINERS/python.sif $LUSTRE_HOME/bin/batch.sh
+lxbk0595 3.10.0-1127.18.2.el7.x86_64
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+/usr/local/bin/python
+Python 3.8.3Execute the batch script with the sbatch command (cf. batch jobs)» sbatch -p debug \
+--singularity-container=$APPTAINER_CONTAINERS/python.sif \
+-- $LUSTRE_HOME/bin/batch.sh
+Submitted batch job 11777406
+
+# print the output
+» cat slurm-11777406.out
+lxbk0595 3.10.0-1127.18.2.el7.x86_64
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+/usr/local/bin/python
+Python 3.8.3Following is a simple Python script to print the version information about the Python interpreter its executed with:cat > $LUSTRE_HOME/bin/python_version.py <<EOF
+#!python
+import sys
+print(sys.version)
+EOF
+chmod +x $LUSTRE_HOME/bin/python_version.pyUse the batch script to execute the Python script on the cluster with sbatch:» sbatch -p debug \
+--singularity-container=$APPTAINER_CONTAINERS/python.sif \
+-- $LUSTRE_HOME/bin/batch.sh $LUSTRE_HOME/bin/python_version.py
+Submitted batch job 11777645
+
+# print the output
+» cat slurm-11777645.out
+lxbk0595 3.10.0-1127.18.2.el7.x86_64
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+/usr/local/bin/python
+3.8.3 (default, Jun 9 2020, 17:39:39)
+[GCC 8.3.0]
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/build.html
+Title: Custom Images – Virgo
+==============================================================================
+
+All users can build container images directly on the cluster submit nodes. This capability is provided by the Apptainer Fakeroot Feature 1 which enables an unprivileged user to run a container with the appearance of running as root. Effectively this mechanism makes it possible for users to install any software within the container, which includes the use of a package management systems from the Linux distribution used for the container image.Lets consider following simple example which builds a container image for GNU Hello 2 using a container definition file 3 show below. Simply speaking the definition uses the official Fedora container images, and installs development tools to build GNU hello from source before Installing it:BootStrap: docker
+From: quay.io/fedora/fedora:latest
+
+%labels
+Maintainer John Snow <j.snow@example.org>
+
+%post
+version=2.12.1
+archive=hello-$version.tar.gz
+
+dnf install -y wget tar gzip gcc make
+dnf clean all
+
+wget https://ftp.gnu.org/gnu/hello/$archive
+tar xvzf $archive -C /opt
+rm $archive
+cd /opt/hello-$version
+
+./configure
+make
+make install
+
+%runscript
+/usr/local/bin/helloOptionDescription-f,--fakerootWork as a fake root user inside a container. The option is automatically implied when doing a build as an unprivileged user.The definition file is passed as argument to the apptainer build command after providing the name for the container image. Note that by convention Apptainer container images use .sif as suffix to indicate the file-type.# ...login to a cluster submit-node (non VAE environment)
+ssh -J lxlogin.gsi.de virgo.hpc.gsi.de
+
+# create a user specific directory in /tmp
+tmp=$(mktemp -d /tmp/$USER-apptainer-XXXXXX)
+export APPTAINER_TMPDIR=$tmp
+export APPTAINER_CACHEDIR=$tmp
+
+# ...create the container definition file
+$EDITOR gnu-hello.def
+
+# ...set the path to the container image (on shared storage)
+export APPTAINER_CONTAINER=$LUSTRE_HOME/containers/hello.sif
+# ...build the container image
+apptainer build $APPTAINER_CONTAINER gnu-hello.def
+
+# ...test the functionality of the container image
+>>> apptainer run $APPTAINER_CONTAINER
+Hello, world!
+>>> apptainer exec $APPTAINER_CONTAINER hello --version | head -n1
+hello (GNU Hello) 2.12.1A much more involved instruction to build containers is available in the Apptainer User Guide 4.FootnotesApptainer Fakeroot Feature, Apptainer User Guidehttps://apptainer.org/docs/user/main/fakeroot.html↩︎GNU Hello Websitehttps://www.gnu.org/software/hello↩︎Definition Files, Apptainer User Guidehttps://apptainer.org/docs/user/main/definition_files.html↩︎Build a Container, Apptainer User Guidehttps://apptainer.org/docs/user/main/build_a_container.html↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/containers/usingx.html
+Title: X Forwarding – Virgo
+==============================================================================
+
+OverviewThe Virgo cluster (including its submit nodes) is prepared to forward display information1 from the X Window System2 to the local screen of a user. Since X forwarding is considered insecure the communication is send over a secure SSH connection. This process is known as “X forwarding”3. In order to execute X11 graphical applications inside a container on the cluster following requirement has to be met. In the container the xauth program must be installed which is the case for our Virtual Application Environments (VAEs). Users building a custom container image need to make sure that the xauth program is available. In most cases if there are any X11 programs installed in the container, it’s probable that Xauth has been included as dependency.# Test if `xauth` is installed in the container
+>>> apptainer exec $APPTAINER_CONTAINER which xauth 
+/usr/bin/xauthWhen xauth is installed, login to the container to test the functionality of X forwarding. Since there are no X applications installed in the VAEs we use an application loaded from CVMFS called Root4 for the following example:# Login to the VAE'25 container...
+1>>> ssh -X -J lxlogin.gsi.de vae25.hpc.gsi.de
+
+# ...load ROOT into the shell environment
+2>>> source /cvmfs/fairsoft.gsi.de/debian10/fairsoft/nov22p1/bin/thisroot.sh
+
+# Start the ROOT interpreter...
+3>>> root
+------------------------------------------------------------------
+| Welcome to ROOT 6.26/10 https://root.cern |
+| (c) 1995-2021, The ROOT Team; conception: R. Brun, F. Rademakers |
+| Built for linuxx8664gcc on Dec 16 2022, 14:50:00 |
+| From tags/v6-26-10@v6-26-10 |
+| With c++ (Debian 8.3.0-6) 8.3.0 |
+| Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+------------------------------------------------------------------
+
+# ...launch an X11 application
+root [0] new TBrowser();1Login with ssh to a VAE using the option -X to enable X forwarding (more details in the following sub-section).2After login load the ROOT application into the shell environment. Note that ROOT is one example for an X11 application, you could start any X11 program to verify if X forwarding is properly enabled.3When Root is started execute the command new TBrowser(); to start the ROOT object browser which should forwarded to your local screen. If the browser starts you can close it by selecting Browser » Quit Root from the menu.If you want to start your own container the sequence is similar. Instead of direct login into a VAE, login in to a (bare-metal) submit node and start your container:# Login to a submit-node (a non VAE environment)
+>>> ssh -X -J lxlogin.gsi.de virgo.hpc.gsi.de
+
+# We use a pre-build VAE container for this example
+>>> export APPTAINER_CONTAINER=/cvmfs/vae.gsi.de/vae25/containers/user_container-production.sif
+
+# Start a shell within a container...
+1>>> apptainer shell -B /cvmfs $APPTAINER_CONTAINER
+
+# ...test if X forwarding is working
+Apptainer> source /cvmfs/fairsoft.gsi.de/debian10/fairsoft/nov22p1/bin/thisroot.sh
+2Apptainer> root
+------------------------------------------------------------------
+| Welcome to ROOT 6.26/10 https://root.cern |
+| (c) 1995-2021, The ROOT Team; conception: R. Brun, F. Rademakers |
+| Built for linuxx8664gcc on Dec 16 2022, 14:50:00 |
+| From tags/v6-26-10@v6-26-10 |
+| With c++ (Debian 8.3.0-6) 8.3.0 |
+| Try '.help', '.demo', '.license', '.credits', '.quit'/'.q' |
+------------------------------------------------------------------
+
+root [0] new TBrowser();1Since CVMFS is not mounted by default, make sure to bind mount the directory /cvmfs explicitly with the Apptainer option -B.2Like in the previous example start an X11 graphical application to verify proper functionality of X forwarding. X-forwarding OptionsX forwarding is supported in two different modes: trusted ssh -Y and untrusted ssh -X X-forwarding (cf. footnotes). In summary untrusted X-forwarding restricts permissions which normally is preferable. Unfortunately trusted X-forwarding is actually the default behavior on Linux even if untrusted X-Forwarding is requested, so the user does not need to care about the differences. X-Forwarding on Apple Mac OS X When using ssh -X on Mac OS the system defaults to untrusted X-forwarding which has implications. The most obvious difference is a timeout of only 20 minutes (default setting) after which no new connections can be opened. If you experience problems with X-forwarding after some time you probably used untrusted X-forwarding and ran into the time limit. Resolve this by passing a different timeout as parameter during SSH login:# ...login to a cluster submit-node (non VAE environment)
+ssh -o ForwardX11Timeout=8h -X -J lxlogin.gsi.de virgo.hpc.gsi.de Custom Home-DirectoryEnvironment VariableDescriptionXAUTHORITYDefines the path to the Xauthority file (defaults to $HOME/.Xauthority)During start of a container Apptainer mounts the $HOME directory defined on the host as home directory inside the container. This can result in problems when using different operating systems inside the containers which may manipulate files in a users home directory. Avoid this problem by using a home directory different then $HOME when starting a container.Unfortunately a custom path to your home directory conflicts with the default behaviour of X-forwarding. Inside the container the .Xauthority file needs to be available in the home directory. Without additional configuration during SSH connection the .Xauthority file is expected in the $HOME directory on the target node by default. Configure a custom path to Xauthority by setting the environment variable XAUTHORITY:# Login to a cluster submit-node (non VAE environment)
+XAUTHORITY=~/custom_home/.Xauthority
+1ssh -o SendEnv=XAUTHORITY -X -J lxlogin.gsi.de virgo.hpc.gsi.de
+
+# Optionally check the path to the `.Xauthority` file after login
+ls -l $XAUTHORITY
+
+# ...Start a shell in the container
+2apptainer shell -H ~/custom_home -B /cvmfs $APPTAINER_CONTAINER1Use the option -o SendEnv= to propagate the XAUTHORITY environment variable during SSH login to the target node.2Set the Apptainer option -H to specify the path to a custom home-directory. Note that the container environment binds the specified path to the expected default path of $HOME.FootnotesSSH Manual Page, Section X11 Forwardinghttps://man.openbsd.org/ssh#X11_FORWARDING↩︎X Window Systemhttps://en.wikipedia.org/wiki/X_Window_System↩︎What You Need to Know About X11 Forwardinghttps://goteleport.com/blog/x11-forwarding/↩︎ROOT Data Analyses Frameworkhttps://root.cern.ch↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/appendix/index.html
+Title: Appendix – Virgo
+==============================================================================
+
+Reference material and supplementary information.PageDescriptionArchitecture & TechnologyCluster computing concepts, Linux containers, and Slurm architectureConfiguration & ToolsTerminal multiplexers, text editors, and other useful toolsGlossaryDefinitions of common terms
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/appendix/architecture_technology.html
+Title: Architecture & Technology – Virgo
+==============================================================================
+
+Compute ClusterThe idea for cluster computers 1 originated as cost-effective alternative to traditional High Performance Computing (HPC) 2 with the goal to achieve similar performance orchestration of low-cost off-the-shelf computer hardware. The architecture depends on the network interconnect in terms of bandwidth and latency to enable efficient communication among nodes between nodes and the storage. Thus, many compute clusters use network hardware other then Ethernet, for example Infiniband.In layman’s terms: “A cluster is a set of interconnected computers”.Cluster computers are collections of tightly connected computes integrated into a single system by a workload management system. Each compute node runs its own instance of an operating system (OS) and typically provides a limited capacity of local storage, which can be used as temporary cache. The majority of compute clusters are connected to a huge, e.g. in the scale of PetaBytes, distributed storage system accessible by all compute nodes like shared storage. Slurm ArchitectureSLURM - Simple Linux Utility for Resource Management - is a widely used cluster resource management system running on 80% of supercomputers listed in TOP500 3. It is an actively developed Open Source (GPLv2) project hosted on Github 4 with over 180 contributors from academia and industry. It is highly scalable and used on the largest compute clusters like the Tianhe-2 with 16.000 nodes and more than 3 million cores. DaemonsSlurm uses an architecture of multiple interconnected service daemons forming the communication infrastructure to manage resources in a cluster of distributed compute nodes, which consist of the following components:slurmctld – Central controller (typically one per cluster)Monitors state of resources, manages job queues, allocates resources.slurmdbd – Database daemon (typically one per enterprise)Collects accounting information, uploads configuration information (limits, fair-share, etc.) to slurmctld.slurmd – Compute node daemon (typically one per compute node)Launches and manages slurmstepd (see below), small and very light-weight, quiescent after launch except for optional accounting. Supports hierarchical communications with configurable fanout.slurmstepd – Job step shepherdLaunched for each job step, launches user application tasks, manages application I/O, signals, etc. NodesSlurms responsibility is to manage all connected computes nodes as a single shared resource for all users. Nodes can be allocated by requesting specifics like the number of CPUs, required RAM using the salloc, srun or the sbatch command. The terms compute node and execution node are used interchangeably, since the compute node is executing the user applications. The detailed hardware configuration of nodes can be queried with the scontrol command. $(hostname) assumes you are logged onto a submit node, and want to inquire information about the local host:>>> scontrol show node ccexe0100
+NodeName=ccexe0100 Arch=x86_64 CoresPerSocket=64 
+CPUAlloc=0 CPUEfctv=256 CPUTot=256 CPULoad=0.00
+#…
+NodeAddr=10.20.1.162 NodeHostName=ccexe0100 Version=25.11.3
+OS=Linux 5.14.0-611.27.1.el9_7.x86_64 #1 SMP PREEMPT_DYNAMIC Fri Feb 6 13:43:43 UTC 2026 
+RealMemory=772000 AllocMem=0 FreeMem=763220 Sockets=2 Boards=1
+State=IDLE+DYNAMIC_NORM ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A MCS_label=N/A
+Partitions=main,long 
+#… PartitionsSlurm partitions allow administrators to establish different job limits or access controls for various groups of nodes. Nodes may be in more than one partition, making partitions serve as general purpose queues. For example, one may put the same set of nodes into two different partitions, each with different constraints, e.g. time limit, job sizes, groups allowed to use the partition and so on. Jobs are allocated resources within a single partition. The partition configuration is queried with the sinfo command described in the partitions section.FootnotesCompute Cluster, Wikipediahttps://en.wikipedia.org/wiki/Computer_cluster↩︎Supercomputer, Wikipediahttps://en.wikipedia.org/wiki/Supercomputer↩︎TOP500, ranks the 500 most powerful HPC systems in the worldhttps://www.top500.org/lists/top500↩︎Slurm Source Code Repository, GitHubhttps://github.com/SchedMD/slurm↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/appendix/configuration_tools.html
+Title: Configuration & Tools – Virgo
+==============================================================================
+
+Terminal MultiplexerA terminal multiplexer (Tmux) 1 is used to multiplex several separate shells inside a single terminal window. It is particularly useful to use with a single SSH login session for remote access to the HPC infrastructure. The terminal multiplexer Tmux 2 supports:Multiplex several shells with a single terminal sessionOrganises shells with split panes and tabsPersistence keeps terminal sessions during logout until reconnectKeysDescriptionC-b ?Show key bindingC-b dDetach from running sessions# start tmux
+tmux
+
+# at some point use `C-b d` to detach
+# close your SSH session, and eventully login again later
+# list all sessions managed by the server
+tmux list-sessions
+
+# attach to most recently used session
+tmux attach-sessionWe recommend to read the book The Tao of tmux 3, which gives an excellent introduction to get started with Tmux. Git Protocol ProxyGit uses several protocols for client-server communication:ProtocolExample Connection Addresshttpshttps://example.com/repository.gitsshgit@example.com/repository.gitgitgit://example.com/repository.gitIn case you want to learn more about the different protocols used to connect with a Git server read Git on the Server - The Protocols 4. The https protocol is recommended, since it uses the existing configuration for HTTP proxies on the Virgo cluster:# print the pre-configured HTTP proxies
+» env | grep HTTP
+HTTPS_PROXY=http://proxy-ib2.gsi.de:3128/
+HTTP_PROXY=http://proxy-ib2.gsi.de:3128/Proxy a connection over SSH using the environment variable GIT_SSH_COMMAND. Modify the ssh command executed by Git to include an option for a to configure login nodes as jump host:GIT_SSH_COMMAND="ssh -J lxpool.gsi.de " git ...However if access to a repository is required over the git protocol it is necessary to configure a Git proxy command. Use the login nodes as network proxy to bypass the firewall for an outgoing connection:# create a helper script with the proxy command
+cat > gitproxy <<'EOF'
+#!/bin/bash
+exec ssh lxpool.gsi.de nc "$@"
+EOF
+# make sure that is is executable
+chmod +x gitproxy
+# set an environment variable to use a proxy command
+export GIT_PROXY_COMMAND=$PWD/gitproxyConnection with a Git server using the Git protocol:# the connection uses git:// as protocol prefix
+git clone git://...FootnotesTerminal multiplexer, Wikipediahttps://en.wikipedia.org/wiki/Terminal_multiplexer↩︎tmux project, GitHubhttps://tmux.github.io↩︎The Tao of tmux, Leanpubhttps://leanpub.com/the-tao-of-tmux/read↩︎Git on the Server - The Protocolshttps://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols#The-Git-Protocol↩︎
+
+==============================================================================
+URL: https://virgo-docs.hpc.gsi.de/user-guide/appendix/glossary.html
+Title: Glossary – Virgo
+==============================================================================
+
+Accounting DatabaseUsers are associated to accounts, which define the available resources accessible for job execution. On behalf of an account user activity on the cluster is recorded, in particular resource allocations. The records in the accounting database are used to calculate a fair-share score, which is used to assign priorities to all jobs.Batch ScriptA batch script is a small program typically written in a scripting language like Bash. It is used as command line argument to the sbatch command of the Slurm Workload Manager. User should use it to specify Slurm configuration options using meta-commands and to start a defined application program. Furthermore, a batch script is usually used to track the application programs behaviour and to read and log information required for debugging, cf. first-issue in the example section.Cluster ControllerThe cluster controller is the central entity interfacing all resources to users and operators. It runs the job scheduler and handles all communication within the cluster.Compute ClusterA compute cluster is a collection of compute nodes integrated into a single system by a Workload Management System. The system accepts work requests as “jobs” from users and puts these jobs into a pending area “queue”. Queued jobs will be scheduled to the available resources according to sharing policies and efficiency constrains. The section slurm architecture provides a very basic overview for a workload management system.Compute JobA job is the basic unit of work users send to workload management system. A job includes the application a users wants to execute as well as the definition of a resource allocation. An application is an executable program, a set of commands or a script.Compute NodeThe individual computers executing the user jobs. The typical configuration of these nodes are detailed in the hardware section. The terms execution node and batch node are used as synonyms.Scheduler QueueAs soon as free resources become available a “matching” job from the queue is selected and send to the compute nodes. Jobs are sorted by priority order in the queue by the resource scheduler components of the workload management system. Priorities are calculated according to a fair-share algorithm.Submit NodeSpecific compute nodes which allow login from users. They are build to enable users to interact with the compute cluster and to request resources from the cluster controller. A user submits applications as compute job from these nodes and can access all storage systems.

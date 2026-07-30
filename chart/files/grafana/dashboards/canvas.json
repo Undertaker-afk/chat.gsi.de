@@ -1,0 +1,4839 @@
+{
+ "uid": "chatgsi-canvas",
+ "title": "chat.gsi.de \u2014 Canvas",
+ "description": "The whole system on one screen: components, the data that flows between them, and whether each one is alive right now.",
+ "tags": [
+  "chat-gsi",
+  "topology"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "10s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 902,
+   "type": "bargauge",
+   "title": "Saturation \u2014 where the time goes",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "description": "Each component's p95 latency as a percentage of a budget chosen for that hop, so components whose absolute latencies differ by orders of magnitude can be compared on one axis. The topology below shows what is flowing; this shows what is struggling. Budgets are in deploy/grafana/nodegraph.py.",
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "label_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_http_request_duration_seconds_bucket[$__rate_interval])))) / 2.0 * 100, 200) >= 0) or vector(0)), \"component\", \"Frontend\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_db_query_duration_seconds_bucket[$__rate_interval])))) / 0.1 * 100, 200) >= 0) or vector(0)), \"component\", \"Postgres\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_s3_operation_duration_seconds_bucket[$__rate_interval])))) / 0.5 * 100, 200) >= 0) or vector(0)), \"component\", \"Object storage\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_keycloak_probe_duration_seconds_bucket[$__rate_interval])))) / 0.5 * 100, 200) >= 0) or vector(0)), \"component\", \"Keycloak\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_embedding_duration_seconds_bucket[$__rate_interval])))) / 5.0 * 100, 200) >= 0) or vector(0)), \"component\", \"Embeddings\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_llm_request_duration_seconds_bucket[$__rate_interval])))) / 30.0 * 100, 200) >= 0) or vector(0)), \"component\", \"LLM proxy\", \"\", \"\")\n  or\nlabel_replace(((clamp_max((histogram_quantile(0.95, sum by (le) (rate(chatgsi_document_read_duration_seconds_bucket[$__rate_interval])))) / 20.0 * 100, 200) >= 0) or vector(0)), \"component\", \"Indico / Repository\", \"\", \"\")",
+     "format": "time_series",
+     "instant": true,
+     "legendFormat": "{{component}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "min": 0,
+     "max": 200,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "yellow",
+        "value": 50
+       },
+       {
+        "color": "orange",
+        "value": 80
+       },
+       {
+        "color": "red",
+        "value": 100
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "displayMode": "gradient",
+    "orientation": "horizontal",
+    "showUnfilled": true,
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "sortBy": "Value",
+    "sortOrder": "Descending"
+   }
+  },
+  {
+   "id": 1,
+   "type": "canvas",
+   "title": "System topology and live data flow",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 30,
+    "w": 24,
+    "x": 0,
+    "y": 8
+   },
+   "description": "Every box is a component and every number on it is live. Liveness dots are green at 1 and red at 0. The scrape path is deliberately drawn: Prometheus has ONE target, and the frontend collects from Postgres, SeaweedFS, Valkey, Keycloak and the crawl_runs table on its behalf \u2014 which is also why a frontend outage blanks every other panel rather than showing them as zero.",
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "unit": "short",
+     "decimals": 1,
+     "custom": {}
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byNames",
+       "options": {
+        "mode": "include",
+        "names": [
+         "db_size",
+         "s3_used",
+         "valkey_mem",
+         "disk_free",
+         "cache_bytes"
+        ]
+       }
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "bytes"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byNames",
+       "options": {
+        "mode": "include",
+        "names": [
+         "s3_bps"
+        ]
+       }
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "bytes"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byNames",
+       "options": {
+        "mode": "include",
+        "names": [
+         "http_p95",
+         "db_p95",
+         "llm_ttft",
+         "retr_p95",
+         "crawl_hb"
+        ]
+       }
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "s"
+       },
+       {
+        "id": "decimals",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byNames",
+       "options": {
+        "mode": "include",
+        "names": [
+         "s3_pct"
+        ]
+       }
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "percentunit"
+       },
+       {
+        "id": "decimals",
+        "value": 4
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byNames",
+       "options": {
+        "mode": "include",
+        "names": [
+         "sessions",
+         "dau",
+         "chunks",
+         "documents",
+         "volumes",
+         "corpus_docs",
+         "collectors",
+         "in_flight",
+         "crawl_active",
+         "crawl_seen",
+         "crawl_queue"
+        ]
+       }
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 0
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "inlineEditing": true,
+    "showAdvancedTypes": true,
+    "panZoom": true,
+    "infinitePan": false,
+    "root": {
+     "type": "frame",
+     "name": "Element 1",
+     "elements": [
+      {
+       "type": "text",
+       "name": "t_title",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 18,
+        "text": {
+         "mode": "fixed",
+         "fixed": "chat.gsi.de \u2014 live system topology"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 8,
+        "left": 20,
+        "width": 520,
+        "height": 26,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "t_sub",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#a1a1aa"
+        },
+        "size": 11,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Boxes are components; dots are liveness; lines are data flow. Every number is live from /metrics."
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 32,
+        "left": 20,
+        "width": 900,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "lg1",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#3b82f6"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "\u25ac internal request/response"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 8,
+        "left": 1130,
+        "width": 240,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "lg2",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f59e0b"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "\u25ac bytes to/from storage"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 24,
+        "left": 1130,
+        "width": 240,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "lg3",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#ef4444"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "\u25ac leaves the lab subnet"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 40,
+        "left": 1130,
+        "width": 240,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "lg4",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#a855f7"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "\u25ac telemetry"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 8,
+        "left": 1370,
+        "width": 200,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "lg5",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#a1a1aa"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "\u25cf green = up, red = down"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 24,
+        "left": 1370,
+        "width": 220,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "browser",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Browser\nchat.lab"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#1e3a5f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#60a5fa"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 120,
+        "left": 30,
+        "width": 170,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "traefik",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 3
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "metric-value",
+       "name": "m_dau",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "dau",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " daily users"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 198,
+        "left": 30,
+        "width": 170,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_sess",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "sessions",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " live sessions"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 216,
+        "left": 30,
+        "width": 170,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "traefik",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Traefik ingress\nchat / keycloak / s3 / grafana .lab"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#3f3f46"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#a1a1aa"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 120,
+        "left": 250,
+        "width": 200,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "frontend",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 3
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "metric-value",
+       "name": "m_rps",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "http_rps",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " req/s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 198,
+        "left": 250,
+        "width": 200,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_p95",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "http_p95",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "p95 ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 216,
+        "left": 250,
+        "width": 200,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "frontend",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Frontend (SvelteKit)\nadapter-node \u00b7 one replica"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#14532d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#4ade80"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 105,
+        "left": 510,
+        "width": 230,
+        "height": 100,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 0,
+          "y": -1
+         },
+         "target": {
+          "x": 0,
+          "y": 1
+         },
+         "targetName": "keycloak",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 0,
+          "y": 1
+         },
+         "target": {
+          "x": 0,
+          "y": -1
+         },
+         "targetName": "orchestrator",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 1,
+          "y": -0.5
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "postgres",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 1,
+          "y": 0.5
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "valkey",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 1,
+          "y": 0.9
+         },
+         "target": {
+          "x": -1,
+          "y": -0.6
+         },
+         "targetName": "s3gw",
+         "color": {
+          "fixed": "#f59e0b"
+         },
+         "size": {
+          "fixed": 3
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": -1,
+          "y": 0.8
+         },
+         "target": {
+          "x": 1,
+          "y": -0.5
+         },
+         "targetName": "prometheus",
+         "color": {
+          "fixed": "#a855f7"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "ellipse",
+       "name": "s_frontend",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "frontend_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "frontend_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 112,
+        "left": 520,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_inflight",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "in_flight",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " in flight"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 207,
+        "left": 510,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_5xx",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "http_5xx",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " 5xx/s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 225,
+        "left": 510,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "keycloak",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Keycloak\nrealm gsi (ephemeral H2)"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#4c1d95"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#c4b5fd"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 320,
+        "left": 500,
+        "width": 230,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "ellipse",
+       "name": "s_keycloak",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "keycloak_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "keycloak_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 327,
+        "left": 510,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_logins",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "logins_ph",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " logins/h"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 398,
+        "left": 500,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_refresh",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "refresh_pm",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " token refresh/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 416,
+        "left": 500,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "orchestrator",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Orchestrator\ngsi-fast \u00b7 gsi-deep"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#14532d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#4ade80"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 470,
+        "left": 510,
+        "width": 230,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": -0.4
+         },
+         "target": {
+          "x": -1,
+          "y": 0.2
+         },
+         "targetName": "llmproxy",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 3
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": -1,
+          "y": 0
+         },
+         "target": {
+          "x": 1,
+          "y": 0
+         },
+         "targetName": "retrieval",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "metric-value",
+       "name": "m_turns",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "turns_ph",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " turns/h"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 548,
+        "left": 510,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_sub",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "subagents_pm",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " subagents/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 566,
+        "left": 510,
+        "width": 230,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "retrieval",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Hybrid retrieval\npgvector + tsvector, RRF"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7c2d12"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fdba74"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 470,
+        "left": 240,
+        "width": 220,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 0,
+          "y": -1
+         },
+         "target": {
+          "x": 0,
+          "y": 1
+         },
+         "targetName": "postgres",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "metric-value",
+       "name": "m_retr",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "retr_p95",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "p95 ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 548,
+        "left": 240,
+        "width": 220,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "postgres",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Postgres 17 + pgvector\nchunks \u00b7 documents \u00b7 users \u00b7 runs"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7c2d12"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fdba74"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 300,
+        "left": 820,
+        "width": 240,
+        "height": 86,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "ellipse",
+       "name": "s_db",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "db_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "db_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 307,
+        "left": 830,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_qps",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "db_qps",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " queries/s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 388,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_dbp95",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "db_p95",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "p95 ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 406,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_dbsize",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "db_size",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "size ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 424,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_chunks",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "chunks",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " embedded chunks"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 442,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "valkey",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Valkey 8\nsessions \u00b7 no persistence"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7c2d12"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fdba74"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 480,
+        "left": 820,
+        "width": 240,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "ellipse",
+       "name": "s_valkey",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "valkey_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "valkey_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 487,
+        "left": 830,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_vmem",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "valkey_mem",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "mem ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 558,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_vops",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "valkey_ops",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " ops/s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 576,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "s3gw",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "SeaweedFS S3 gateway\n:8333 \u00b7 SigV4"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#78350f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fcd34d"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 660,
+        "left": 820,
+        "width": 240,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "filer",
+         "color": {
+          "fixed": "#f59e0b"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "ellipse",
+       "name": "s_s3",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "seaweed_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "seaweed_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 667,
+        "left": 830,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_s3ops",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "s3_ops",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " ops/s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 732,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_s3bps",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "s3_bps",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": "/s server-side"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 750,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "filer",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "SeaweedFS filer\nnamespace"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#78350f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fcd34d"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 660,
+        "left": 1110,
+        "width": 170,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "master",
+         "color": {
+          "fixed": "#f59e0b"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "rectangle",
+       "name": "master",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "SeaweedFS master\nvolume assignment"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#78350f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fcd34d"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 660,
+        "left": 1320,
+        "width": 180,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "volume",
+         "color": {
+          "fixed": "#f59e0b"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "rectangle",
+       "name": "volume",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Volume servers\nStatefulSet, scalable"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#78350f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fcd34d"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 660,
+        "left": 1540,
+        "width": 190,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_vols",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "volumes",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " volume servers"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 732,
+        "left": 1540,
+        "width": 190,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_used",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "s3_used",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "stored ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 750,
+        "left": 1540,
+        "width": 190,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_pct",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "s3_pct",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " of 25 TB plan"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 768,
+        "left": 1540,
+        "width": 190,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_free",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "disk_free",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "disk free ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 786,
+        "left": 1540,
+        "width": 190,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "llmproxy",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "GSI LLM proxy\n192.168.50.1:8080/api/v1"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7f1d1d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fca5a5"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 100,
+        "left": 820,
+        "width": 240,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 0,
+          "y": 1
+         },
+         "target": {
+          "x": 0,
+          "y": -1
+         },
+         "targetName": "models",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "ellipse",
+       "name": "s_llm",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "llm_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "llm_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 107,
+        "left": 830,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_llm",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "llm_cpm",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " calls/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 178,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_tps",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "llm_tps",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " tokens/s out"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 196,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_ttft",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "llm_ttft",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "TTFT p95 ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 214,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_llmerr",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "llm_err",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " errors/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 232,
+        "left": 820,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "models",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Mistral-Small 120B \u00b7 GPT-OSS 120B\nQwen3-Embedding-8B (4096d)"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7f1d1d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fca5a5"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 100,
+        "left": 1110,
+        "width": 260,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_embed",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "embed_pm",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " texts embedded/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 178,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "wiki",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "wiki.gsi.de\nFoswiki \u00b7 Crawl-delay 5 s"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7f1d1d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fca5a5"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 300,
+        "left": 1420,
+        "width": 200,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "rectangle",
+       "name": "www",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "www.gsi.de\nTypo3 + sitemap"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7f1d1d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fca5a5"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 390,
+        "left": 1420,
+        "width": 200,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "rectangle",
+       "name": "virgo",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "virgo-docs.hpc.gsi.de\nHPC user guide"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#7f1d1d"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fca5a5"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 480,
+        "left": 1420,
+        "width": 200,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "rectangle",
+       "name": "crawler",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Crawler (batch)\ndiscover \u2192 fetch \u2192 extract \u2192 chunk \u2192 embed"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#164e63"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#67e8f9"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 390,
+        "left": 1110,
+        "width": 260,
+        "height": 86,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": -0.5
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "wiki",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "www",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 1,
+          "y": 0.5
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "virgo",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": -1,
+          "y": 0.4
+         },
+         "target": {
+          "x": 1,
+          "y": 0.6
+         },
+         "targetName": "postgres",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        },
+        {
+         "source": {
+          "x": 0,
+          "y": -1
+         },
+         "target": {
+          "x": 1,
+          "y": 1
+         },
+         "targetName": "llmproxy",
+         "color": {
+          "fixed": "#ef4444"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "ellipse",
+       "name": "s_crawler",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "crawlerjob_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "crawlerjob_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 397,
+        "left": 1120,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_cactive",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "crawl_active",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " crawls running"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 478,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_cseen",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "crawl_seen",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " pages this run"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 496,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_cqueue",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "crawl_queue",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " queued requests"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 514,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_cdocs",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "corpus_docs",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " documents in corpus"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 532,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_chb",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "crawl_hb",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "heartbeat age ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 550,
+        "left": 1110,
+        "width": 260,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "cron",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "CronJob crawler-tick\nevery 5 min \u00b7 reads crawl_control"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#164e63"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#67e8f9"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 250,
+        "left": 1110,
+        "width": 260,
+        "height": 62,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 0,
+          "y": 1
+         },
+         "target": {
+          "x": 0,
+          "y": -1
+         },
+         "targetName": "crawler",
+         "color": {
+          "fixed": "#3b82f6"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "rectangle",
+       "name": "cache",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "External document cache\n7 days, in SeaweedFS"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#78350f"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#fcd34d"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 660,
+        "left": 500,
+        "width": 240,
+        "height": 70,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "s3gw",
+         "color": {
+          "fixed": "#f59e0b"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "metric-value",
+       "name": "m_cache",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "cache_bytes",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "cached ",
+         "suffix": ""
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 732,
+        "left": 500,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_chit",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "cache_hits",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " hits/min"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 750,
+        "left": 500,
+        "width": 240,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "prometheus",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Prometheus\nONE scrape target: frontend:3000/metrics"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#581c87"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#d8b4fe"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 800,
+        "left": 130,
+        "width": 280,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "grafana",
+         "color": {
+          "fixed": "#a855f7"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "ellipse",
+       "name": "s_prom",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#00000000"
+        },
+        "size": 1,
+        "text": {
+         "mode": "fixed",
+         "fixed": ""
+        },
+        "backgroundColor": {
+         "field": "prom_up"
+        }
+       },
+       "background": {
+        "color": {
+         "field": "prom_up"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#00000055"
+        },
+        "width": 1
+       },
+       "placement": {
+        "top": 807,
+        "left": 140,
+        "width": 16,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "metric-value",
+       "name": "m_coll",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#e4e4e7"
+        },
+        "size": 12,
+        "text": {
+         "mode": "field",
+         "field": "collectors",
+         "fixed": ""
+        },
+        "textDecoration": {
+         "prefix": "",
+         "suffix": " collectors reporting"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 878,
+        "left": 130,
+        "width": 280,
+        "height": 18,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "rectangle",
+       "name": "promtail",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Promtail (DaemonSet)\ntails /var/log/pods"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#581c87"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#d8b4fe"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 920,
+        "left": 130,
+        "width": 280,
+        "height": 66,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0
+         },
+         "targetName": "loki",
+         "color": {
+          "fixed": "#a855f7"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "rectangle",
+       "name": "loki",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Loki\n31-day retention, filesystem"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#581c87"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#d8b4fe"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 920,
+        "left": 460,
+        "width": 250,
+        "height": 66,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": [
+        {
+         "source": {
+          "x": 1,
+          "y": 0
+         },
+         "target": {
+          "x": -1,
+          "y": 0.5
+         },
+         "targetName": "grafana",
+         "color": {
+          "fixed": "#a855f7"
+         },
+         "size": {
+          "fixed": 2
+         },
+         "path": "straight"
+        }
+       ]
+      },
+      {
+       "type": "rectangle",
+       "name": "grafana",
+       "config": {
+        "align": "center",
+        "valign": "middle",
+        "color": {
+         "fixed": "#f4f4f5"
+        },
+        "size": 13,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Grafana\nllmbot-admin only, via Keycloak"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "#581c87"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "#d8b4fe"
+        },
+        "width": 2
+       },
+       "placement": {
+        "top": 800,
+        "left": 460,
+        "width": 250,
+        "height": 76,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": [],
+       "connections": []
+      },
+      {
+       "type": "text",
+       "name": "note_scrape",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#a855f7"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "collects Postgres \u00b7 SeaweedFS \u00b7 Valkey \u00b7 Keycloak \u00b7 crawl_runs at scrape time"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 780,
+        "left": 130,
+        "width": 580,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "note_stop",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#67e8f9"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "Pause / Stop / interval are written to crawl_control by /admin and polled here"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 232,
+        "left": 1110,
+        "width": 400,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      },
+      {
+       "type": "text",
+       "name": "note_hair",
+       "config": {
+        "align": "left",
+        "valign": "middle",
+        "color": {
+         "fixed": "#c4b5fd"
+        },
+        "size": 10,
+        "text": {
+         "mode": "fixed",
+         "fixed": "pod \u2192 node IP \u2192 Traefik \u2192 Keycloak (hairpin): the issuer string must match the browser's"
+        }
+       },
+       "background": {
+        "color": {
+         "fixed": "transparent"
+        }
+       },
+       "border": {
+        "color": {
+         "fixed": "transparent"
+        },
+        "width": 0
+       },
+       "placement": {
+        "top": 300,
+        "left": 500,
+        "width": 470,
+        "height": 16,
+        "rotation": 0
+       },
+       "constraint": {
+        "horizontal": "left",
+        "vertical": "top"
+       },
+       "links": []
+      }
+     ],
+     "background": {
+      "color": {
+       "fixed": "transparent"
+      }
+     },
+     "border": {
+      "color": {
+       "fixed": "transparent"
+      }
+     },
+     "constraint": {
+      "horizontal": "left",
+      "vertical": "top"
+     },
+     "placement": {
+      "top": 0,
+      "left": 0,
+      "width": 1800,
+      "height": 1020,
+      "rotation": 0
+     }
+    }
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "up{job=\"chat-gsi\"}",
+     "legendFormat": "frontend_up",
+     "refId": "Q0",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up{collector=\"postgres\"}",
+     "legendFormat": "db_up",
+     "refId": "Q1",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up{collector=\"valkey\"}",
+     "legendFormat": "valkey_up",
+     "refId": "Q2",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up{collector=\"seaweed\"}",
+     "legendFormat": "seaweed_up",
+     "refId": "Q3",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_keycloak_ready",
+     "legendFormat": "keycloak_up",
+     "refId": "Q4",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up{collector=\"crawler\"}",
+     "legendFormat": "crawler_up",
+     "refId": "Q5",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up{collector=\"vectors\"}",
+     "legendFormat": "vectors_up",
+     "refId": "Q6",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "clamp_max(sum(chatgsi_crawl_active) + 1, 1) or vector(1)",
+     "legendFormat": "crawlerjob_up",
+     "refId": "Q7",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "up{job=\"prometheus\"}",
+     "legendFormat": "prom_up",
+     "refId": "Q8",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "(1 - clamp_max(sum(rate(chatgsi_llm_errors_total[5m])) * 1000, 1)) or vector(1)",
+     "legendFormat": "llm_up",
+     "refId": "Q9",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_http_requests_total[$__rate_interval]))",
+     "legendFormat": "http_rps",
+     "refId": "Q10",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_active_sessions{kind=\"session\"})",
+     "legendFormat": "sessions",
+     "refId": "Q11",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_active_users{window=\"1d\"}",
+     "legendFormat": "dau",
+     "refId": "Q12",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_http_request_duration_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "http_p95",
+     "refId": "Q13",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_http_requests_in_flight)",
+     "legendFormat": "in_flight",
+     "refId": "Q14",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_http_requests_total{status=~\"5..\"}[$__rate_interval])) or vector(0)",
+     "legendFormat": "http_5xx",
+     "refId": "Q15",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_auth_events_total{event=\"login_ok\"}[$__rate_interval]) * 3600) or vector(0)",
+     "legendFormat": "logins_ph",
+     "refId": "Q16",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_auth_events_total{event=~\"refresh_ok\"}[$__rate_interval]) * 60) or vector(0)",
+     "legendFormat": "refresh_pm",
+     "refId": "Q17",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_db_queries_total[$__rate_interval]))",
+     "legendFormat": "db_qps",
+     "refId": "Q18",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_db_query_duration_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "db_p95",
+     "refId": "Q19",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_postgres_size_bytes",
+     "legendFormat": "db_size",
+     "refId": "Q20",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_vector_chunks{state=\"embedded\"}",
+     "legendFormat": "chunks",
+     "refId": "Q21",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_vector_documents{state=\"live\"}",
+     "legendFormat": "documents",
+     "refId": "Q22",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_valkey_memory_bytes{state=\"used\"}",
+     "legendFormat": "valkey_mem",
+     "refId": "Q23",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "rate(chatgsi_valkey_commands_total[$__rate_interval])",
+     "legendFormat": "valkey_ops",
+     "refId": "Q24",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_s3_bytes_total[$__rate_interval]))",
+     "legendFormat": "s3_bps",
+     "refId": "Q25",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_s3_operations_total[$__rate_interval]))",
+     "legendFormat": "s3_ops",
+     "refId": "Q26",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_used_bytes",
+     "legendFormat": "s3_used",
+     "refId": "Q27",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_used_bytes / chatgsi_object_storage_capacity_bytes",
+     "legendFormat": "s3_pct",
+     "refId": "Q28",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_seaweed_volume_servers",
+     "legendFormat": "volumes",
+     "refId": "Q29",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_seaweed_disk_bytes{state=\"free\"})",
+     "legendFormat": "disk_free",
+     "refId": "Q30",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_requests_total[$__rate_interval]) * 60)",
+     "legendFormat": "llm_cpm",
+     "refId": "Q31",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_tokens_total{direction=\"completion\"}[$__rate_interval]))",
+     "legendFormat": "llm_tps",
+     "refId": "Q32",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_llm_time_to_first_token_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "llm_ttft",
+     "refId": "Q33",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_embedding_inputs_total[$__rate_interval]) * 60)",
+     "legendFormat": "embed_pm",
+     "refId": "Q34",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_errors_total[$__rate_interval]) * 60) or vector(0)",
+     "legendFormat": "llm_err",
+     "refId": "Q35",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_chat_turns_total[$__rate_interval]) * 3600)",
+     "legendFormat": "turns_ph",
+     "refId": "Q36",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_orchestrator_subagents_total[$__rate_interval]) * 60) or vector(0)",
+     "legendFormat": "subagents_pm",
+     "refId": "Q37",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_retrieval_duration_seconds_bucket[$__rate_interval])))",
+     "legendFormat": "retr_p95",
+     "refId": "Q38",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_active) or vector(0)",
+     "legendFormat": "crawl_active",
+     "refId": "Q39",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_active_pages{outcome=\"seen\"}) or vector(0)",
+     "legendFormat": "crawl_seen",
+     "refId": "Q40",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_crawl_queue_depth) or vector(0)",
+     "legendFormat": "crawl_queue",
+     "refId": "Q41",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(chatgsi_corpus_documents)",
+     "legendFormat": "corpus_docs",
+     "refId": "Q42",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "max(chatgsi_crawl_heartbeat_age_seconds) or vector(0)",
+     "legendFormat": "crawl_hb",
+     "refId": "Q43",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_cache_bytes{state=\"total\"}",
+     "legendFormat": "cache_bytes",
+     "refId": "Q44",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_external_cache_requests_total{result=\"hit\"}[$__rate_interval]) * 60) or vector(0)",
+     "legendFormat": "cache_hits",
+     "refId": "Q45",
+     "range": true
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_http_requests_total[$__rate_interval])) * 0 + count(chatgsi_collector_up)",
+     "legendFormat": "collectors",
+     "refId": "Q46",
+     "range": true
+    }
+   ]
+  },
+  {
+   "id": 910,
+   "type": "row",
+   "title": "Reading this diagram",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 38
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "table",
+   "title": "Component liveness",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 0,
+    "y": 39
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto",
+      "cellOptions": {
+       "type": "auto"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_collector_up",
+     "refId": "A",
+     "range": false,
+     "legendFormat": "__auto",
+     "format": "table",
+     "instant": true
+    }
+   ],
+   "description": "1 = the backend answered the last scrape. A collector at 0 with the frontend at 1 means one backend is unreachable and its panels are stale, not zero.",
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "footer": {
+     "show": false,
+     "reducer": [
+      "sum"
+     ],
+     "countRows": false,
+     "fields": ""
+    }
+   },
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "job": true,
+       "instance": true,
+       "__name__": true,
+       "service": true,
+       "stack": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "timeseries",
+   "title": "Flow between components (bytes/s and ops/s)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 16,
+    "x": 8,
+    "y": 39
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_s3_bytes_total[$__rate_interval]))",
+     "refId": "A",
+     "range": true,
+     "legendFormat": "S3 bytes/s"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_db_queries_total[$__rate_interval]))",
+     "refId": "B",
+     "range": true,
+     "legendFormat": "DB queries/s"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_llm_requests_total[$__rate_interval]))",
+     "refId": "C",
+     "range": true,
+     "legendFormat": "LLM calls/s"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate(chatgsi_http_requests_total[$__rate_interval]))",
+     "refId": "D",
+     "range": true,
+     "legendFormat": "HTTP req/s"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "rate(chatgsi_valkey_commands_total[$__rate_interval])",
+     "refId": "E",
+     "range": true,
+     "legendFormat": "Valkey ops/s"
+    }
+   ],
+   "description": "The same edges as the diagram, over time rather than as an instant value.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  }
+ ]
+}

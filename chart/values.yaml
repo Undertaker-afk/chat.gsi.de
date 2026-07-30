@@ -1,0 +1,334 @@
+# =============================================================================
+# chat-gsi — portable defaults.
+#
+# These defaults are for a REAL cluster with real DNS and a real registry. To
+# reproduce the GSI lab exactly (local-path storage, .lab hostnames, node-IP
+# hostAliases, seeded demo users, the private registry), add:
+#
+#     helm install chat ./chart -n chat-gsi --create-namespace -f chart/values-lab.yaml
+#
+# Minimal real-cluster setup is: set the six `hosts`, point `image.*.repository`
+# at a registry your cluster can pull from, set `secrets.*`, and set
+# `config.LLM_BASE_URL` to your inference endpoint. Everything else has a
+# working default.
+# =============================================================================
+
+global:
+  # "" uses the cluster's default StorageClass. The lab uses "local-path".
+  storageClass: ""
+
+# ----------------------------------------------------------------------------
+# Where the app is reached. Every external URL (OIDC issuer, redirect URIs,
+# public download links, Grafana root, OAuth endpoints) is DERIVED from these
+# plus `tls.enabled`, so they can never drift apart.
+# ----------------------------------------------------------------------------
+tls:
+  enabled: false          # true => https:// everywhere and Ingress TLS blocks
+
+hosts:
+  chat: chat.example.com
+  keycloak: keycloak.example.com
+  s3: s3.example.com
+  grafana: grafana.example.com
+  prometheus: prometheus.example.com
+  uptime: uptime.example.com
+  status: status.example.com
+
+ingress:
+  enabled: true
+  className: ""           # "" = cluster default IngressClass. Lab uses "traefik".
+  annotations: {}
+  # When tls.enabled, each host gets a TLS block. Provide a secret per host or a
+  # single wildcard secret; leave "" to rely on an ingress-shim/cert-manager
+  # default. Keys are the host values above (chat, keycloak, ...).
+  tlsSecrets: {}
+
+# Lab-only. Pins the .lab hostnames to a node IP INSIDE pods so the OIDC issuer
+# string is identical from the browser and from every pod. On a real cluster
+# with real DNS this must stay disabled — DNS already resolves the ingress host
+# for pods and browsers alike.
+nodeHostAliases:
+  enabled: false
+  ip: ""
+  hostnames: []
+
+# ----------------------------------------------------------------------------
+# Images. The three application images are not public — build and push them to a
+# registry your cluster can pull from (see chart/README.md → Building images),
+# then set these. Tag defaults to Chart.appVersion when left "".
+# ----------------------------------------------------------------------------
+image:
+  frontend:
+    repository: ghcr.io/OWNER/chat-gsi-frontend
+    tag: ""
+    pullPolicy: IfNotPresent
+  crawler:
+    repository: ghcr.io/OWNER/chat-gsi-crawler
+    tag: ""
+    pullPolicy: IfNotPresent
+  statuspage:
+    repository: ghcr.io/OWNER/chat-gsi-statuspage
+    tag: ""
+    pullPolicy: IfNotPresent
+# e.g. [{ name: regcred }]
+imagePullSecrets: []
+
+# ----------------------------------------------------------------------------
+# Feature toggles for the heavy optional pieces. Turn any off for a minimal
+# install; the app core (db, valkey, keycloak, frontend, seaweedfs) always runs.
+# ----------------------------------------------------------------------------
+observability:
+  enabled: true           # Prometheus + Grafana
+logs:
+  enabled: true           # Loki + Promtail (Promtail needs a cluster ClusterRole)
+crawler:
+  enabled: true           # the every-5-min crawl scheduler CronJob
+statusPage:
+  enabled: true           # Uptime Kuma + the independent AI status agent
+
+# ----------------------------------------------------------------------------
+# Identity. Two modes:
+#
+#   BUNDLED (default) — keycloak.enabled: true. The chart runs Keycloak and
+#     imports realm-gsi.json with the llmbot-user/privileged/admin roles. All
+#     URLs derive from hosts.keycloak.
+#
+#   EXTERNAL — keycloak.enabled: false. You point at your own Keycloak with
+#     oidc.issuer, and map YOUR realm's role names to the app's canonical roles
+#     with oidc.roleAliases (see below). The chart deploys no Keycloak.
+# ----------------------------------------------------------------------------
+oidc:
+  realm: gsi
+  clientId: chat-gsi-de
+
+  # EXTERNAL Keycloak: the realm issuer URL, e.g.
+  #   https://id.mycorp.example/realms/staff
+  # Leave "" to use the bundled Keycloak. When set, every issuer-derived URL
+  # (app OIDC, Grafana OAuth) uses it, and keycloak.enabled should be false.
+  issuer: ""
+
+  # Where roles live in the token. Bundled Keycloak: realm_access.roles. A client
+  # mapper lifting them to a top-level claim: roles. A per-client role:
+  # resource_access.<client>.roles.
+  rolesClaim: realm_access.roles
+
+  # ROLE ALIASING. Map the app's canonical roles to whatever YOUR realm calls
+  # them. A token carrying the aliased name then counts as the canonical role
+  # everywhere in the app, with no rebuild. Example for an external realm:
+  #   roleAliases:
+  #     llmbot-admin: gsi-admin
+  #     llmbot-privileged: [department-lead, manager]
+  #     llmbot-user: [employee, staff]
+  # Empty is correct for the bundled Keycloak (it already issues llmbot-*).
+  roleAliases: {}
+
+  # EXTERNAL only, both optional. The admin API base URL for the user picker
+  # (defaults to the issuer with /realms/<realm> stripped) and the management URL
+  # for the Keycloak metrics collector (defaults to empty → collector reports
+  # unreachable, which is honest for an IdP the chart does not run).
+  adminBaseUrl: ""
+  managementUrl: ""
+
+keycloak:
+  # Run the bundled Keycloak. Set false to use an external one (set oidc.issuer).
+  enabled: true
+  # Import the demo users (testuser/manager/normaluser with known passwords).
+  # OFF by default — never seed known-password accounts on a real deployment.
+  # The lab values file turns this on. Ignored when keycloak.enabled is false.
+  seedUsers: false
+
+# ----------------------------------------------------------------------------
+# SECRETS. Override every one of these. They render into a single Secret; the
+# realm import and s3 config pull their credentials from the SAME values, so the
+# old "realm client secret must match .env by hand" footgun is gone.
+# ----------------------------------------------------------------------------
+secrets:
+  postgresPassword: change-me
+  keycloakAdminPassword: change-me
+  sessionSecret: change-me-to-32-random-bytes
+  llmApiKey: ""
+  # OIDC client secrets — injected into the realm import automatically.
+  oidcClientSecret: change-me
+  keycloakAdminClientSecret: change-me
+  grafanaOidcClientSecret: change-me
+  # SeaweedFS S3 credentials — injected into s3.json automatically.
+  s3AccessKey: gsi-chat
+  s3SecretKey: change-me
+  # Grafana local admin (recovery path only; login form is disabled by default).
+  grafanaAdminPassword: change-me
+  # Empty on an isolated subnet. Set it if /metrics is ever internet-facing: the
+  # exposition names users in chatgsi_user_stored_bytes.
+  metricsToken: ""
+  # Status page ↔ Uptime Kuma.
+  kumaApiKey: ""
+  kumaAdminPassword: change-me
+
+# ----------------------------------------------------------------------------
+# Non-secret application config. Rendered into a ConfigMap and loaded verbatim
+# by the frontend and crawler (envFrom). These are tuning knobs and inputs, not
+# wiring — the in-cluster URLs (db, valkey, s3, keycloak) are set on each
+# workload from fixed Service names, and the external URLs are derived from
+# `hosts` above. Add or override any key here and it reaches the app.
+# ----------------------------------------------------------------------------
+config:
+  # --- inference endpoint (yours) ---
+  LLM_BASE_URL: http://llm-proxy.example.com/api/v1
+  CHAT_MODEL: llmbot.mistral-small-4-119b
+  CRAWL_MODEL: llmbot.qwen3.6-27b
+  UTILITY_MODEL: llmbot.gpt-oss-120b
+  EMBEDDING_MODEL: Qwen/Qwen3-Embedding-8B
+  LLM_CONTEXT_WINDOW: "200000"
+  EMBED_BATCH_SIZE: "32"
+
+  # --- database identity (password is a secret) ---
+  POSTGRES_DB: llmbot
+  POSTGRES_USER: llmbot
+
+  # --- keycloak / kuma admin usernames (passwords are secrets) ---
+  KEYCLOAK_ADMIN: admin
+  KUMA_ADMIN_USER: admin
+
+  # --- orchestrator ---
+  MAX_ROUNDS: "3"
+  MAX_SUBAGENTS_PER_ROUND: "4"
+  DEEP_WALL_CLOCK_BUDGET_S: "180"
+  RETRIEVE_TOP_K: "40"
+  CONTEXT_CHUNKS_FAST: "8"
+  CONTEXT_CHUNKS_DEEP: "12"
+
+  # --- crawler ---
+  CRAWL_RATE_LIMIT_RPS: "0.2"
+  CRAWL_USER_AGENT: "gsi-llmbot-crawler/1.0 (+https://chat.raven.hpc.gsi.de)"
+  CRAWL_VISION_ENABLED: "true"
+  CRAWL_LLM_EXTRACTION: "true"
+
+  # --- external documents agent ---
+  DOCS_AGENT_ENABLED: "true"
+  DOCS_AGENT_MAX_READS: "3"
+  DOCS_AGENT_MAX_TEXT_CHARS: "12000"
+
+  # --- uploads ---
+  UPLOAD_QUOTA_BYTES: "1073741824"
+  UPLOAD_MAX_FILE_BYTES: "4194304"
+  UPLOAD_MAX_ATTACHMENT_CHARS: "30000"
+
+  # --- object storage ---
+  S3_REGION: us-east-1
+  S3_BUCKET: gsi-uploads
+  S3_LINK_TTL_SECONDS: "300"
+
+  # --- access control ---
+  REVOCATION_GRACE_DAYS: "30"
+
+  # --- metrics ---
+  METRICS_ENABLED: "true"
+  METRICS_CACHE_SECONDS: "15"
+  METRICS_TIMEOUT_SECONDS: "5"
+  APP_VERSION: dev
+  S3_CAPACITY_BYTES: "27487790694400"
+
+  # --- grafana ---
+  GRAFANA_DISABLE_LOGIN_FORM: "true"
+
+  # --- status page ---
+  STATUS_POLL_SECONDS: "30"
+  STATUS_AI_ENABLED: "true"
+  STATUS_MODEL: ""
+  STATUS_PROMETHEUS_ENABLED: "true"
+
+# ----------------------------------------------------------------------------
+# Per-component knobs. Sizes are the lab defaults; raise for real workloads.
+# ----------------------------------------------------------------------------
+postgres:
+  image: docker.io/pgvector/pgvector:pg17
+  persistence:
+    size: 10Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+
+valkey:
+  image: docker.io/valkey/valkey:8-alpine
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 512Mi }
+
+keycloakServer:
+  image: quay.io/keycloak/keycloak:26.0
+  heap: "-Xms256m -Xmx512m"
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+    limits: { memory: 1Gi }
+
+seaweedfs:
+  image: docker.io/chrislusf/seaweedfs:latest
+  master:
+    persistence: { size: 1Gi }
+  volume:
+    # One volume server by default (matches the raw manifest). Add capacity by
+    # scaling this up — the master spreads writes with no other change.
+    replicas: 1
+    persistence: { size: 20Gi }
+  filer:
+    persistence: { size: 5Gi }
+
+frontend:
+  replicas: 1
+  # Kept ABOVE UPLOAD_MAX_FILE_BYTES on purpose: adapter-node caps request
+  # bodies at 512K by default, which would refuse a 4 MiB upload before the app
+  # can answer with a friendly 413. The app must be the thing that says no.
+  bodySizeLimit: "8M"
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+crawlerJob:
+  # Every-5-min scheduler tick; the DB decides what is actually due.
+  schedule: "*/5 * * * *"
+  persistence:
+    size: 20Gi
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+
+prometheus:
+  image: docker.io/prom/prometheus:v3.1.0
+  retention: 15d
+  persistence: { size: 5Gi }
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+grafana:
+  image: docker.io/grafana/grafana:11.5.1
+  persistence: { size: 2Gi }
+  # The OAuth client id in your realm. Bundled: "grafana". External: whatever you
+  # named the Grafana client. Its secret is secrets.grafanaOidcClientSecret.
+  oauthClientId: grafana
+  # JMESPath over the roles claim deciding who becomes a Grafana Admin (strict:
+  # anyone it cannot map is refused). Default matches the bundled llmbot-admin;
+  # for an external realm point it at your admin role, e.g.
+  #   roleAttributePath: "contains(roles[*], 'gsi-admin') && 'Admin'"
+  roleAttributePath: "contains(roles[*], 'llmbot-admin') && 'Admin'"
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+loki:
+  image: docker.io/grafana/loki:3.3.2
+  persistence: { size: 10Gi }
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+promtail:
+  image: docker.io/grafana/promtail:3.3.2
+  # k3s stores container logs here; a standard cluster uses /var/log/pods only.
+  containerdPath: /var/lib/rancher/k3s/agent/containerd
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
+statusPageAgent:
+  kumaImage: docker.io/louislam/uptime-kuma:1
+  kumaPersistence: { size: 2Gi }
+  dataPersistence: { size: 1Gi }
+  pollSeconds: 30

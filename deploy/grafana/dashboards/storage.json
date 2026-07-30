@@ -1,0 +1,2242 @@
+{
+ "uid": "chatgsi-storage",
+ "title": "chat.gsi.de \u2014 Storage",
+ "description": "Object storage against the 25 TB plan, the real disk under it, and what the application thinks it has stored. The gap between the last two is the panel worth watching.",
+ "tags": [
+  "chat-gsi",
+  "storage"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-7d",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "id": 30,
+   "type": "row",
+   "title": "Object storage against plan",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 31,
+   "type": "gauge",
+   "title": "S3 used of planned capacity",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 6,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percentunit",
+     "custom": {},
+     "min": 0,
+     "max": 1,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "#EAB839",
+        "value": 0.7
+       },
+       {
+        "color": "orange",
+        "value": 0.85
+       },
+       {
+        "color": "red",
+        "value": 0.95
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_used_bytes / chatgsi_object_storage_capacity_bytes",
+     "legendFormat": "used",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Bytes SeaweedFS actually holds, over S3_CAPACITY_BYTES (25 TB by default). The denominator is a TARGET, not the disk that is attached -- see the real filesystem below.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "showThresholdLabels": false,
+    "showThresholdMarkers": true,
+    "minVizWidth": 75,
+    "minVizHeight": 75,
+    "sizing": "auto"
+   }
+  },
+  {
+   "id": 32,
+   "type": "stat",
+   "title": "Used",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 6,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_used_bytes",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Summed over every volume on every volume server.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 33,
+   "type": "stat",
+   "title": "Planned capacity",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 10,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_capacity_bytes",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "S3_CAPACITY_BYTES. Configured, not measured.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 34,
+   "type": "stat",
+   "title": "Headroom to plan",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 14,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_capacity_bytes - chatgsi_object_storage_used_bytes",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 35,
+   "type": "stat",
+   "title": "Objects",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 18,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_objects",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 36,
+   "type": "stat",
+   "title": "Reclaimable",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 21,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_reclaimable_bytes",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Deleted needles still on disk. A volume compaction gets these back without adding hardware.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 37,
+   "type": "stat",
+   "title": "Volume servers",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 10
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_seaweed_volume_servers",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Scale with: kubectl -n chat-gsi scale statefulset/seaweed-volume --replicas=N",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 38,
+   "type": "stat",
+   "title": "Volume slots free",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 10
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 3
+       },
+       {
+        "color": "green",
+        "value": 10
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_seaweed_volume_slots{state=\"free\"}",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Writes fail when the master has no slot to assign, even with disk left.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 39,
+   "type": "timeseries",
+   "title": "Object storage used over time",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 16,
+    "x": 8,
+    "y": 10
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 15,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_used_bytes",
+     "legendFormat": "seaweed on disk",
+     "range": true,
+     "refId": "A"
+    },
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "chatgsi_object_storage_capacity_bytes",
+     "legendFormat": "planned capacity",
+     "range": true,
+     "refId": "B"
+    }
+   ],
+   "description": "Extrapolate this line, not the gauge: the useful question is when the plan runs out, not what today's percentage is.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 40,
+   "type": "stat",
+   "title": "Days to full (linear)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "h": 9,
+    "w": 8,
+    "x": 0,
+    "y": 19
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "d",
+     "custom": {},
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 30
+       },
+       {
+        "color": "green",
+        "value": 180
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "editorMode": "code",
+     "expr": "(chatgsi_object_storage_capacity_bytes - chatgsi_object_storage_used_bytes) / clamp_min(deriv(chatgsi_object_storage_used_bytes[6h]) * 86400, 1)",
+     "legendFormat": "__auto",
+     "range": true,
+     "refId": "A"
+    }
+   ],
+   "description": "Naive extrapolation of the last 6 hours of growth. Meaningless while growth is flat or negative -- it is a smoke alarm, not a capacity plan.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 41,
+   "type": "row",
+   "title": "The real filesystem",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 28
+   },
+   "panels": [
+    {
+     "id": 42,
+     "type": "gauge",
+     "title": "SeaweedFS filesystem used",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 6,
+      "x": 0,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percentunit",
+       "custom": {},
+       "min": 0,
+       "max": 1,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "#EAB839",
+          "value": 0.7
+         },
+         {
+          "color": "orange",
+          "value": 0.85
+         },
+         {
+          "color": "red",
+          "value": 0.95
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum(chatgsi_seaweed_disk_bytes{state=\"used\"}) / clamp_min(sum(chatgsi_seaweed_disk_bytes{state=\"all\"}), 1)",
+       "legendFormat": "used",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "The disk that actually exists under the volume servers. On k3s this is /var/lib/rancher/k3s/storage on the node, shared with every other PVC -- filling it takes the whole cluster down, not just uploads.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "showThresholdLabels": false,
+      "showThresholdMarkers": true,
+      "minVizWidth": 75,
+      "minVizHeight": 75,
+      "sizing": "auto"
+     }
+    },
+    {
+     "id": 43,
+     "type": "timeseries",
+     "title": "Filesystem bytes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 10,
+      "x": 6,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_disk_bytes{state=\"used\"}",
+       "legendFormat": "used",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_disk_bytes{state=\"free\"}",
+       "legendFormat": "free",
+       "range": true,
+       "refId": "B"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_disk_bytes{state=\"all\"}",
+       "legendFormat": "total",
+       "range": true,
+       "refId": "C"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 44,
+     "type": "bargauge",
+     "title": "Stored bytes per volume server",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 29
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {},
+       "min": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "blue",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_node_stored_bytes",
+       "legendFormat": "{{node}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Uneven distribution is normal after scaling out: SeaweedFS assigns new writes to new volumes, it does not rebalance existing ones.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "displayMode": "gradient",
+      "orientation": "horizontal",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "sizing": "auto"
+     }
+    }
+   ]
+  },
+  {
+   "id": 45,
+   "type": "row",
+   "title": "File usage by the application",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 29
+   },
+   "panels": [
+    {
+     "id": 46,
+     "type": "timeseries",
+     "title": "Stored bytes by kind",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_stored_bytes{kind=\"upload\"}",
+       "legendFormat": "uploads",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_stored_bytes{kind=\"generated\"}",
+       "legendFormat": "generated files",
+       "range": true,
+       "refId": "B"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_stored_bytes{kind=\"chat\"}",
+       "legendFormat": "chat text",
+       "range": true,
+       "refId": "C"
+      }
+     ],
+     "description": "What the app believes is stored -- the numbers UPLOAD_QUOTA_BYTES is enforced against. Chat text is octet_length of what users wrote, not compressed on-disk size.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 47,
+     "type": "timeseries",
+     "title": "Accounting gap: object store minus database",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 30
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum(chatgsi_object_storage_used_bytes) - sum(chatgsi_stored_bytes{kind=~\"upload|generated\"})",
+       "legendFormat": "gap",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Orphaned objects: bytes written to S3 whose row never landed, or rows deleted without the object following. Quota is enforced on the database side, so a growing gap means the disk fills faster than any user's quota says it can.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 48,
+     "type": "bargauge",
+     "title": "Top 20 users by attachment bytes",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 38
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {},
+       "min": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "blue",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_user_stored_bytes",
+       "legendFormat": "{{user}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Capped at 20 series on purpose (see collectors.ts). The bar is scaled against the per-user quota below.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "displayMode": "gradient",
+      "orientation": "horizontal",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "sizing": "auto"
+     }
+    },
+    {
+     "id": 49,
+     "type": "stat",
+     "title": "Files stored",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 5,
+      "w": 6,
+      "x": 12,
+      "y": 38
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {},
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_files{kind=\"upload\"}",
+       "legendFormat": "uploads",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_files{kind=\"generated\"}",
+       "legendFormat": "generated",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "value_and_name",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 50,
+     "type": "stat",
+     "title": "Per-user quota",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 5,
+      "w": 6,
+      "x": 18,
+      "y": 38
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {},
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "text",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_user_quota_bytes",
+       "legendFormat": "__auto",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "UPLOAD_QUOTA_BYTES. Covers uploads, generated files and chat text together.",
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "auto",
+      "textMode": "auto",
+      "colorMode": "value",
+      "graphMode": "none",
+      "justifyMode": "auto"
+     }
+    },
+    {
+     "id": 51,
+     "type": "timeseries",
+     "title": "Upload throughput",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 5,
+      "w": 6,
+      "x": 0,
+      "y": 48
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "Bps",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (direction) (rate(chatgsi_s3_bytes_total[$__rate_interval]))",
+       "legendFormat": "{{direction}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Server-side only. Downloads via presigned links go browser-to-gateway and never touch Node, which is the point of the presign scheme.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 52,
+     "type": "timeseries",
+     "title": "Uploads accepted by type",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 5,
+      "w": 6,
+      "x": 6,
+      "y": 48
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cph",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (mime) (rate(chatgsi_uploads_stored_total[$__rate_interval]) * 3600)",
+       "legendFormat": "{{mime}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 53,
+   "type": "row",
+   "title": "Storage backends",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 30
+   },
+   "panels": [
+    {
+     "id": 54,
+     "type": "timeseries",
+     "title": "S3 gateway operations",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "reqps",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (operation, outcome) (rate(chatgsi_s3_operations_total[$__rate_interval]))",
+       "legendFormat": "{{operation}} {{outcome}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "not_found is a normal outcome for delete and a fault for get.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 55,
+     "type": "timeseries",
+     "title": "S3 latency p95",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(chatgsi_s3_operation_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "{{operation}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 56,
+     "type": "timeseries",
+     "title": "Uploads rejected",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 31
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "cph",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (reason) (rate(chatgsi_uploads_rejected_total[$__rate_interval]) * 3600)",
+       "legendFormat": "{{reason}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "quota, too_large and unsupported_type lead to three completely different fixes.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 57,
+     "type": "timeseries",
+     "title": "Postgres database size",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 15,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_postgres_size_bytes",
+       "legendFormat": "database",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "description": "Dominated by chunk embeddings: 4096 float4 per chunk is ~16 KB before TOAST.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 58,
+     "type": "timeseries",
+     "title": "Postgres query latency",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.95, sum by (le) (rate(chatgsi_db_query_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "p95",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "histogram_quantile(0.99, sum by (le) (rate(chatgsi_db_query_duration_seconds_bucket[$__rate_interval])))",
+       "legendFormat": "p99",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "description": "As seen by the app, connection acquisition included -- so pool exhaustion shows up here rather than hiding in Postgres.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 59,
+     "type": "timeseries",
+     "title": "Valkey memory",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"used\"}",
+       "legendFormat": "used",
+       "range": true,
+       "refId": "A"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_valkey_memory_bytes{state=\"peak\"}",
+       "legendFormat": "peak",
+       "range": true,
+       "refId": "B"
+      }
+     ],
+     "description": "Sessions only; Valkey runs with no persistence, so this is lost and rebuilt on restart.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 60,
+   "type": "row",
+   "title": "Volume servers and upload sizes",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 31
+   },
+   "panels": [
+    {
+     "id": 61,
+     "type": "timeseries",
+     "title": "Volume server reachability",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 8,
+      "x": 0,
+      "y": 32
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "min": 0,
+       "max": 1
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_node_up",
+       "legendFormat": "{{node}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "description": "Discovered from the master's topology, so a scaled-up StatefulSet appears here on its own. A node at 0 during a rolling restart is expected; a node at 0 for minutes is not."
+    },
+    {
+     "id": 62,
+     "type": "timeseries",
+     "title": "Volumes per server",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 8,
+      "x": 8,
+      "y": 32
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_seaweed_node_volumes",
+       "legendFormat": "{{node}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "description": "Volumes are capped at -volumeSizeLimitMB (256 MB); the master allocates a new one when the current fills."
+    },
+    {
+     "id": 63,
+     "type": "timeseries",
+     "title": "Conversations by mode",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 8,
+      "x": 16,
+      "y": 32
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "chatgsi_conversations_by_mode",
+       "legendFormat": "{{mode}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "description": "Chat text counts against the same quota as uploads, so the deep/fast split is a storage number as much as a usage one."
+    },
+    {
+     "id": 64,
+     "type": "barchart",
+     "title": "Upload size distribution",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "short",
+       "custom": {
+        "fillOpacity": 80,
+        "lineWidth": 1,
+        "gradientMode": "none"
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "sum by (le) (increase(chatgsi_upload_size_bytes_bucket[$__range]))",
+       "legendFormat": "{{le}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "single",
+       "sort": "none"
+      },
+      "orientation": "auto",
+      "xTickLabelRotation": 0,
+      "showValue": "auto",
+      "stacking": "none"
+     },
+     "description": "Cumulative buckets over the selected range, in bytes. If the top bucket is crowded, UPLOAD_MAX_FILE_BYTES (10 MiB) is what people are hitting."
+    },
+    {
+     "id": 65,
+     "type": "timeseries",
+     "title": "Time since last successful crawl",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 39
+     },
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "editorMode": "code",
+       "expr": "time() - chatgsi_crawl_last_finished_timestamp_seconds{status=\"ok\"}",
+       "legendFormat": "{{source}}",
+       "range": true,
+       "refId": "A"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "description": "From the crawl_runs table. Rising without bound means the systemd timer or the Job stopped running -- the corpus does not shrink, it just quietly stops matching the wiki."
+    }
+   ]
+  }
+ ]
+}

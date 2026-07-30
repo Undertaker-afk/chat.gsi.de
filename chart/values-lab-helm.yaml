@@ -1,0 +1,47 @@
+# =============================================================================
+# Parallel test overlay: run the chart on the SAME lab cluster/node as the live
+# `chat-gsi` deployment, without colliding with it. Layer it on top of the lab
+# values:
+#
+#   helm upgrade --install chat-helm ./chart -n chat-gsi-helm --create-namespace \
+#     -f chart/values-lab.yaml -f chart/values-lab-helm.yaml -f my-secrets.yaml
+#
+# What makes it collision-free:
+#   * a separate namespace (chat-gsi-helm) — bare Service names are isolated there
+#   * distinct `-h.lab` hostnames — Traefik routes by host, so the live stack's
+#     chat.lab etc. are untouched
+#   * the promtail positions hostPath is release-scoped (templates/logs.yaml)
+#   * the ClusterRole/Binding are release-scoped (release name chat-helm)
+#
+# The crawler and status page are OFF here on purpose: the crawler would
+# double-hit wiki.gsi.de, and Uptime Kuma's baked-in default monitors point at
+# the LIVE stack's .lab hosts. Core + observability + logs are the chart surface
+# worth exercising in parallel.
+# =============================================================================
+
+hosts:
+  chat: chat-h.lab
+  keycloak: keycloak-h.lab
+  s3: s3-h.lab
+  grafana: grafana-h.lab
+  prometheus: prometheus-h.lab
+  uptime: uptime-h.lab
+  status: status-h.lab
+
+# Pods must resolve the -h.lab names to the node, same reason as the live stack.
+nodeHostAliases:
+  enabled: true
+  ip: "192.168.50.119"
+  hostnames:
+    - chat-h.lab
+    - keycloak-h.lab
+    - s3-h.lab
+    - grafana-h.lab
+    - prometheus-h.lab
+    - uptime-h.lab
+    - status-h.lab
+
+crawler:
+  enabled: false
+statusPage:
+  enabled: false

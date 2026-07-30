@@ -1,0 +1,155 @@
+{{- if .Values.logs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "loki") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.loki.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "loki") | nindent 4 }}
+spec:
+  selector:
+    app: loki
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "loki") | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: loki
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "loki") | nindent 8 }}
+    spec:
+      securityContext:
+        fsGroup: 10001
+        runAsUser: 10001
+        runAsNonRoot: true
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: loki
+          image: {{ .Values.loki.image }}
+          args: ["-config.file=/etc/loki/loki.yaml"]
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - { name: config, mountPath: /etc/loki, readOnly: true }
+            - { name: data, mountPath: /loki }
+          readinessProbe:
+            httpGet: { path: /ready, port: 3100 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          resources: {{- toYaml .Values.loki.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap: { name: loki-config }
+        - name: data
+          persistentVolumeClaim: { claimName: loki-data }
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: promtail
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "promtail") | nindent 4 }}
+---
+# Cluster-scoped (Promtail discovers pods node-wide), so the name carries the
+# release to stay unique if the chart is installed into more than one namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-promtail
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "promtail") | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/proxy, services, endpoints, pods]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-promtail
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "promtail") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-promtail
+subjects:
+  - kind: ServiceAccount
+    name: promtail
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "promtail") | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "promtail") | nindent 8 }}
+    spec:
+      serviceAccountName: promtail
+      # /var/log/pods is root-owned 0644, so this must run as root to read it.
+      securityContext:
+        runAsUser: 0
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: promtail
+          image: {{ .Values.promtail.image }}
+          args: ["-config.file=/etc/promtail/promtail-k8s.yaml"]
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 9080
+              name: http
+          volumeMounts:
+            - { name: config, mountPath: /etc/promtail, readOnly: true }
+            - { name: varlog, mountPath: /var/log, readOnly: true }
+            # containerd stores the real log files; /var/log/pods is symlinks into
+            # it. Without this mount Promtail gets dangling links and empty logs.
+            - { name: containerd, mountPath: {{ .Values.promtail.containerdPath }}, readOnly: true }
+            - { name: positions, mountPath: /run/promtail }
+          readinessProbe:
+            httpGet: { path: /ready, port: 9080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 10
+          resources: {{- toYaml .Values.promtail.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap: { name: promtail-config }
+        - name: varlog
+          hostPath: { path: /var/log }
+        - name: containerd
+          hostPath: { path: {{ .Values.promtail.containerdPath }} }
+        - name: positions
+          # Release-scoped so two installs on the same node do not fight over one
+          # positions file. The mountPath stays /run/promtail (the config path).
+          hostPath: { path: /run/promtail-{{ .Release.Name }}, type: DirectoryOrCreate }
+{{- end }}

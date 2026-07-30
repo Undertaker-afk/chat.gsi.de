@@ -1,0 +1,80 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "keycloak") | nindent 4 }}
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - { name: http, port: 80, targetPort: 8081 }
+    - { name: management, port: 9000, targetPort: 9000 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "keycloak") | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "keycloak") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      {{- include "chat-gsi.hostAliases" . | nindent 6 }}
+      containers:
+        - name: keycloak
+          image: {{ .Values.keycloakServer.image }}
+          args: ["start-dev", "--import-realm"]
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: {{ .Values.config.KEYCLOAK_ADMIN | quote }}
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_HTTP_PORT
+              value: "8081"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            # The issuer in the discovery document. It must resolve to the SAME
+            # URL from the browser and from inside every pod, or OIDC issuer
+            # validation fails. On a real cluster that is just DNS; on the lab it
+            # is the nodeHostAliases hack.
+            - name: KC_HOSTNAME
+              value: {{ include "chat-gsi.url.keycloak" . | quote }}
+            - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+              value: "false"
+            # Behind an ingress proxy, so trust the forwarded headers.
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            {{- if .Values.tls.enabled }}
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: "true"
+            {{- end }}
+            - name: JAVA_OPTS_KC_HEAP
+              value: {{ .Values.keycloakServer.heap | quote }}
+          ports:
+            - containerPort: 8081
+            - containerPort: 9000
+          volumeMounts:
+            - name: realm
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 9000 }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 40
+          resources: {{- toYaml .Values.keycloakServer.resources | nindent 12 }}
+      volumes:
+        - name: realm
+          configMap:
+            name: keycloak-realm
+{{- end }}

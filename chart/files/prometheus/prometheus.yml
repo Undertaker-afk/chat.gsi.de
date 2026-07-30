@@ -1,0 +1,42 @@
+# Prometheus for chat.gsi.de.
+#
+# There is exactly ONE application scrape target. The frontend's /metrics
+# assembles its own counters together with Postgres, SeaweedFS, Valkey, Keycloak
+# and the crawler's run history at scrape time (see
+# frontend/src/lib/server/metrics/collectors.ts), so there are no sidecar
+# exporters to deploy, no second ingress, and nothing to keep in sync when a
+# backend moves. The cost is that a frontend outage takes the whole exposition
+# with it -- which is why `up` and chatgsi_collector_up are both on the overview
+# dashboard: "the app is down" and "one backend is down" must not look alike.
+#
+# The service names below resolve identically under podman compose and in the
+# chat-gsi namespace on k3s, so this file is shared by both deployments.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  # Long enough for the slowest collector fan-out (METRICS_TIMEOUT_SECONDS=5 per
+  # backend, run in parallel), short enough to stay under scrape_interval.
+  scrape_timeout: 10s
+  external_labels:
+    stack: chat-gsi
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: chat-gsi
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["frontend:3000"]
+        labels:
+          service: frontend
+    # Uncomment together with METRICS_TOKEN in .env if this ever leaves the lab
+    # subnet. The exposition names users in chatgsi_user_stored_bytes.
+    # authorization:
+    #   type: Bearer
+    #   credentials_file: /etc/prometheus/metrics-token
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

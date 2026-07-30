@@ -1,0 +1,51 @@
+{{- if .Values.ingress.enabled }}
+{{- $ := . -}}
+{{- $scheme := include "chat-gsi.scheme" . -}}
+{{/* One row per externally reachable route. `on` gates it behind the matching
+     feature toggle; `key` selects a TLS secret from ingress.tlsSecrets. */}}
+{{- $routes := list
+      (dict "name" "frontend"    "key" "chat"       "host" .Values.hosts.chat       "svc" "frontend"    "port" 3000 "on" true)
+      (dict "name" "keycloak"    "key" "keycloak"   "host" .Values.hosts.keycloak   "svc" "keycloak"    "port" 80   "on" .Values.keycloak.enabled)
+      (dict "name" "seaweed-s3"  "key" "s3"         "host" .Values.hosts.s3         "svc" "seaweed-s3"  "port" 8333 "on" true)
+      (dict "name" "grafana"     "key" "grafana"    "host" .Values.hosts.grafana    "svc" "grafana"     "port" 80   "on" .Values.observability.enabled)
+      (dict "name" "prometheus"  "key" "prometheus" "host" .Values.hosts.prometheus "svc" "prometheus"  "port" 9090 "on" .Values.observability.enabled)
+      (dict "name" "uptime-kuma" "key" "uptime"     "host" .Values.hosts.uptime     "svc" "uptime-kuma" "port" 80   "on" .Values.statusPage.enabled)
+      (dict "name" "statuspage"  "key" "status"     "host" .Values.hosts.status     "svc" "uptime-kuma" "port" 8080 "on" .Values.statusPage.enabled)
+-}}
+{{- range $r := $routes }}
+{{- if $r.on }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $r.name }}
+  labels: {{- include "chat-gsi.labels" $ | nindent 4 }}
+  {{- with $.Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $.Values.ingress.className }}
+  ingressClassName: {{ $.Values.ingress.className }}
+  {{- end }}
+  {{- if $.Values.tls.enabled }}
+  tls:
+    - hosts: [{{ $r.host | quote }}]
+      {{- $secret := index $.Values.ingress.tlsSecrets $r.key | default "" }}
+      {{- if $secret }}
+      secretName: {{ $secret }}
+      {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $r.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $r.svc }}
+                port:
+                  number: {{ $r.port }}
+{{- end }}
+{{- end }}
+{{- end }}

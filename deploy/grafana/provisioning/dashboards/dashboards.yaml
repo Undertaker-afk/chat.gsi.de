@@ -1,0 +1,22 @@
+# Dashboards are files in the repo, not objects in Grafana's database.
+#
+# Grafana here has no persistent volume worth trusting (and under k3s it is a
+# ConfigMap mount), so anything drawn in the UI is lost on the next restart.
+# Provisioning from disk makes the dashboards part of the deployment: they are
+# reviewable, they come back after a wipe, and a change to a panel is a change to
+# a file rather than an undocumented click.
+apiVersion: 1
+
+providers:
+  - name: chat-gsi
+    orgId: 1
+    folder: chat.gsi.de
+    type: file
+    # allowUiUpdates: false -- panels are read-only in the UI. Use "Save As" to
+    # experiment, then copy the JSON back into deploy/grafana/dashboards/.
+    allowUiUpdates: false
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

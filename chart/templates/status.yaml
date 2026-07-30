@@ -1,0 +1,158 @@
+{{- if .Values.statusPage.enabled }}
+{{/* The status page is independent of everything else on purpose: the one
+     moment anybody opens it is the moment the stack is broken. Its only link to
+     the app namespace is a read-only mount of Kuma's SQLite and a read-only
+     view of the Kubernetes API (to tell a rollout from a fault). */}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: statuspage
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: statuspage-readonly
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+rules:
+  - apiGroups: ["apps"]
+    resources: [deployments, statefulsets, daemonsets, replicasets]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: statuspage-readonly
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: statuspage-readonly
+subjects:
+  - kind: ServiceAccount
+    name: statuspage
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kuma-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.statusPageAgent.kumaPersistence.size }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: status-data
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- include "chat-gsi.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.statusPageAgent.dataPersistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uptime-kuma
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+spec:
+  selector:
+    app: uptime-kuma
+  ports:
+    - { name: kuma, port: 80, targetPort: 3001 }
+    - { name: status, port: 8080, targetPort: 3003 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-kuma
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 4 }}
+spec:
+  replicas: 1
+  # ReadWriteOnce PVCs: a RollingUpdate deadlocks on the volume the old pod holds.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: uptime-kuma
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "statuspage") | nindent 8 }}
+    spec:
+      serviceAccountName: statuspage
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      {{- include "chat-gsi.hostAliases" . | nindent 6 }}
+      containers:
+        - name: kuma
+          image: {{ .Values.statusPageAgent.kumaImage }}
+          ports:
+            - { containerPort: 3001, name: http }
+          volumeMounts:
+            - { name: kuma, mountPath: /app/data }
+          readinessProbe:
+            httpGet: { path: /, port: 3001 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 512Mi }
+
+        - name: agent
+          image: {{ include "chat-gsi.image" (dict "ctx" . "component" "statuspage") }}
+          imagePullPolicy: {{ .Values.image.statuspage.pullPolicy }}
+          env:
+            - { name: KUMA_DB, value: /kuma/kuma.db }
+            - { name: STATUS_DB, value: /data/status.db }
+            - { name: PORT, value: "3003" }
+            - { name: PROMETHEUS_URL, value: http://prometheus:9090 }
+            - { name: PROMETHEUS_ENABLED, value: {{ .Values.config.STATUS_PROMETHEUS_ENABLED | quote }} }
+            # Same pod, so localhost. Used only to create the default monitors on
+            # first run; every read goes through the read-only SQLite mount.
+            - { name: KUMA_URL, value: http://127.0.0.1:3001 }
+            - { name: KUBE_NAMESPACE, value: {{ .Release.Namespace | quote }} }
+            - { name: STATUS_POLL_SECONDS, value: {{ .Values.config.STATUS_POLL_SECONDS | quote }} }
+            - { name: STATUS_AI_ENABLED, value: {{ .Values.config.STATUS_AI_ENABLED | quote }} }
+            - { name: STATUS_MODEL, value: {{ .Values.config.STATUS_MODEL | quote }} }
+            - { name: UTILITY_MODEL, value: {{ .Values.config.UTILITY_MODEL | quote }} }
+            - { name: LLM_BASE_URL, value: {{ .Values.config.LLM_BASE_URL | quote }} }
+            - { name: KUMA_ADMIN_USER, value: {{ .Values.config.KUMA_ADMIN_USER | quote }} }
+            - { name: LOG_LEVEL, value: info }
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef: { name: chat-gsi-secrets, key: LLM_API_KEY }
+            - name: KUMA_API_KEY
+              valueFrom:
+                secretKeyRef: { name: chat-gsi-secrets, key: KUMA_API_KEY }
+            - name: KUMA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: chat-gsi-secrets, key: KUMA_ADMIN_PASSWORD }
+          ports:
+            - { containerPort: 3003, name: status }
+          volumeMounts:
+            - { name: kuma, mountPath: /kuma, readOnly: true }
+            - { name: status, mountPath: /data }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 3003 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+      volumes:
+        - name: kuma
+          persistentVolumeClaim: { claimName: kuma-data }
+        - name: status
+          persistentVolumeClaim: { claimName: status-data }
+{{- end }}

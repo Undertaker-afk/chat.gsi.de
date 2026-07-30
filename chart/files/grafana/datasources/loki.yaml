@@ -1,0 +1,28 @@
+# Logs. Pinned uid for the same reason as the Prometheus datasource: the
+# dashboard JSON refers to it by uid, and a generated one would make every log
+# panel render "Datasource not found" on a fresh volume.
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      # Cap on lines returned to a panel. High enough to read a whole crawl run,
+      # low enough that a careless `{app="frontend"}` over 31 days does not try
+      # to render a million rows into a browser tab.
+      maxLines: 2000
+      # Ties the two datasources together: a trace-less stack still gets
+      # "show me the metrics around this log line" by clicking through.
+      derivedFields:
+        - name: run_id
+          # Crawl lines carry run_id in their JSON body; this turns it into a
+          # clickable link that filters the whole run.
+          matcherType: label
+          matcherRegex: run_id
+          datasourceUid: loki
+          url: '{app="crawler"} | json | run_id="$${__value.raw}"'
+          urlDisplayLabel: 'Whole run'

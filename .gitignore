@@ -1,0 +1,10 @@
+.env
+node_modules/
+.svelte-kit/
+build/
+__pycache__/
+*.pyc
+.venv/
+data/corpus/
+data/backups/
+info.md

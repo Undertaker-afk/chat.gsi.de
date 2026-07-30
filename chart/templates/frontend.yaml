@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "frontend") | nindent 4 }}
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "frontend") | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels: {{- include "chat-gsi.componentLabels" (dict "ctx" . "component" "frontend") | nindent 8 }}
+    spec:
+      {{- include "chat-gsi.imagePullSecrets" . | nindent 6 }}
+      # Replaces compose's depends_on: service_healthy. Without it the pod
+      # crash-loops with backoff on a cold start until its dependencies are up.
+      initContainers:
+        - name: wait-for-deps
+          image: docker.io/library/busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z db 5432; do echo "waiting for db"; sleep 2; done
+              until nc -z valkey 6379; do echo "waiting for valkey"; sleep 2; done
+              until nc -z seaweed-s3 8333; do echo "waiting for s3"; sleep 2; done
+              {{- if .Values.keycloak.enabled }}
+              until nc -z keycloak 80; do echo "waiting for keycloak"; sleep 2; done
+              {{- end }}
+      {{- include "chat-gsi.hostAliases" . | nindent 6 }}
+      containers:
+        - name: frontend
+          image: {{ include "chat-gsi.image" (dict "ctx" . "component" "frontend") }}
+          imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: chat-gsi-config
+            - secretRef:
+                name: chat-gsi-secrets
+          # Wiring. These override any same-named key from envFrom: in-cluster
+          # Service names for backends, host-derived URLs for anything that ends
+          # up in a token or a browser redirect.
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: postgres://{{ .Values.config.POSTGRES_USER }}:$(POSTGRES_PASSWORD)@db:5432/{{ .Values.config.POSTGRES_DB }}
+            - name: VALKEY_URL
+              value: redis://valkey:6379
+            - name: OIDC_ISSUER
+              value: {{ include "chat-gsi.oidcIssuer" . | quote }}
+            - name: OIDC_REDIRECT_URI
+              value: {{ printf "%s/auth/callback" (include "chat-gsi.url.chat" .) | quote }}
+            # Roles: where they live in the token, and how this realm's names map
+            # to the app's canonical llmbot-* roles (external Keycloak support).
+            - name: OIDC_ROLES_CLAIM
+              value: {{ .Values.oidc.rolesClaim | quote }}
+            - name: OIDC_ROLE_ALIASES
+              value: {{ .Values.oidc.roleAliases | toJson | quote }}
+            - name: ORIGIN
+              value: {{ include "chat-gsi.url.chat" . | quote }}
+            - name: APP_ORIGIN
+              value: {{ include "chat-gsi.url.chat" . | quote }}
+            - name: KEYCLOAK_BASE_URL
+              value: {{ include "chat-gsi.keycloakBaseUrl" . | quote }}
+            # adapter-node caps request bodies at 512K by default, which silently
+            # overrode UPLOAD_MAX_FILE_BYTES. Kept ABOVE the app limit so the app
+            # answers with a friendly 413 instead of the socket closing.
+            - name: BODY_SIZE_LIMIT
+              value: {{ .Values.frontend.bodySizeLimit | quote }}
+            - name: S3_ENDPOINT
+              value: http://seaweed-s3:8333
+            - name: S3_PUBLIC_ENDPOINT
+              value: {{ include "chat-gsi.url.s3" . | quote }}
+            # Scrape-time collectors reach these directly by Service name — none
+            # of it ends up in a token, so no hairpin through the ingress.
+            - name: S3_MASTER_URL
+              value: http://seaweed-master:9333
+            - name: KEYCLOAK_MANAGEMENT_URL
+              value: {{ include "chat-gsi.keycloakMgmtUrl" . | quote }}
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 3000 }
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}

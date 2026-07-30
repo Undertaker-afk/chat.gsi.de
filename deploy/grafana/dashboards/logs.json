@@ -1,0 +1,1157 @@
+{
+ "uid": "chatgsi-logs",
+ "title": "chat.gsi.de \u2014 Logs",
+ "description": "Every component's logs in one place, via Loki. The frontend and the crawler both emit one JSON object per line, so a single query spans both.",
+ "tags": [
+  "chat-gsi",
+  "logs"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "editable": false,
+ "refresh": "30s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "timepicker": {},
+ "graphTooltip": 1,
+ "links": [
+  {
+   "title": "Overview",
+   "type": "link",
+   "url": "/d/chatgsi-overview",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Storage",
+   "type": "link",
+   "url": "/d/chatgsi-storage",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "LLM & retrieval",
+   "type": "link",
+   "url": "/d/chatgsi-llm",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Crawler",
+   "type": "link",
+   "url": "/d/chatgsi-crawler",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Vector DB",
+   "type": "link",
+   "url": "/d/chatgsi-vectors",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Users",
+   "type": "link",
+   "url": "/d/chatgsi-users",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Files",
+   "type": "link",
+   "url": "/d/chatgsi-files",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Cache",
+   "type": "link",
+   "url": "/d/chatgsi-cache",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  },
+  {
+   "title": "Logs",
+   "type": "link",
+   "url": "/d/chatgsi-logs",
+   "icon": "dashboard",
+   "tooltip": "",
+   "asDropdown": false,
+   "includeVars": false,
+   "keepTime": true,
+   "tags": [],
+   "targetBlank": false
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "app",
+    "label": "Component",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki"
+    },
+    "query": {
+     "label": "app",
+     "refId": "LokiVariableQueryEditor-VariableQuery",
+     "stream": "",
+     "type": 1
+    },
+    "refresh": 1,
+    "includeAll": true,
+    "allValue": ".+",
+    "multi": true,
+    "current": {
+     "selected": true,
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "options": [],
+    "hide": 0,
+    "sort": 1
+   },
+   {
+    "name": "level",
+    "label": "Level",
+    "type": "custom",
+    "query": "info,warn,error,debug",
+    "includeAll": true,
+    "allValue": ".+",
+    "multi": true,
+    "current": {
+     "selected": true,
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "options": [],
+    "hide": 0
+   },
+   {
+    "name": "search",
+    "label": "Contains",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "selected": false,
+     "text": "",
+     "value": ""
+    },
+    "options": [],
+    "hide": 0
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "row",
+   "title": "Volume",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Lines/min (all)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "cpm",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum(rate({app=~\"$app\", namespace=\"chat-gsi\"} [$__auto])) * 60",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Errors (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 25
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum(count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level = \"error\" [1h])) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Warnings (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum(count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level =~ \"warn|warning\" [1h])) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "5xx responses (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum(count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | kind = \"access\" | status >= 500 [1h])) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Components reporting",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "short",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "count(count by (app) (count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} [$__range]))) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "description": "How many components have logged anything in the window. A component dropping off this count is the first sign it stopped running.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "none",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Slowest request (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {},
+     "unit": "ms",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "text",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "max_over_time({app=\"frontend\"} | json | __error__=\"\" | kind = \"access\" | unwrap duration_ms [1h]) or vector(0)",
+     "refId": "A",
+     "range": true,
+     "queryType": "range"
+    }
+   ],
+   "description": "From the access log's duration_ms. Note /api/chat returns its SSE stream immediately, so a long turn does not appear here.",
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "auto",
+    "textMode": "auto",
+    "colorMode": "value",
+    "graphMode": "area",
+    "justifyMode": "auto"
+   }
+  },
+  {
+   "id": 8,
+   "type": "timeseries",
+   "title": "Log volume by component",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "cpm"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "sum by (app) (rate({app=~\"$app\", namespace=\"chat-gsi\"} [$__auto])) * 60",
+     "refId": "A",
+     "range": true,
+     "queryType": "range",
+     "legendFormat": "{{app}}"
+    }
+   ],
+   "description": "A sudden flat line for one component means it stopped logging \u2014 usually because it stopped running.",
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "right",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 9,
+   "type": "timeseries",
+   "title": "Log volume by level",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 5
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 1,
+      "fillOpacity": 8,
+      "gradientMode": "opacity",
+      "showPoints": "never",
+      "spanNulls": true,
+      "axisLabel": "",
+      "scaleDistribution": {
+       "type": "linear"
+      },
+      "stacking": {
+       "mode": "normal",
+       "group": "A"
+      }
+     },
+     "unit": "cpm"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "editorMode": "code",
+     "expr": "label_replace(sum by (level) (rate({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" [$__auto])) * 60, \"level\", \"warn\", \"level\", \"warning\")",
+     "refId": "A",
+     "range": true,
+     "queryType": "range",
+     "legendFormat": "{{level}}"
+    }
+   ],
+   "options": {
+    "legend": {
+     "calcs": [
+      "mean",
+      "max",
+      "lastNotNull"
+     ],
+     "displayMode": "table",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 10,
+   "type": "row",
+   "title": "HTTP access log",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 13
+   },
+   "panels": [
+    {
+     "id": 11,
+     "type": "timeseries",
+     "title": "Requests by status class",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 14
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "cpm"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "sum by (status) (rate({app=\"frontend\"} | json | __error__=\"\" | kind = \"access\" [$__auto])) * 60",
+       "refId": "A",
+       "range": true,
+       "queryType": "range",
+       "legendFormat": "{{status}}"
+      }
+     ],
+     "description": "From the frontend's own access log, so it agrees with chatgsi_http_requests_total by construction. /metrics and /health are excluded at the source \u2014 two probes would otherwise be ~20k lines a day of 'a robot checked and all was well'.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 12,
+     "type": "timeseries",
+     "title": "Request duration p95 by route",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 14
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        }
+       },
+       "unit": "ms"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "quantile_over_time(0.95, {app=\"frontend\"} | json | __error__=\"\" | kind = \"access\" | unwrap duration_ms [$__auto]) by (route)",
+       "refId": "A",
+       "range": true,
+       "queryType": "range",
+       "legendFormat": "{{route}}"
+      }
+     ],
+     "description": "The same question the metrics answer, but sliced by anything in the log line rather than only by pre-chosen labels.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "right",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 13,
+     "type": "logs",
+     "title": "Failed requests (4xx and 5xx)",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 10,
+      "w": 24,
+      "x": 0,
+      "y": 22
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=\"frontend\"} | json | __error__=\"\" | kind = \"access\" | status >= 400",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "description": "Every rejected request with its route, status, duration and user. This is the panel to open first when somebody says 'it did not work'.",
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "type": "row",
+   "title": "Errors",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 14
+   },
+   "panels": [
+    {
+     "id": 15,
+     "type": "logs",
+     "title": "Errors and warnings, all components",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 12,
+      "w": 24,
+      "x": 0,
+      "y": 15
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level =~ \"warn|warning|error\"",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "description": "Both the frontend and the crawler emit one JSON object per line, so this is a single query across two languages.",
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    },
+    {
+     "id": 16,
+     "type": "timeseries",
+     "title": "Errors by component",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 0,
+      "y": 27
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "sum by (app) (count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level = \"error\" [$__auto]))",
+       "refId": "A",
+       "range": true,
+       "queryType": "range",
+       "legendFormat": "{{app}}"
+      }
+     ],
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    },
+    {
+     "id": 17,
+     "type": "timeseries",
+     "title": "Errors by kind",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 7,
+      "w": 12,
+      "x": 12,
+      "y": 27
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "lineWidth": 1,
+        "fillOpacity": 8,
+        "gradientMode": "opacity",
+        "showPoints": "never",
+        "spanNulls": true,
+        "axisLabel": "",
+        "scaleDistribution": {
+         "type": "linear"
+        },
+        "stacking": {
+         "mode": "normal",
+         "group": "A"
+        }
+       },
+       "unit": "short"
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "sum by (kind) (count_over_time({app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level = \"error\" [$__auto]))",
+       "refId": "A",
+       "range": true,
+       "queryType": "range",
+       "legendFormat": "{{kind}}"
+      }
+     ],
+     "description": "`kind` is the subsystem tag on the line: access, auth, crawl, metrics, valkey.",
+     "options": {
+      "legend": {
+       "calcs": [
+        "mean",
+        "max",
+        "lastNotNull"
+       ],
+       "displayMode": "table",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "type": "row",
+   "title": "Search",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 15
+   },
+   "panels": [
+    {
+     "id": 19,
+     "type": "logs",
+     "title": "Everything matching the filters above",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "gridPos": {
+      "h": 16,
+      "w": 24,
+      "x": 0,
+      "y": 16
+     },
+     "fieldConfig": {
+      "defaults": {
+       "custom": {}
+      },
+      "overrides": []
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "loki",
+        "uid": "loki"
+       },
+       "editorMode": "code",
+       "expr": "{app=~\"$app\", namespace=\"chat-gsi\"} | json | __error__=\"\" | level =~ \"$level\" |~ \"(?i)$search\"",
+       "refId": "A",
+       "range": true,
+       "queryType": "range"
+      }
+     ],
+     "description": "Use the Component, Level and Contains controls at the top. `Contains` is a case-insensitive regex over the whole line; leave it empty to see everything.",
+     "options": {
+      "showTime": true,
+      "showLabels": false,
+      "showCommonLabels": false,
+      "wrapLogMessage": true,
+      "prettifyLogMessage": false,
+      "enableLogDetails": true,
+      "dedupStrategy": "none",
+      "sortOrder": "Descending"
+     }
+    }
+   ]
+  }
+ ]
+}

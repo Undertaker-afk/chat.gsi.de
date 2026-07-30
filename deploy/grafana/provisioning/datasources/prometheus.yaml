@@ -1,0 +1,22 @@
+# The one datasource. `uid` is pinned rather than generated, because the
+# dashboard JSON in deploy/grafana/dashboards/ refers to it by uid -- a
+# generated uid would make every provisioned dashboard render "Datasource not
+# found" on a fresh volume.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    # Provisioned datasources are read-only in the UI by default; `editable:
+    # false` makes that explicit so nobody edits a field that the next container
+    # restart silently reverts.
+    editable: false
+    jsonData:
+      # Must match global.scrape_interval in prometheus.yml, or Grafana picks
+      # $__rate_interval values that produce gaps in rate() graphs.
+      timeInterval: 15s
+      httpMethod: POST

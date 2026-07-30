@@ -1,0 +1,17 @@
+FROM docker.io/library/python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+# httpx is the only dependency: two outbound calls (the LLM proxy and, best
+# effort, Prometheus). Everything else is stdlib, because this service's whole
+# job is to be up when the rest of the stack is not.
+# httpx for the two outbound calls (LLM proxy, Prometheus); python-socketio only
+# to create the default monitors in Uptime Kuma on first run. Everything else is
+# stdlib, because this service's job is to be up when the rest of the stack is not.
+RUN pip install --no-cache-dir "httpx>=0.27" "python-socketio[client]>=5.11"
+
+COPY app ./app
+
+EXPOSE 3003
+ENTRYPOINT ["python", "-m", "app.main"]

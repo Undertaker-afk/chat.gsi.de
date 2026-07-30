@@ -1,0 +1,25 @@
+apiVersion: v2
+name: chat-gsi
+description: >-
+  The GSI Assistant — a SvelteKit RAG chat app with Keycloak SSO, Postgres
+  (pgvector), Valkey, SeaweedFS object storage, a crawler, a full Prometheus /
+  Grafana / Loki observability stack, and an independent AI status page. One
+  chart, feature toggles for the heavy optional pieces, portable defaults.
+type: application
+
+# Chart version — bump on any change to the chart itself.
+version: 0.1.0
+
+# The application version. Image tags default to this unless overridden per
+# component (image.<component>.tag), so a coherent release is one appVersion.
+appVersion: "dev"
+
+home: https://chat.gsi.de
+sources:
+  - https://chat.gsi.de
+maintainers:
+  - name: GSI Assistant team
+
+annotations:
+  # A one-line note that shows up in `helm show chart`.
+  category: Application

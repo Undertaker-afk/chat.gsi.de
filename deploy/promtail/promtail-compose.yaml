@@ -1,0 +1,69 @@
+# Promtail for the podman compose stack.
+#
+# This path is BEST-EFFORT and is not the verified one — k3s is where the stack
+# actually runs (AGENTS.md §1), and deploy/promtail/promtail-k8s.yaml is what is
+# tested. The difference is unavoidable: k8s gives Promtail a uniform
+# /var/log/pods layout and a discovery API, while podman's log location depends
+# on the log driver and on whether it is running rootful or rootless.
+#
+# What is configured below assumes the ROOTFUL podman default, where containers
+# log to journald. If `podman compose logs` works but Grafana shows nothing,
+# check which driver is in use:
+#
+#     podman inspect chat-gsi-de_frontend_1 --format '{{.HostConfig.LogConfig.Type}}'
+#
+# If it says `k8s-file`, switch the journal block below for a `static_configs`
+# job tailing the paths that `podman inspect --format '{{.LogPath}}'` reports,
+# and mount that directory into this container.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: warn
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: podman-journal
+    journal:
+      json: false
+      max_age: 12h
+      path: /var/log/journal
+      labels:
+        job: podman
+    relabel_configs:
+      # Only this compose project. The host journal also carries sshd, the
+      # kernel and every other unit on a developer laptop, none of which belong
+      # in an application log store.
+      - source_labels: ["__journal_container_name"]
+        regex: "chat-gsi-de[_-].*"
+        action: keep
+      - source_labels: ["__journal_container_name"]
+        target_label: container
+      # Derive `app` from the container name so the dashboards' queries are the
+      # same on both deployments: chat-gsi-de_frontend_1 -> frontend.
+      - source_labels: ["__journal_container_name"]
+        regex: "chat-gsi-de[_-]([a-z0-9-]+?)([_-][0-9]+)?"
+        target_label: app
+        replacement: "$1"
+      - source_labels: ["__journal__systemd_unit"]
+        target_label: unit
+    pipeline_stages:
+      # No `cri` stage here: journald has already unwrapped the line, so the
+      # message is the raw application output.
+      - json:
+          expressions:
+            level: level
+            kind: kind
+            ts: ts
+      - labels:
+          level:
+          kind:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          action_on_failure: skip

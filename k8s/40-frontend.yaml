@@ -1,0 +1,143 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: chat-gsi
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: chat-gsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      # Replaces compose's `depends_on: service_healthy`. Without it the pod
+      # crash-loops with backoff on a cold start until Postgres is up, which
+      # looks like a failure but is not.
+      initContainers:
+        - name: wait-for-deps
+          image: docker.io/library/busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z db 5432; do echo "waiting for db"; sleep 2; done
+              until nc -z valkey 6379; do echo "waiting for valkey"; sleep 2; done
+              until nc -z seaweed-s3 8333; do echo "waiting for s3"; sleep 2; done
+              until nc -z keycloak 80; do echo "waiting for keycloak"; sleep 2; done
+      # Makes `keycloak.lab` and `s3.lab` resolve to the node from inside the
+      # pod, so the pod and the browser use the identical issuer URL. This is
+      # what `keycloak.localhost` was doing under compose.
+      hostAliases:
+        - ip: "192.168.50.119"
+          hostnames:
+            - keycloak.lab
+            - s3.lab
+            - chat.lab
+      containers:
+        - name: frontend
+          image: 192.168.50.112:5000/chat-gsi-frontend:dev
+          # The :dev tag is mutable, so the node must re-pull on every restart.
+          imagePullPolicy: Always
+          envFrom:
+            # Everything from .env verbatim. Anything listed under `env:` below
+            # wins over it -- that is how the localhost-era values get replaced.
+            - secretRef:
+                name: chat-gsi-env
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-gsi-env
+                  key: POSTGRES_PASSWORD
+            # If .env overrides POSTGRES_USER/POSTGRES_DB, change them here too.
+            - name: DATABASE_URL
+              value: postgres://llmbot:$(POSTGRES_PASSWORD)@db:5432/llmbot
+            - name: VALKEY_URL
+              value: redis://valkey:6379
+            - name: OIDC_ISSUER
+              value: http://keycloak.lab/realms/gsi
+            - name: OIDC_REDIRECT_URI
+              value: http://chat.lab/auth/callback
+            # adapter-node caps request bodies at 512K by default, which
+            # silently overrode UPLOAD_MAX_FILE_BYTES: a 4 MB upload was refused
+            # by the server before it ever reached the route, so the friendly
+            # 413 with real figures never got a chance to fire. Kept ABOVE the
+            # app limit on purpose -- the app should be the thing that says no,
+            # with a message, rather than the socket closing.
+            - name: BODY_SIZE_LIMIT
+              value: "8M"
+            - name: ORIGIN
+              value: http://chat.lab
+            - name: KEYCLOAK_BASE_URL
+              value: http://keycloak.lab
+            - name: S3_ENDPOINT
+              value: http://seaweed-s3:8333
+            - name: S3_PUBLIC_ENDPOINT
+              value: http://s3.lab
+            # Metrics. The frontend is the ONLY Prometheus scrape target: it
+            # queries these two at scrape time and renders the answers into its
+            # own /metrics (see lib/server/metrics/collectors.ts). Both are
+            # in-cluster Service names, never the .lab hostnames -- unlike the
+            # issuer, nothing here ends up in a token, so the hairpin through
+            # Traefik would be pure overhead.
+            - name: S3_MASTER_URL
+              value: http://seaweed-master:9333
+            - name: KEYCLOAK_MANAGEMENT_URL
+              value: http://keycloak:9000
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: chat-gsi
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: chat.lab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000

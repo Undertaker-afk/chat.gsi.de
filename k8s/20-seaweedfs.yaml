@@ -1,0 +1,321 @@
+# SeaweedFS, keeping the same role split as the compose file: the master
+# assigns writes across volume servers, so scaling the volume StatefulSet adds
+# capacity and spreads data with no application change.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seaweed-master
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-master
+  namespace: chat-gsi
+spec:
+  selector:
+    app: seaweed-master
+  ports:
+    - name: http
+      port: 9333
+      targetPort: 9333
+    - name: grpc
+      port: 19333
+      targetPort: 19333
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-master
+  namespace: chat-gsi
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seaweed-master
+  template:
+    metadata:
+      labels:
+        app: seaweed-master
+    spec:
+      containers:
+        - name: master
+          image: docker.io/chrislusf/seaweedfs:latest
+          # -ip must match the Service name, that is the address volume servers
+          # and the filer are told to call back on.
+          args:
+            - master
+            - -ip=seaweed-master
+            - -ip.bind=0.0.0.0
+            - -volumeSizeLimitMB=256
+          ports:
+            - containerPort: 9333
+            - containerPort: 19333
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /cluster/status
+              port: 9333
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: seaweed-master
+---
+# Headless: gives every replica a stable DNS name, which is what lets a volume
+# server register an address the master and filer can actually dial back on.
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-volume
+  namespace: chat-gsi
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: seaweed-volume
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: grpc
+      port: 18080
+      targetPort: 18080
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: seaweed-volume
+  namespace: chat-gsi
+spec:
+  serviceName: seaweed-volume
+  # Scale with: kubectl -n chat-gsi scale statefulset/seaweed-volume --replicas=3
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seaweed-volume
+  template:
+    metadata:
+      labels:
+        app: seaweed-volume
+    spec:
+      containers:
+        - name: volume
+          image: docker.io/chrislusf/seaweedfs:latest
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          # $(POD_NAME) is expanded by the kubelet, not a shell. Each replica
+          # registers under its own stable hostname, which is what makes
+          # scaling work.
+          args:
+            - volume
+            - -mserver=seaweed-master:9333
+            - -ip=$(POD_NAME).seaweed-volume
+            - -ip.bind=0.0.0.0
+            - -port=8080
+            - -max=0
+            - -dir=/data
+          ports:
+            - containerPort: 8080
+            - containerPort: 18080
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: seaweed-filer
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-filer
+  namespace: chat-gsi
+spec:
+  selector:
+    app: seaweed-filer
+  ports:
+    - name: http
+      port: 8888
+      targetPort: 8888
+    - name: grpc
+      port: 18888
+      targetPort: 18888
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-filer
+  namespace: chat-gsi
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: seaweed-filer
+  template:
+    metadata:
+      labels:
+        app: seaweed-filer
+    spec:
+      containers:
+        - name: filer
+          image: docker.io/chrislusf/seaweedfs:latest
+          args:
+            - filer
+            - -master=seaweed-master:9333
+            - -ip=seaweed-filer
+            - -ip.bind=0.0.0.0
+          ports:
+            - containerPort: 8888
+            - containerPort: 18888
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: seaweed-filer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: seaweed-s3
+  namespace: chat-gsi
+spec:
+  selector:
+    app: seaweed-s3
+  ports:
+    - name: http
+      port: 8333
+      targetPort: 8333
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seaweed-s3
+  namespace: chat-gsi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: seaweed-s3
+  template:
+    metadata:
+      labels:
+        app: seaweed-s3
+    spec:
+      containers:
+        - name: s3
+          image: docker.io/chrislusf/seaweedfs:latest
+          args:
+            - s3
+            - -filer=seaweed-filer:8888
+            - -ip.bind=0.0.0.0
+            - -port=8333
+            - -config=/etc/seaweedfs/s3.json
+          ports:
+            - containerPort: 8333
+          volumeMounts:
+            - name: config
+              mountPath: /etc/seaweedfs
+              readOnly: true
+          readinessProbe:
+            # /healthz, not /: the root is an S3 ListBuckets call, which
+            # correctly answers 403 to an unsigned request and would keep the
+            # pod permanently NotReady.
+            httpGet:
+              path: /healthz
+              port: 8333
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: config
+          configMap:
+            name: seaweed-s3-config
+---
+# Presigned download URLs are signed against the public host, so the browser
+# must reach the gateway under exactly the name the app signed for.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: seaweed-s3
+  namespace: chat-gsi
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: s3.lab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweed-s3
+                port:
+                  number: 8333

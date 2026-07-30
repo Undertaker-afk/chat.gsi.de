@@ -1,0 +1,141 @@
+{{/*
+All configuration objects in one place.
+
+  * chat-gsi-secrets / chat-gsi-config  — the app's environment, split into a
+    Secret (credentials) and a ConfigMap (knobs). The frontend and crawler load
+    BOTH via envFrom; other workloads reference individual keys.
+  * the file-backed ConfigMaps            — migrations, the templated realm and
+    s3 config, and the verbatim Prometheus/Grafana/Loki/Promtail configs.
+
+Names are kept exactly as the raw manifests used them, because the workloads and
+the shipped config files reference them by those names.
+*/}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chat-gsi-secrets
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: {{ .Values.secrets.postgresPassword | quote }}
+  KEYCLOAK_ADMIN_PASSWORD: {{ .Values.secrets.keycloakAdminPassword | quote }}
+  SESSION_SECRET: {{ .Values.secrets.sessionSecret | quote }}
+  LLM_API_KEY: {{ .Values.secrets.llmApiKey | quote }}
+  OIDC_CLIENT_SECRET: {{ .Values.secrets.oidcClientSecret | quote }}
+  KEYCLOAK_ADMIN_CLIENT_SECRET: {{ .Values.secrets.keycloakAdminClientSecret | quote }}
+  GRAFANA_OIDC_CLIENT_SECRET: {{ .Values.secrets.grafanaOidcClientSecret | quote }}
+  GRAFANA_ADMIN_PASSWORD: {{ .Values.secrets.grafanaAdminPassword | quote }}
+  S3_ACCESS_KEY: {{ .Values.secrets.s3AccessKey | quote }}
+  S3_SECRET_KEY: {{ .Values.secrets.s3SecretKey | quote }}
+  METRICS_TOKEN: {{ .Values.secrets.metricsToken | quote }}
+  KUMA_API_KEY: {{ .Values.secrets.kumaApiKey | quote }}
+  KUMA_ADMIN_PASSWORD: {{ .Values.secrets.kumaAdminPassword | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat-gsi-config
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{- range $k, $v := .Values.config }}
+  {{ $k }}: {{ $v | quote }}
+{{- end }}
+  # Derived from oidc.* so realm/clientId have a single source of truth.
+  KEYCLOAK_REALM: {{ .Values.oidc.realm | quote }}
+  OIDC_CLIENT_ID: {{ .Values.oidc.clientId | quote }}
+  KEYCLOAK_ADMIN_CLIENT_ID: {{ printf "%s-admin" .Values.oidc.clientId | quote }}
+  GRAFANA_OIDC_CLIENT_ID: "grafana"
+---
+# Postgres init scripts. Run once, on an empty data volume, in filename order.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-migrations
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/migrations/*.sql").AsConfig | indent 2 }}
+{{- if .Values.keycloak.enabled }}
+---
+# Keycloak realm — templated so client secrets and redirect/origin URLs come
+# from the same values as everything else. Only rendered for the bundled
+# Keycloak; an external one owns its own realm.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+  realm-gsi.json: |
+{{ tpl (.Files.Get "files/keycloak/realm-gsi.json.tpl") . | indent 4 }}
+{{- end }}
+---
+# SeaweedFS S3 identity — templated so its keys match secrets.s3*.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: seaweed-s3-config
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+  s3.json: |
+{{ tpl (.Files.Get "files/seaweedfs/s3.json.tpl") . | indent 4 }}
+{{- if .Values.observability.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/prometheus/prometheus.yml").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/prometheus/rules/*.yml").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/grafana/datasources/*.yaml").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/grafana/provider/*.yaml").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/grafana/dashboards/*.json").AsConfig | indent 2 }}
+{{- end }}
+{{- if .Values.logs.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+{{ (.Files.Glob "files/loki/loki.yaml").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  labels: {{- include "chat-gsi.labels" . | nindent 4 }}
+data:
+  promtail-k8s.yaml: |
+{{ tpl (.Files.Get "files/promtail/promtail-k8s.yaml.tpl") . | indent 4 }}
+{{- end }}
