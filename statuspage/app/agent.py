@@ -303,7 +303,8 @@ class Agent:
             "started_at": _human(monitor.last_beat.isoformat() if monitor.last_beat else None),
             "consecutive failed checks": monitor.streak,
             "error reported by the check": (monitor.message or "none")[:200],
-            "recent check results": [f"{b['status']} at {b['at']}" for b in beats[:5]],
+            # `state`, not `status`: the model gets "down at 12:10", not "0 at 12:10".
+            "recent check results": [f"{b['state']} at {b['at']}" for b in beats[:5]],
             "components": [monitor.name],
         }
         # Grafana/Prometheus is optional and best-effort by design: this service

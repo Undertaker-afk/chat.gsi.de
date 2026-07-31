@@ -191,7 +191,17 @@ class Kuma:
             conn.close()
 
     def recent_beats(self, monitor_id: int, limit: int = 30) -> list[dict[str, Any]]:
-        """The last few heartbeats, newest first. Context for the incident writer."""
+        """The last few heartbeats, newest first. Context for the classifier and
+        the incident writer.
+
+        `status` is Kuma's integer code, because classify.py compares against the
+        codes. It used to be the *name* ("up"/"down"), which silently disabled
+        degradation detection entirely: `status != 1` was true for every beat, so
+        the slow-run walk stopped on the first one and `down_seconds` counted the
+        whole window as downtime. Nothing threw, the unit-shaped synthetic beats
+        in tests kept passing, and the page simply never reported a slow service.
+        The readable name lives beside it in `state`, for the LLM prompt.
+        """
         conn = self._connect()
         if conn is None:
             return []
@@ -201,7 +211,9 @@ class Kuma:
                     WHERE monitor_id = ? ORDER BY time DESC, id DESC LIMIT ?""",
                 (monitor_id, limit),
             ).fetchall()
-            return [{"status": STATUS_NAME.get(r["status"], "?"), "message": r["msg"],
+            return [{"status": r["status"],
+                     "state": STATUS_NAME.get(r["status"], "?"),
+                     "message": r["msg"],
                      "at": r["time"], "ping_ms": r["ping"]} for r in rows]
         except sqlite3.Error:
             return []

@@ -24,11 +24,14 @@ unavailable.
 
 ## Why "slow" is relative
 
-These checks answer in 11-14 ms. A fixed "slower than 500 ms" threshold would
-never fire on a healthy-but-degrading service, and a fixed "3x" would fire on
-13 ms -> 40 ms, which nobody would call degradation. So it is both: a multiple of
-the component's own recent median AND an absolute floor, and it has to be
-sustained rather than a single slow sample.
+These checks answer in 11-14 ms. A fixed threshold alone would never fire on a
+healthy-but-degrading service, and a fixed "3x" alone would fire on 13 ms -> 40 ms,
+which nobody would call degradation. So it is both: a multiple of the component's
+own recent median AND an absolute floor of one second, and it has to be sustained
+rather than a single slow sample.
+
+The floor is what a reader would call slow: anything answering in under a second
+is not worth a status-page entry, however far it has drifted from its own habit.
 """
 
 from __future__ import annotations
@@ -46,8 +49,11 @@ OUTAGE_AFTER_S = 180
 #: How much slower than its own baseline counts as slow.
 DEGRADED_FACTOR = 3.0
 
-#: ...and never below this, so 13 ms -> 40 ms is not "degraded".
-DEGRADED_FLOOR_MS = 250.0
+#: ...and never below this, so 13 ms -> 40 ms is not "degraded". One second is
+#: the number the user asked for: below it nobody calls the service slow, and a
+#: floor low enough to fire on 300 ms would report degradations no reader
+#: recognises. The drill answers in 1.5 s to sit clearly above it.
+DEGRADED_FLOOR_MS = 1000.0
 
 #: Baseline window. Long enough to be a habit, short enough to follow real change.
 BASELINE_WINDOW_S = 6 * 3600
@@ -75,6 +81,20 @@ class Verdict:
         return self.kind in ("degraded", "outage", "maintenance")
 
 
+def is_up(beat: dict) -> bool:
+    """Whether a heartbeat says the component answered.
+
+    Accepts Kuma's integer code and its readable name. Deliberately tolerant:
+    this comparison being wrong does not raise, it just quietly turns every
+    verdict into "outage" and stops degradation from ever being reported. That
+    happened -- `recent_beats` returned "up" while every check here tested
+    `== 1` -- and it was invisible until a drill asked for a slow service and
+    got silence. A page that fails loudly is recoverable; one that fails silently
+    is worse than no page.
+    """
+    return beat.get("status") in (1, "up")
+
+
 def _at(beat: dict) -> datetime | None:
     raw = beat.get("at")
     if not raw:
@@ -86,9 +106,40 @@ def _at(beat: dict) -> datetime | None:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+def _without_current_slow_run(beats: list[dict]) -> list[dict]:
+    """
+    Drop the newest unbroken run of healthy-but-over-the-floor beats.
+
+    Without this the baseline eats the very slowness it is meant to measure
+    against. Slow beats are *healthy* beats, so once a slow run outnumbers the
+    fast history the median becomes the slow value, the threshold jumps to three
+    times it, and the degradation stops registering -- roughly 100 s into a
+    condition that has to last 120 s to be reported. Observed exactly that way:
+    twelve consecutive 1510 ms beats produced no incident at all.
+
+    Left unfixed it does not merely break the drill. A real component that stays
+    slow long enough normalises itself, an open degradation resolves while it is
+    still slow (`_still_slow` asks this same question), and the page says
+    everything is fine.
+
+    The run is anchored on DEGRADED_FLOOR_MS, an absolute number, so this stays
+    non-circular: the floor decides which beats are *candidates* for being slow,
+    and the beats before them decide whether they actually are.
+    """
+    for index, beat in enumerate(sorted(beats, key=lambda b: str(b.get("at") or ""),
+                                        reverse=True)):
+        ping = beat.get("ping_ms")
+        if not is_up(beat) or ping is None or float(ping) < DEGRADED_FLOOR_MS:
+            return sorted(beats, key=lambda b: str(b.get("at") or ""), reverse=True)[index:]
+    # Every beat we hold is over the floor: this component has no faster habit on
+    # record, so there is nothing to compare against and the caller gets None.
+    return []
+
+
 def baseline_ms(beats: list[dict]) -> float | None:
     """
-    The component's own habit: median response time over healthy recent beats.
+    The component's own habit: median response time over healthy recent beats,
+    ignoring a slow spell that is still going (see `_without_current_slow_run`).
 
     Median, not mean -- one 8-second stall during a deploy would drag a mean up
     far enough to hide the degradation this is meant to catch.
@@ -96,9 +147,9 @@ def baseline_ms(beats: list[dict]) -> float | None:
     cutoff = datetime.now(timezone.utc) - timedelta(seconds=BASELINE_WINDOW_S)
     values = [
         float(b["ping_ms"])
-        for b in beats
+        for b in _without_current_slow_run(beats)
         if b.get("ping_ms") is not None
-        and b.get("status") == 1
+        and is_up(b)
         and (_at(b) or cutoff) >= cutoff
     ]
     return statistics.median(values) if len(values) >= MIN_SAMPLES else None
@@ -123,7 +174,7 @@ def sustained_slow_seconds(beats: list[dict], baseline: float) -> tuple[int, flo
     for beat in sorted(beats, key=lambda b: str(b.get("at") or ""), reverse=True):
         ping = beat.get("ping_ms")
         when = _at(beat)
-        if beat.get("status") != 1 or ping is None or when is None:
+        if not is_up(beat) or ping is None or when is None:
             break
         if float(ping) < threshold:
             break
@@ -145,7 +196,7 @@ def down_seconds(beats: list[dict]) -> int:
     oldest: datetime | None = None
 
     for beat in sorted(beats, key=lambda b: str(b.get("at") or ""), reverse=True):
-        if beat.get("status") == 1:
+        if is_up(beat):
             break
         when = _at(beat)
         if when is None:

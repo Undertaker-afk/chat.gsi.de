@@ -59,8 +59,12 @@ DEGRADED_TIMEOUT = 260                 # DEGRADED_AFTER_S(120) + Kuma + poll sla
 OUTAGE_TIMEOUT = 300                   # OUTAGE_AFTER_S(180) + slack
 MAINT_TIMEOUT = 360                    # 180s down + rollout detection + slack
 RECOVER_TIMEOUT = 160                  # RESOLVE_AFTER(3) beats + poll
-SLOW_MS = 700                          # well over DEGRADED_FLOOR_MS(250) and 3x a
-                                       # single-digit-ms baseline
+SLOW_MS = 1500                         # over DEGRADED_FLOOR_MS(1000) with room to
+                                       # spare, and far over 3x a ~13 ms baseline.
+                                       # Still well under the monitor's 10 s
+                                       # timeout, so Kuma records a SLOW SUCCESS
+                                       # -- a timeout would be a down beat and the
+                                       # phase would assert the wrong thing.
 
 
 class DrillError(RuntimeError):

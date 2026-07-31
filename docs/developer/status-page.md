@@ -107,11 +107,17 @@ their intent and no inference should override it.
 
 ### "Slow" has to be relative
 
-These checks answer in 11–15 ms. A fixed "slower than 500 ms" would never fire on
-a service that is degrading but still fast; a fixed "3× baseline" would fire on
-13 ms → 40 ms, which nobody would call degradation. So it is **both**: 3× the
-component's own 6-hour median **and** at least 250 ms, sustained over at least
+These checks answer in 11–15 ms. A fixed threshold alone would never fire on a
+service that is degrading but still fast; a fixed "3× baseline" alone would fire
+on 13 ms → 40 ms, which nobody would call degradation. So it is **both**: 3× the
+component's own 6-hour median **and** at least **1 s**, sustained over at least
 three samples. `classify.py` holds the numbers.
+
+The 1 s floor is the reader's definition of slow: under a second nothing is worth
+a status-page entry, however far it has drifted from its own habit. The drill's
+degraded phase answers in 1.5 s so it sits clearly above the floor and clearly
+below the monitor's 10 s timeout — a timeout would be a *down* beat, and the
+phase would then be asserting on an outage while claiming to test degradation.
 
 The baseline is a *median*, not a mean — one 8-second stall during a deploy would
 drag a mean up far enough to hide the very degradation this is meant to catch.
