@@ -345,6 +345,48 @@ import { t } from '$lib/language.svelte';
 			});
 	});
 
+
+	// --- users: search and delete ---------------------------------------------
+
+	let purgeQuery = $state('');
+	let purgeResults = $state<DirectoryUser[]>([]);
+	let purgeSearching = $state(false);
+	let purgeDeleting = $state<string | null>(null);
+
+	async function searchUsersToPurge() {
+		purgeSearching = true;
+		try {
+			const res = await fetch(`/api/admin/users?q=${encodeURIComponent(purgeQuery)}`);
+			if (!res.ok) return;
+			const body = await res.json();
+			purgeResults = body.users;
+		} finally {
+			purgeSearching = false;
+		}
+	}
+
+	async function purgeUser(sub: string, name: string) {
+		if (!confirm(t('admin.confirmDeleteUser', { name }))) return;
+		purgeDeleting = sub;
+		errorMessage = null;
+		try {
+			const res = await fetch(`/api/admin/users/${encodeURIComponent(sub)}`, { method: 'DELETE' });
+			if (!res.ok) {
+				errorMessage = t('admin.userDeleteFailed');
+				return;
+			}
+			const body = await res.json();
+			message = t('admin.userDeleted', {
+				name,
+				conversations: body.conversations,
+				attachments: body.attachments,
+				generatedFiles: body.generatedFiles
+			});
+			purgeResults = purgeResults.filter((u) => u.sub !== sub);
+		} finally {
+			purgeDeleting = null;
+		}
+	}
 	// --- knowledge bases: the public baseline ---------------------------------
 
 	/** Staged default set: what someone with no group at all can search. */
@@ -588,6 +630,7 @@ import { t } from '$lib/language.svelte';
 		{ id: 'kbs', label: t('admin.knowledgeBases'), icon: LibraryIcon, description: t('admin.knowledgeBasesDescription') },
 		{ id: 'sources', label: t('admin.sources'), icon: DatabaseIcon, description: t('admin.sourcesDescription') },
 		{ id: 'audit', label: t('admin.audit'), icon: ScrollTextIcon, description: t('admin.auditDescription') },
+		{ id: 'users', label: t('admin.users'), icon: Trash2Icon, description: t('admin.usersDescription') },
 		{ id: 'stats', label: t('admin.stats'), icon: BarChart3Icon }
 	];
 
@@ -1186,6 +1229,70 @@ import { t } from '$lib/language.svelte';
 						{/each}
 					</Table.Body>
 				</Table.Root>
+			</Card.Content>
+		</Card.Root>
+	{:else if active === 'users'}
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>{t('admin.users')}</Card.Title>
+				<Card.Description>{t('admin.usersDescription')}</Card.Description>
+			</Card.Header>
+			<Card.Content class="flex flex-col gap-4">
+				<div class="flex gap-2">
+					<Input
+						bind:value={purgeQuery}
+						placeholder={t('admin.searchUsers')}
+						onkeydown={(e) => e.key === 'Enter' && searchUsersToPurge()}
+					/>
+					<Button size="sm" onclick={searchUsersToPurge} disabled={purgeSearching}>
+						{#if purgeSearching}<Spinner data-icon="inline-start" />{/if}
+						{t('admin.searchUsers')}
+					</Button>
+				</div>
+
+				{#if purgeResults.length === 0 && !purgeSearching && purgeQuery}
+					<p class="text-muted-foreground text-sm">{t('admin.noUsersFound')}</p>
+				{:else}
+					<div class="flex flex-col gap-2">
+						{#each purgeResults as user (user.sub)}
+							{@const totalBytes = (user.uploadBytes ?? 0) + (user.generatedBytes ?? 0)}
+							<div class="flex items-center justify-between gap-3 rounded-lg border p-3">
+								<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+									<span class="truncate text-sm font-medium">
+										{user.name || user.username || user.sub}
+									</span>
+									<span class="text-muted-foreground truncate text-xs">
+										{user.email || user.sub}
+										{#if !user.everLoggedIn}
+											· {t('admin.neverLoggedIn')}
+										{/if}
+									</span>
+									{#if user.everLoggedIn}
+										<span class="text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
+											<span>{t('admin.userConversations', { count: user.conversations ?? 0 })}</span>
+											<span>{t('admin.userUploads', { count: user.uploads ?? 0, bytes: formatBytes(user.uploadBytes ?? 0) })}</span>
+											<span>{t('admin.userGenerated', { count: user.generatedFiles ?? 0, bytes: formatBytes(user.generatedBytes ?? 0) })}</span>
+											{#if totalBytes > 0}
+												<span class="font-medium">{t('admin.userTotal', { bytes: formatBytes(totalBytes) })}</span>
+											{/if}
+										</span>
+									{/if}
+								</div>
+								<Button
+									variant="destructive"
+									size="sm"
+									disabled={purgeDeleting === user.sub}
+									onclick={() => purgeUser(user.sub, user.name || user.username || user.sub)}
+								>
+									{#if purgeDeleting === user.sub}
+										<Spinner data-icon="inline-start" />
+									{/if}
+									{t('admin.deleteUser')}
+								</Button>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</Card.Content>
 		</Card.Root>
 	{:else if active === 'stats'}

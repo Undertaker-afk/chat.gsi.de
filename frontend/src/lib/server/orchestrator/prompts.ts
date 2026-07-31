@@ -46,11 +46,7 @@ Files saved in this conversation, which you may modify:
 To change one, emit a fenced block whose info string is "edit " followed by the exact filename:
 
 \`\`\`edit submit_job.sh
-<<<<<<< SEARCH
 #SBATCH --time=01:00:00
-=======
-#SBATCH --time=04:00:00
->>>>>>> REPLACE
 \`\`\`
 
 Rules for edit blocks:
@@ -72,6 +68,14 @@ Rules:
 - Make them specific and keyword-rich. "Slurm GPU partition names and gres syntax" beats "how do GPUs work".
 - Do not decompose a question that is already atomic.
 
+COMPARISON and MULTI-TOPIC questions:
+- When the question compares, contrasts, or asks about MULTIPLE distinct entities (clusters, storage systems, experiments, services), create ONE subquery per entity.
+- "compare the CPU architectures of HIMster and Virgo" → ["HIMster cluster CPU architecture processor specifications", "Virgo cluster CPU architecture processor specifications"]
+- "what is the difference between Lustre and Spectrum Scale" → ["Lustre filesystem GSI configuration access", "Spectrum Scale filesystem GSI configuration access"]
+- "how do I submit jobs on Virgo and Kronos" → ["Virgo cluster job submission sbatch queue", "Kronos cluster job submission sbatch queue"]
+- Name the ENTITY first in every subquery so retrieval matches the right documents.
+- Each subquery stands alone: a researcher picking up any one of them knows exactly which system it is about.
+
 "image_query" searches the GSI photo library. Set it ONLY when a photograph is genuinely part of the answer:
 - The user asked to see something — "zeig mir", "wie sieht … aus", "Foto", "Bild", "Aufnahme".
 - Or the subject is a physical thing whose appearance IS the answer: a building, the FAIR construction site, an accelerator, a piece of hardware, an experiment hall.
@@ -79,7 +83,6 @@ Rules:
 - When set, name the subject in TWO OR THREE concrete German nouns, as a photographer would caption it: "FAIR Baustelle", "SIS18 Beschleuniger", "CBM Experiment". Not a sentence.
 - Add at most ONE qualifier, and only when it genuinely changes which picture is wanted — "FAIR Baustelle Luftaufnahme" for a view from above. Put the subject first and the qualifier last.
 - The library requires EVERY term to match, so each extra word throws results away: "FAIR Baustelle" finds 1006 pictures, "FAIR Baustelle Luftaufnahme" 297, and one adjective more finds none. Four terms is already too many. Never stack qualifiers like "Bauphase Luftaufnahme aktuell".`;
-
 /**
  * The image subagent's vision call.
  *

@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS incident (
     opened_at    TEXT NOT NULL,
     resolved_at  TEXT,
     -- minor: one non-critical component. major: a user-facing component.
-    -- critical: the app itself is unreachable.
+    -- critical: the app itself is unreachable. degraded: working but slow.
+    -- maintenance: down on purpose. See SEVERITIES below.
     severity     TEXT NOT NULL DEFAULT 'minor',
     title        TEXT NOT NULL,
     summary      TEXT NOT NULL DEFAULT '',
@@ -60,8 +61,18 @@ CREATE TABLE IF NOT EXISTS monitor_state (
 );
 """
 
-SEVERITIES = ("minor", "major", "critical")
-STATUSES = ("investigating", "identified", "monitoring", "resolved")
+# minor/major/critical are outages, in rising order of what they take out.
+# degraded and maintenance are not outages at all -- one is "slow but working",
+# the other "down on purpose" -- and the page draws all three differently. They
+# have to be listed here: a severity missing from this tuple is silently
+# rewritten to "minor" on insert, which is how a planned rollout ended up on the
+# page wearing an amber MINOR badge.
+SEVERITIES = ("minor", "major", "critical", "degraded", "maintenance")
+#: "all_clear" is the closing note published once every component is healthy
+#: again. It is a distinct status, not a second "resolved", so an incident does
+#: not render two Resolved headings in a row.
+STATUSES = ("investigating", "identified", "monitoring", "resolved",
+            "degraded", "maintenance", "all_clear")
 
 
 @dataclass
@@ -144,7 +155,11 @@ class Store:
                 " VALUES (?, ?, ?, ?, ?)",
                 (incident_id, _now(), status, body, int(ai_written)),
             )
-            conn.execute("UPDATE incident SET status = ? WHERE id = ?", (status, incident_id))
+            if status != "all_clear":
+                # The all-clear is published after resolve() and must not move
+                # the incident off "resolved".
+                conn.execute("UPDATE incident SET status = ? WHERE id = ?",
+                             (status, incident_id))
 
     def add_components(self, incident_id: int, components: list[str]) -> list[str]:
         """Merge newly-affected components into an open incident. Returns the new set."""

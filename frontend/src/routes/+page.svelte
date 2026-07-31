@@ -205,6 +205,7 @@
 							{onedit}
 							onversion={(id) => chat.switchVersion(id)}
 							onask={ask}
+							onretry={() => chat.retry()}
 						/>
 					{/each}
 				</div>

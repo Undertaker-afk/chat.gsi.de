@@ -4,14 +4,6 @@ import { assertAdmin } from '$lib/server/permissions';
 import { directory, directoryConfigured } from '$lib/server/keycloak';
 import { sql } from '$lib/server/db';
 
-/**
- * People the admin can put into a group.
- *
- * Two sources, merged: the Keycloak directory (so someone who has never logged
- * in can still be provisioned) and our own app_users mirror (so the picker keeps
- * working when the read-only service account is not configured, and so we can
- * show which roles a person actually holds).
- */
 export const GET: RequestHandler = async ({ locals, url }) => {
 	assertAdmin(locals.user);
 	const search = (url.searchParams.get('q') ?? '').trim();
@@ -30,18 +22,59 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			}
 		 ORDER BY last_seen_at DESC LIMIT 50`;
 
-	const byId = new Map(seen.map((u) => [u.sub, { ...u, enabled: true, everLoggedIn: true }]));
+	// Per-user storage stats in one round-trip.
+	const stats = await sql<
+		{ sub: string; uploads: string; upload_bytes: string; generated: string; generated_bytes: string; conversations: number }[]
+	>`
+		SELECT u.sub,
+		       coalesce((SELECT count(*) FROM attachments a WHERE a.user_sub = u.sub), 0)::text AS uploads,
+		       coalesce((SELECT sum(bytes)  FROM attachments a WHERE a.user_sub = u.sub), 0)::text AS upload_bytes,
+		       coalesce((SELECT count(*) FROM generated_files g WHERE g.user_sub = u.sub), 0)::text AS generated,
+		       coalesce((SELECT sum(bytes)  FROM generated_files g WHERE g.user_sub = u.sub), 0)::text AS generated_bytes,
+		       (SELECT count(*) FROM conversations c WHERE c.user_sub = u.sub)::int AS conversations
+		  FROM app_users u
+		 WHERE u.sub = ANY(${seen.map((s) => s.sub)})
+	`;
+
+	const statsBySub = new Map(stats.map((s) => [s.sub, s]));
+
+	const byId = new Map(
+		seen.map((u) => {
+			const s = statsBySub.get(u.sub);
+			return [u.sub, {
+				...u,
+				enabled: true,
+				everLoggedIn: true,
+				uploads: Number(s?.uploads ?? 0),
+				uploadBytes: Number(s?.upload_bytes ?? 0),
+				generatedFiles: Number(s?.generated ?? 0),
+				generatedBytes: Number(s?.generated_bytes ?? 0),
+				conversations: s?.conversations ?? 0
+			}];
+		})
+	);
 
 	let directoryError: string | null = null;
 	if (directoryConfigured()) {
 		try {
 			for (const u of await directory(search)) {
 				const known = byId.get(u.sub);
-				byId.set(u.sub, { ...u, roles: known?.roles ?? [], everLoggedIn: Boolean(known) });
+				if (known) {
+					byId.set(u.sub, { ...u, ...known });
+				} else {
+					byId.set(u.sub, {
+						...u,
+						roles: [],
+						everLoggedIn: false,
+						uploads: 0,
+						uploadBytes: 0,
+						generatedFiles: 0,
+						generatedBytes: 0,
+						conversations: 0
+					});
+				}
 			}
 		} catch (err) {
-			// A directory outage must not take the admin page down: it degrades to
-			// the people we have seen ourselves.
 			directoryError = err instanceof Error ? err.message : 'directory unavailable';
 		}
 	}

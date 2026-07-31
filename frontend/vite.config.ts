@@ -78,5 +78,5 @@ export default defineConfig({
 			devOptions: { enabled: false }
 		})
 	],
-	server: { host: '0.0.0.0', port: 3000 }
+	server: { host: '0.0.0.0', port: 3000, allowedHosts: ['chat.lab', 'keycloak.lab', '.lab'] }
 });

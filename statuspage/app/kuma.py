@@ -62,24 +62,46 @@ class Monitor:
 
 
 @dataclass
-class DayStat:
-    day: str          # YYYY-MM-DD
+class Bucket:
+    """Up/down counts over one slice of time -- one day, or one minute."""
+
+    label: str
     up: int
     down: int
+    #: Beats Kuma recorded as PENDING: the check failed, but its retry budget was
+    #: not spent yet, so Kuma had not called it down. Counted separately and
+    #: never folded into `up` -- a failed request is not a successful one. Missing
+    #: this bucket is what made a minute containing a 403 render "not monitored".
+    pending: int = 0
+    #: True when no heartbeat landed in this slice and the state was carried
+    #: forward from the previous one. Only ever set on the minute strip, where
+    #: a 60 s check interval leaves genuinely empty minutes.
+    carried: bool = False
 
     @property
     def total(self) -> int:
-        return self.up + self.down
+        return self.up + self.down + self.pending
 
     @property
     def ratio(self) -> float | None:
-        """Uptime for the day, or None when nothing was recorded.
+        """Uptime for the slice, or None when nothing was recorded.
 
         None and 1.0 are different facts and the status page draws them
         differently: a grey bar for "we were not watching" is honest, a green bar
-        would be a lie about a period we know nothing about.
+        would be a lie about a period we know nothing about. None must therefore
+        mean *no heartbeat at all* -- any beat, whatever its status, has to land
+        in one of the counters or it silently becomes "not monitored".
         """
         return (self.up / self.total) if self.total else None
+
+
+@dataclass
+class DayStat(Bucket):
+    """One day of the 90-day strip. `label` is YYYY-MM-DD."""
+
+    @property
+    def day(self) -> str:
+        return self.label
 
 
 class Kuma:
@@ -196,7 +218,8 @@ class Kuma:
             rows = conn.execute(
                 """SELECT substr(time, 1, 10) AS day,
                           sum(CASE WHEN status IN (1,3) THEN 1 ELSE 0 END) AS up,
-                          sum(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS down
+                          sum(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS down,
+                          sum(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS pending
                      FROM heartbeat
                     WHERE monitor_id = ? AND substr(time, 1, 10) >= ?
                     GROUP BY day ORDER BY day""",
@@ -207,13 +230,72 @@ class Kuma:
         finally:
             conn.close()
 
-        seen = {r["day"]: DayStat(r["day"], r["up"] or 0, r["down"] or 0) for r in rows}
+        seen = {r["day"]: DayStat(r["day"], r["up"] or 0, r["down"] or 0,
+                                  pending=r["pending"] or 0)
+                for r in rows}
         # Fill the gaps so the strip always has one cell per day. A missing day is
         # a real state -- "not monitored" -- and is rendered grey, not green.
         today = datetime.now(timezone.utc).date()
         return [seen.get((today - timedelta(days=n)).isoformat(),
                          DayStat((today - timedelta(days=n)).isoformat(), 0, 0))
                 for n in range(days - 1, -1, -1)]
+
+    def minute_uptime(self, monitor_id: int, minutes: int = 90) -> list[Bucket]:
+        """Per-minute up/down counts, oldest first -- the short strip on the page.
+
+        Checks run every 60 s, so most minutes hold exactly one heartbeat and
+        some hold none at all (jitter moves a beat across a minute boundary).
+        An empty minute is NOT drawn grey here, unlike an empty day: status is a
+        step function, and a component that was up at 12:03 and up again at
+        12:05 was up at 12:04. So an empty minute inherits the last known state
+        and is marked `carried`, which the page says in the tooltip. Only
+        minutes before the first heartbeat we have stay grey -- there, "we were
+        not watching" is the truth.
+        """
+        conn = self._connect()
+        if conn is None:
+            return []
+        now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        start = now - timedelta(minutes=minutes - 1)
+        # A lookback window before the strip starts, so the first minutes can be
+        # carried forward from a beat that landed just before it.
+        since = (start - timedelta(minutes=30)).strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            rows = conn.execute(
+                """SELECT substr(replace(time, 'T', ' '), 1, 16) AS minute,
+                          sum(CASE WHEN status IN (1,3) THEN 1 ELSE 0 END) AS up,
+                          sum(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS down,
+                          sum(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS pending
+                     FROM heartbeat
+                    WHERE monitor_id = ? AND replace(time, 'T', ' ') >= ?
+                    GROUP BY minute ORDER BY minute""",
+                (monitor_id, since),
+            ).fetchall()
+        except sqlite3.Error:
+            return []
+        finally:
+            conn.close()
+
+        seen = {r["minute"]: (r["up"] or 0, r["down"] or 0, r["pending"] or 0)
+                for r in rows}
+
+        # State to carry into the strip: the newest beat before it, if any.
+        head = start.strftime("%Y-%m-%d %H:%M")
+        earlier = sorted(k for k in seen if k < head)
+        last: tuple[int, int, int] | None = seen[earlier[-1]] if earlier else None
+
+        out: list[Bucket] = []
+        for n in range(minutes):
+            label = (start + timedelta(minutes=n)).strftime("%Y-%m-%d %H:%M")
+            counts = seen.get(label)
+            if counts is not None:
+                last = counts
+                out.append(Bucket(label, counts[0], counts[1], pending=counts[2]))
+            elif last is not None:
+                out.append(Bucket(label, last[0], last[1], pending=last[2], carried=True))
+            else:
+                out.append(Bucket(label, 0, 0))
+        return out
 
     def overall_uptime(self, monitor_id: int, days: int = 90) -> float | None:
         stats = [d for d in self.daily_uptime(monitor_id, days) if d.total]

@@ -76,8 +76,8 @@ export type OrchestratorEvent =
 			score: number;
 			fetchedAt: string;
 	  }
+	| { type: 'suggestions'; items: string[] }
 	| { type: 'done'; usage: Usage; partial: boolean }
-	| { type: 'error'; message: string };
 
 export interface Usage {
 	rounds: number;

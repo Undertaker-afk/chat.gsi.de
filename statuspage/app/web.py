@@ -20,7 +20,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from .kuma import DayStat
+from .kuma import Bucket, DayStat
 from .store import Incident
 
 BANNER = {
@@ -37,11 +37,17 @@ BANNER = {
     "unknown":        ("Status Unknown", "#57606a", "unknown"),
 }
 
-SEVERITY_LABEL = {"minor": "Minor", "major": "Major", "critical": "Critical",
-                  "degraded": "Degraded", "maintenance": "Maintenance"}
+# The badge on an incident. Two kinds of event, and the wording says which:
+# something that still works but is slow reads "Minor" in amber, and something
+# that does not work reads "Outage" in red. The severity of an outage only
+# changes how much red -- it never demotes it to a milder word.
+SEVERITY_LABEL = {"minor": "Outage", "major": "Major Outage",
+                  "critical": "Critical Outage",
+                  "degraded": "Minor", "maintenance": "Maintenance"}
 STATUS_LABEL = {"investigating": "Investigating", "identified": "Identified",
                 "monitoring": "Monitoring", "resolved": "Resolved",
-                "degraded": "Degraded Performance", "maintenance": "Maintenance"}
+                "degraded": "Degraded Performance", "maintenance": "Maintenance",
+                "all_clear": "All Systems Operational"}
 
 CSS = """
 :root{--bg:#fff;--fg:#1f2328;--muted:#656d76;--line:#d1d9e0;--card:#fff;
@@ -70,10 +76,16 @@ nav a:hover,nav a.on{color:var(--fg)}
       color:var(--muted)}
 .pill.ok{color:var(--ok);border-color:var(--ok)}
 .pill.bad{color:var(--bad);border-color:var(--bad)}
-.bars{display:flex;gap:2px;width:100%;margin-top:10px}
+.strip{width:100%;margin-top:12px}
+.bars{display:flex;gap:2px;width:100%}
 .bar{flex:1;height:30px;border-radius:2px;background:var(--none);min-width:2px}
 .bar.ok{background:var(--ok)}.bar.warn{background:var(--warn)}.bar.bad{background:var(--bad)}
+/* The minute strip is the same data at a different zoom, so it is the same
+   shape, drawn shorter -- the 90 days below it stays the dominant one. */
+.bars.mins .bar{height:14px}
+.bar.carried{opacity:.55}
 .scale{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
+.scale b{font-weight:500;color:var(--muted)}
 .inc{padding:18px;border-bottom:1px solid var(--line)}
 .inc:last-child{border-bottom:0}
 .inc h3{margin:0 0 4px;font-size:16px;font-weight:600}
@@ -84,7 +96,10 @@ nav a:hover,nav a.on{color:var(--fg)}
 .upd p{margin:4px 0 0}
 .sev{font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;
      border-radius:4px;color:#fff;margin-right:8px}
-.sev.minor{background:var(--warn)}.sev.major{background:#d1242f}.sev.critical{background:#82071e}
+/* Red is reserved for "it does not work". Amber for "it works, badly", purple
+   for "we took it down on purpose" -- a deployment must not look like a fault. */
+.sev.minor{background:#cf222e}.sev.major{background:#a40e26}.sev.critical{background:#82071e}
+.sev.degraded{background:var(--warn)}.sev.maintenance{background:#6639ba}
 .month{margin:32px 0 12px;font-size:15px;font-weight:600;padding-bottom:6px;
        border-bottom:1px solid var(--line)}
 .empty{color:var(--muted);padding:18px;font-size:14px}
@@ -117,7 +132,8 @@ generated.</footer>
 
 
 def render_current(snapshot: dict[str, Any], uptime: dict[int, list[DayStat]],
-                   overall_uptime: dict[int, float | None]) -> str:
+                   overall_uptime: dict[int, float | None],
+                   minutes: dict[int, list[Bucket]] | None = None) -> str:
     label, colour, _ = BANNER[snapshot["overall"]]
     parts = [f'<div class="banner" style="background:{colour}">{esc(label)}</div>']
 
@@ -155,24 +171,60 @@ def render_current(snapshot: dict[str, Any], uptime: dict[int, list[DayStat]],
             f'<div class="row"><span class="name">{esc(m.name)}</span>'
             f'<span><span class="pill">{esc(pct_text)}</span> '
             f'<span class="pill {pill}">{esc(state)}</span></span>'
-            f'<div class="bars">{_bars(uptime.get(m.id, []))}</div>'
-            f'<div class="scale"><span>90 days ago</span><span>today</span></div></div>')
+            # Two zoom levels of the same history: the minute strip answers "is
+            # it working right now, and was it a moment ago", which the day
+            # strip cannot -- a single bad minute is invisible inside a day.
+            f'<div class="strip"><div class="bars mins">'
+            f'{_bars((minutes or {}).get(m.id, []), "minute")}</div>'
+            f'<div class="scale"><span>90 minutes ago</span>'
+            f'<span><b>last 90 minutes</b></span><span>now</span></div></div>'
+            f'<div class="strip"><div class="bars">'
+            f'{_bars(uptime.get(m.id, []), "day")}</div>'
+            f'<div class="scale"><span>90 days ago</span>'
+            f'<span><b>last 90 days</b></span><span>today</span></div></div></div>')
     parts.append("</div>")
     return page("chat.gsi.de status", "\n".join(parts), "current")
 
 
-def _bars(days: list[DayStat]) -> str:
+def _bars(buckets: list[Bucket], unit: str = "day") -> str:
+    """One strip of bars. `unit` only changes the wording of the tooltips.
+
+    The thresholds differ by zoom on purpose. A day holds hundreds of checks, so
+    a single failure among them is a blip and stays green until it is a pattern.
+    A minute usually holds exactly one check, so there is no such thing as a
+    negligible fraction: anything that failed in that minute is worth seeing.
+    """
     out = []
-    for d in days:
-        ratio = d.ratio
+    for b in buckets:
+        ratio = b.ratio
         if ratio is None:
-            cls, tip = "", f"{d.day}: not monitored"
+            cls, tip = "", f"{b.label}: not monitored"
+        elif unit == "minute":
+            # A pending beat is a check that FAILED and had retries left. Amber,
+            # never green: Kuma draws it the same way, and a reader comparing the
+            # two pages must not find them disagreeing about a failed request.
+            if b.carried:
+                state = "up" if ratio >= 1 else ("failing" if b.pending and not b.down
+                                                 else "down")
+                cls = "ok" if ratio >= 1 else ("warn" if state == "failing" else "bad")
+                tip = f"{b.label} UTC: no check in this minute (last known: {state})"
+            elif ratio >= 1:
+                cls, tip = "ok", f"{b.label} UTC: up"
+            elif b.down:
+                cls, tip = "bad", (f"{b.label} UTC: down"
+                                   if b.down == b.total
+                                   else f"{b.label} UTC: {b.down} of {b.total} checks failed")
+            else:
+                cls, tip = "warn", (f"{b.label} UTC: check failed, retrying "
+                                    f"({b.pending} of {b.total})")
         elif ratio >= 0.999:
-            cls, tip = "ok", f"{d.day}: no downtime"
+            cls, tip = "ok", f"{b.label}: no downtime"
         elif ratio >= 0.95:
-            cls, tip = "warn", f"{d.day}: {(1 - ratio) * 100:.1f}% of checks failed"
+            cls, tip = "warn", f"{b.label}: {(1 - ratio) * 100:.1f}% of checks failed"
         else:
-            cls, tip = "bad", f"{d.day}: {(1 - ratio) * 100:.1f}% of checks failed"
+            cls, tip = "bad", f"{b.label}: {(1 - ratio) * 100:.1f}% of checks failed"
+        if b.carried:
+            cls += " carried"
         out.append(f'<div class="bar {cls}" title="{esc(tip)}"></div>')
     return "".join(out)
 

@@ -40,6 +40,7 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import CornerDownRightIcon from '@lucide/svelte/icons/corner-down-right';
 	import FileIcon from '@lucide/svelte/icons/file';
+	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { t } from '$lib/language.svelte';
@@ -50,6 +51,7 @@
 		onedit,
 		onversion,
 		onask,
+		onretry,
 		latest = false,
 		busy = false
 	}: {
@@ -60,6 +62,7 @@
 		onversion?: (messageId: string) => void;
 		/** Asks a follow-up. Undefined hides the suggestion strip entirely. */
 		onask?: (text: string) => void;
+		onretry?: () => void;
 		/**
 		 * Last message in the transcript. Follow-ups belong only under the newest
 		 * answer -- on an older turn they are stale, and a column of them running up
@@ -710,7 +713,7 @@
 							<Button
 								variant="ghost"
 								size="icon"
-								aria-label="Hilfreich"
+								aria-label={t('message.helpful')}
 								class={rating === 1 ? 'text-primary' : 'text-muted-foreground'}
 								onclick={() => (rating = rating === 1 ? null : 1)}
 							>
@@ -719,20 +722,33 @@
 							<Button
 								variant="ghost"
 								size="icon"
-								aria-label="Nicht hilfreich"
+								aria-label={t('message.notHelpful')}
 								class={rating === -1 ? 'text-destructive' : 'text-muted-foreground'}
 								onclick={() => (rating = rating === -1 ? null : -1)}
 							>
 								<ThumbsDownIcon />
 							</Button>
+							<!-- Retry: re-generate this response. Only on the latest message,
+							     when not busy, and when the callback is provided. -->
+							{#if latest && !busy && onretry}
+								<Button
+									variant="ghost"
+									size="icon"
+									class="text-muted-foreground"
+									aria-label={t('message.retry')}
+									onclick={onretry}
+								>
+									<RefreshCwIcon />
+								</Button>
+							{/if}
 							<!-- The raw Markdown, not the rendered text: what the model actually
 							     wrote, so it can be pasted somewhere that renders it again. -->
 							<Button
 								variant="ghost"
 								size="icon"
 								class={copyFailed ? 'text-destructive' : 'text-muted-foreground'}
-								aria-label="Antwort als Markdown kopieren"
-								title={copyFailed ? 'Kopieren wurde vom Browser blockiert' : undefined}
+								aria-label={t('message.copyMarkdown')}
+								title={copyFailed ? t('message.copyBlocked') : undefined}
 								onclick={copyRaw}
 							>
 								{#if copied}<CheckIcon />{:else if copyFailed}<TriangleAlertIcon />{:else}<CopyIcon

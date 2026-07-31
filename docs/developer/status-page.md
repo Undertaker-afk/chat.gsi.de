@@ -35,7 +35,7 @@ The one moment anybody opens a status page is the moment something is broken. So
 | Source | Answers |
 |---|---|
 | `/metrics` via API key | live status and response time — **now** |
-| read-only SQLite | heartbeat history, 90-day bars — **the past** |
+| read-only SQLite | heartbeat history, minute and day bars — **the past** |
 
 Not redundant. An API key unlocks `/metrics` and nothing else useful (verified:
 `/api/status-page/heartbeat` times out, `/api/entry-page` carries no monitor
@@ -79,10 +79,15 @@ incident, and one invented duration or fabricated root cause ends that
 permanently. So every call has a deterministic fallback and the page labels which
 one a reader is looking at with an **AI** badge.
 
-`writer.py` holds the system prompt (five rules), an `IMPACT` map from monitor
-names to user-facing consequences (`keycloak` → "signing in"), and four functions —
-`incident_opened`, `escalated`, `resolved`, `all_clear` — each returning
+`writer.py` holds the system prompt (six rules), an `IMPACT` map from monitor
+names to user-facing consequences (`keycloak` → "signing in"), and four functions:
+`incident_opened`, `escalated`, `resolved`, `all_clear`, each returning
 `(text, ai_written)`.
+
+House style is enforced twice, in the prompt *and* in `_clean()`: markdown is
+stripped, and em and en dashes are rewritten to commas. A prompt rule is a
+request, not a guarantee, and this text renders straight into HTML with no human
+in between. `_clean()` runs before the JSON is parsed, so titles are covered too.
 
 > `_complete()` reads `content or reasoning_content`. gpt-oss returns
 > `content: null` when the token budget goes entirely to reasoning; that threw,
@@ -191,6 +196,50 @@ else:
 `partial_unknown` renders as **Mostly Operational**, and the banner text names
 which checks it is still waiting for. `daily_uptime()` returns `None` rather than
 1.0 for a day with no data, so an un-monitored day is grey, not green.
+
+### Two strips, two zoom levels
+
+Each component draws `minute_uptime(id, 90)` above `daily_uptime(id, 90)`. The
+thresholds differ by zoom, and that is the point: a day holds hundreds of checks
+so one failure among them is a blip and stays green until it is a pattern, while
+a minute usually holds exactly one check, so anything that failed in it is worth
+seeing.
+
+Kuma writes four heartbeat statuses and the buckets must count all of them.
+`0` down, `1` up, `3` maintenance — and `2` **pending**: the check failed but its
+retry budget was not spent, so Kuma has not called it down yet. Pending has its
+own counter and never folds into `up`; a failed request is not a successful one.
+It was originally counted as neither, which made a minute holding a single 403
+fall to `total == 0` and render **"not monitored"** — the page claiming it had
+not looked, about a minute in which it looked and got an error. Kuma draws
+pending amber; so do we, so the two pages cannot disagree about a failed request.
+
+An empty *day* is grey — "we were not watching" is the truth about it. An empty
+*minute* is not: at a 60 s interval, jitter regularly leaves a minute without a
+beat, and a component that was up either side of it was up during it. So a minute
+with no heartbeat inherits the last known state, is drawn faded, and says so in
+its tooltip. Only minutes before the first heartbeat we hold stay grey.
+
+### Severity is a kind of event, not just a size
+
+`SEVERITIES` in `store.py` must list every severity the agent writes —
+`minor`/`major`/`critical` (outages), plus `degraded` and `maintenance`. Anything
+missing from that tuple is silently rewritten to `minor` on insert, which is how
+a planned rollout once reached the page wearing an amber MINOR badge and how
+`snapshot()`'s `all(s == "maintenance")` branch could never fire. `STATUSES` does
+the same to `add_update`, rewriting unknown statuses to `investigating`.
+
+`web.SEVERITY_LABEL` then maps those to the reader's words: `degraded` → **Minor**
+(amber), the three outage severities → **Outage**/**Major Outage**/**Critical
+Outage** (red), `maintenance` → **Maintenance** (purple).
+
+### One Resolved, one all-clear
+
+`resolve()` writes the `resolved` update; the closing "everything is healthy
+again" note is filed under its own `all_clear` status and rendered **All Systems
+Operational**. Same event, two different statements — filing both as `resolved`
+printed the same heading twice. `add_update` does not move the incident's status
+for `all_clear`, so the incident stays resolved.
 
 ## Provisioning
 

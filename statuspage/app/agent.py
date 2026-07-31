@@ -158,7 +158,11 @@ class Agent:
             # second one: one user-visible event, one entry.
             incident = open_incidents[0]
             merged = self.store.add_components(incident.id, [monitor.name])
-            self.store.set_severity(incident.id, self._severity(merged))
+            # A second component going down inside the same rollout is still the
+            # rollout, not an outage -- only escalate when something is failing
+            # for a reason we cannot attribute to maintenance.
+            if not (verdict.kind == "maintenance" and incident.severity == "maintenance"):
+                self.store.set_severity(incident.id, self._severity(merged))
             facts["new_components"] = [monitor.name]
             facts["all_components"] = merged
             body, ai = self.writer.incident_escalated(facts)
@@ -255,14 +259,16 @@ class Agent:
 
             # The "all systems operational" note, published only when NOTHING is
             # left failing -- not once per resolved incident, which would announce
-            # all-clear while another outage is still running.
+            # all-clear while another outage is still running. Filed under
+            # "all_clear" rather than "resolved" so the incident does not show
+            # two Resolved headings saying much the same thing.
             if not still_down and not self.store.open_incidents():
                 note, note_ai = self.writer.all_clear({
                     "recovered_components": incident.components,
                     "monitored_components": [m.name for m in all_monitors],
                     "duration_minutes": facts["duration_minutes"],
                 })
-                self.store.add_update(incident.id, "resolved", note, note_ai)
+                self.store.add_update(incident.id, "all_clear", note, note_ai)
 
     def _still_slow(self, incident: Any, by_name: dict[str, Monitor]) -> bool:
         """Whether any component of a degradation incident is still slow.

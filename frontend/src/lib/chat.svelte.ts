@@ -204,6 +204,27 @@ export class ChatSession {
 		if (this.conversationId) await this.open(this.conversationId);
 	}
 
+	/**
+	 * Re-generate the last response: remove the last assistant message (and
+	 * the user message that triggered it), then re-send the same question.
+	 * Like `edit()` but without changing the text — the server forks the
+	 * branch so the old version is still reachable through version control.
+	 */
+	async retry() {
+		if (this.busy) return;
+		// Find the last user message — there must be one, and it must be followed
+		// by an assistant reply (which is what we are regenerating).
+		const last = this.messages.at(-1);
+		if (!last || last.role !== 'assistant') return;
+		const idx = this.messages.findLastIndex((m) => m.role === 'user');
+		if (idx === -1) return;
+		const userMsg = this.messages[idx];
+		// Drop the user message and everything after it.
+		this.messages = this.messages.slice(0, idx);
+		await this.send(userMsg.content, userMsg.parentId ?? null, userMsg.images, userMsg.files);
+		if (this.conversationId) await this.open(this.conversationId);
+	}
+
 	// --- sending ------------------------------------------------------------
 
 	stop() {

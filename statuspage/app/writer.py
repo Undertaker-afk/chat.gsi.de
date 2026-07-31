@@ -45,7 +45,9 @@ useful; "conversations cannot be loaded or saved" is.
 3. Be calm and specific. No apologies beyond a brief one, no filler, no marketing \
 voice, no emoji, no exclamation marks.
 4. Plain prose. No markdown, no headings, no bullet points, no links.
-5. Never speculate about data loss or security. If asked implicitly, say the \
+5. Never use an em dash or an en dash. Use a comma, a full stop or parentheses \
+instead. Hyphens inside ordinary words like "sign-in" are fine.
+6. Never speculate about data loss or security. If asked implicitly, say the \
 impact is still being assessed."""
 
 #: Names people recognise, for components whose monitor name is infrastructure
@@ -310,15 +312,24 @@ def _facts_block(facts: dict[str, Any]) -> str:
 
 
 def _clean(text: Any) -> str:
-    """Strip the markdown the model was told not to produce.
+    """Strip the markdown and punctuation the model was told not to produce.
 
     Instructions are a request, not a guarantee, and this renders into HTML --
     so leftover ** and ### would show up literally on the page.
+
+    Em and en dashes are rewritten here rather than only asked for in the system
+    prompt, for the same reason: the rule holds even when the model ignores it.
+    Runs before the JSON is parsed, so it covers the title and body alike.
     """
     if not text:
         return ""
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", str(text).strip())
     text = re.sub(r"\*\*|__|^#+\s*", "", text, flags=re.MULTILINE)
+    # A comma reads correctly wherever the model would have put a dash between
+    # clauses, and in a list ("components - Chat interface, ...") it is what the
+    # sentence wanted anyway. Ordinary hyphens are left alone.
+    text = re.sub(r"\s*[‒–—―]+\s*", ", ", text)
+    text = re.sub(r",\s*,+", ",", text)
     return text.strip()
 
 

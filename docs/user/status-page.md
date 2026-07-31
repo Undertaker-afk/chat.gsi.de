@@ -14,7 +14,14 @@ Two different things, on purpose.
 ## The status page
 
 `http://status.lab` — modelled on githubstatus.com. A banner, one row per
-component with 90 days of uptime bars, and an incident history.
+component, and an incident history.
+
+Each component carries two strips of bars, the same history at two zoom levels:
+the **last 90 minutes**, one bar per minute, and below it the **last 90 days**,
+one bar per day. The minute strip answers "is it working right now, and was it a
+moment ago" — a three-minute outage is a whole third of a bar there and invisible
+inside a day. Minutes with no check inherit the previous state and are drawn
+faded; hover any bar for the exact reading.
 
 It is built to work when nothing else does: it shares no database with the
 application, has no dependency on it starting, and its own health check reports
@@ -43,6 +50,23 @@ because declaring victory early and re-opening reads far worse than resolving la
 
 Correlated failures fold into **one** incident. When the database goes down the
 chat interface fails moments later; that is one event to a reader, not two.
+
+The badge on an incident says what kind of event it is, and the colour follows
+the wording:
+
+| Badge | Means |
+|---|---|
+| **Minor** (amber) | it still works, but it is slow |
+| **Outage** / **Major Outage** / **Critical Outage** (red) | it does not work; how much red follows how much is down |
+| **Maintenance** (purple) | it is down on purpose — a deployment, not a fault |
+
+Red is reserved for things that are actually broken. A routine rollout wearing a
+red badge is the fastest way to teach people that red means nothing.
+
+A resolved incident ends with **Resolved** — what recovered and how long it took —
+and, once *every* component is healthy again, one closing **All Systems
+Operational** note. They are two different statements, and the page labels them
+that way rather than printing "Resolved" twice.
 
 An **AI** badge marks text a language model wrote. What the model does is turn
 `keycloak: connect ECONNREFUSED` into "signing in is unavailable" — **it writes

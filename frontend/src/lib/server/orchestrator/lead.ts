@@ -76,24 +76,16 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 	// only ever add to an answer.
 	//
 	// The RAW question, not the standalone rewrite: the rewrite is a model call we
-	// would otherwise have to wait for before starting, and these are keyword
-	// searches against external indexes where a follow-up's missing antecedent
-	// costs far less than the delay would.
-	const documentWork = runDocumentsAgent(input.question, corpusIds, controller.signal).catch(
-		() => null
-	);
-
-	/** External sources, in the order they will be cited. Filled just before the answer. */
-	let externalSources: DocumentSource[] = [];
-
+	// Only in deep mode. Fast mode does a single retrieval pass and the
+	// external search adds latency without the sub-agent fan-out to hide it.
+	let documentWork: Promise<DocumentFindings | null> = Promise.resolve(null);
 	try {
 		const question = await standalone(input, controller.signal);
+
 
 		if (input.mode === 'fast') {
 			rounds = 1;
 			yield { type: 'status', phase: 'retrieving', round: 1 };
-			yield { type: 'documents', state: 'searching' };
-
 			const chunks = await retrieve(question, {
 				limit: config.orchestrator.contextChunksFast,
 				signal: controller.signal,
@@ -105,8 +97,6 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 			const documents = await documentWork;
 			externalSources = documents?.sources ?? [];
 			yield* documentEvents(documents, pool.size);
-
-			yield { type: 'status', phase: 'writing', round: 1 };
 			yield* answer(
 				`Question: ${input.question}\n\nSources:\n\n${formatContext(chunks)}` +
 					externalContext(documents, pool.size),
@@ -117,7 +107,11 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 				pool.size
 			);
 		} else {
-			const findings: Finding[] = [];
+			// Start the documents agent alongside the planner so its external
+			// searches overlap with the first retrieval round.
+			documentWork = runDocumentsAgent(input.question, corpusIds, controller.signal).catch(
+				() => null
+			);
 			const { subqueries, imageQuery } = await plan(question, controller.signal);
 			let queries = subqueries;
 
@@ -258,6 +252,8 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 				external: { origin: source.origin, read: source.read }
 			};
 		}
+
+
 	} catch (error) {
 		partial = true;
 		const aborted = controller.signal.aborted;

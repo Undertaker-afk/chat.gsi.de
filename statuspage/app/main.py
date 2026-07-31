@@ -84,7 +84,8 @@ class Handler(BaseHTTPRequestHandler):
     def _current(self) -> str:
         snap = self.agent.snapshot()
         daily = {m.id: self.kuma.daily_uptime(m.id, 90) for m in snap["monitors"]}
-        return web.render_current(snap, daily, self._uptimes(snap))
+        minutes = {m.id: self.kuma.minute_uptime(m.id, 90) for m in snap["monitors"]}
+        return web.render_current(snap, daily, self._uptimes(snap), minutes)
 
     def _uptimes(self, snap) -> dict[int, float | None]:
         return {m.id: self.kuma.overall_uptime(m.id, 90) for m in snap["monitors"]}
