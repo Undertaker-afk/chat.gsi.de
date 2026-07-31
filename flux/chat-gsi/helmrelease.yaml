@@ -51,15 +51,15 @@ spec:
         - s3-f.lab
     image:
       frontend:
-        repository: 192.168.50.112:5000/chat-gsi-frontend
+        repository: ghcr.io/undertaker-afk/chat-gsi-frontend
         tag: dev
         pullPolicy: Always
       crawler:
-        repository: 192.168.50.112:5000/chat-gsi-crawler
+        repository: ghcr.io/undertaker-afk/chat-gsi-crawler
         tag: dev
         pullPolicy: Always
       statuspage:
-        repository: 192.168.50.112:5000/chat-gsi-statuspage
+        repository: ghcr.io/undertaker-afk/chat-gsi-statuspage
         tag: dev
         pullPolicy: Always
     keycloak:

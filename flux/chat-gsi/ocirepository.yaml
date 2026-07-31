@@ -1,9 +1,10 @@
-# The chart, pulled from the lab's OCI registry.
+# The chart, pulled from ghcr.io (published by .github/workflows/publish.yml).
 #
-# insecure: true because the registry is plain HTTP (192.168.50.112:5000, the
-# same one the node pulls images from). To deliver from ttl.sh instead, run
-# `python3 helm_push.py` and change url to oci://ttl.sh/<repo>/chat-gsi and the
-# ref tag to "6h" (ttl.sh is public, so drop `insecure`).
+# ghcr is HTTPS and this package is public, so no `insecure` and no `secretRef`.
+# If the package is private, add a docker-registry secret with a read:packages
+# PAT and reference it here via `secretRef: { name: ghcr-auth }`.
+# Alternatives: the lab registry (oci://192.168.50.112:5000/charts/chat-gsi with
+# insecure: true) or ttl.sh (python3 helm_push.py, tag "6h").
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
@@ -11,8 +12,7 @@ metadata:
   namespace: chat-gsi-flux
 spec:
   interval: 5m
-  url: oci://192.168.50.112:5000/charts/chat-gsi
-  insecure: true
+  url: oci://ghcr.io/undertaker-afk/charts/chat-gsi
   # Extract the Helm chart layer from the OCI artifact.
   layerSelector:
     mediaType: "application/vnd.cncf.helm.chart.content.v1.tar+gzip"
