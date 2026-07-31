@@ -8,11 +8,11 @@ These docs are split by who is reading them. Start in the right place.
 
 | You are | Start here | What it covers |
 |---|---|---|
-| Using the assistant | [user/](user/) | Logging in, asking questions, files, quotas, what you are allowed to see |
-| Running a department | [user/managing-your-group.md](user/managing-your-group.md) | Granting your team access to knowledge bases |
-| Administering it | [user/administration.md](user/administration.md) | Groups, sources, crawls, the audit log |
-| Building or operating it | [developer/](developer/) | Setup, architecture, testing, observability, the runbook |
-| Deciding about it | [executive/](executive/) | What it does, what it cost, what the risks are |
+| Using the assistant | [user/](docs/user/) | Logging in, asking questions, files, quotas, what you are allowed to see |
+| Running a department | [user/managing-your-group.md](docs/user/managing-your-group.md) | Granting your team access to knowledge bases |
+| Administering it | [user/administration.md](docs/user/administration.md) | Groups, sources, crawls, the audit log |
+| Building or operating it | [developer/](docs/developer/) | Setup, architecture, testing, observability, the runbook |
+| Deciding about it | [executive/](docs/executive/) | What it does, what it cost, what the risks are |
 
 ## Scope of these docs
 
