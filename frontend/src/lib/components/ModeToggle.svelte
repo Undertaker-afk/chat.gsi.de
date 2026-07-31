@@ -5,12 +5,13 @@
 	import { setMode, userPrefersMode } from 'mode-watcher';
 	import { Button } from '$lib/components/ui/button';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { t } from '$lib/language.svelte';
 </script>
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="ghost" size="icon" aria-label="Design wechseln">
+			<Button {...props} variant="ghost" size="icon" aria-label={t('theme.switch')}>
 				<SunIcon
 					class="size-[1.2rem] scale-100 rotate-0 !transition-all dark:scale-0 dark:-rotate-90"
 				/>
@@ -27,21 +28,21 @@
 				data-selected={userPrefersMode.current === 'light' ? '' : undefined}
 			>
 				<SunIcon />
-				Hell
+				{t('theme.light')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item
 				onclick={() => setMode('dark')}
 				data-selected={userPrefersMode.current === 'dark' ? '' : undefined}
 			>
 				<MoonIcon />
-				Dunkel
+				{t('theme.dark')}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item
 				onclick={() => setMode('system')}
 				data-selected={userPrefersMode.current === 'system' ? '' : undefined}
 			>
 				<MonitorIcon />
-				System
+				{t('theme.system')}
 			</DropdownMenu.Item>
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>

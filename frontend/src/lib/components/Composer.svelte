@@ -11,6 +11,7 @@
 	import FileTextIcon from '@lucide/svelte/icons/file-text';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { formatBytes } from '$lib/format';
+	import { t } from '$lib/language.svelte';
 
 	let {
 		mode = $bindable<'fast' | 'deep'>('fast'),
@@ -145,14 +146,14 @@
 				const res = await fetch('/api/uploads', { method: 'POST', body: form });
 				if (!res.ok) {
 					const detail = await res.json().catch(() => null);
-					uploadError = detail?.message ?? `Upload fehlgeschlagen (${res.status})`;
+					uploadError = detail?.message ?? t('composer.uploadFailedStatus', { status: String(res.status) });
 					continue;
 				}
 				const saved = await res.json();
 				images.push({ id: saved.id, url: saved.url, filename: saved.filename, fresh: true });
 				recentLoaded = false; // history is stale now; refetch when next opened
 			} catch {
-				uploadError = 'Upload fehlgeschlagen.';
+				uploadError = t('composer.uploadFailed');
 			} finally {
 				uploading -= 1;
 			}
@@ -256,12 +257,12 @@
 					<div class="group relative">
 						<img
 							src={image.url}
-							alt={image.filename ?? `Anhang ${i + 1}`}
+							alt={image.filename ?? t('composer.attachment', { n: i + 1 })}
 							class="size-16 rounded-lg border object-cover"
 						/>
 						<button
 							type="button"
-							aria-label="Anhang entfernen"
+							aria-label={t('composer.removeAttachment')}
 							class="bg-background/90 absolute -top-1.5 -right-1.5 rounded-full border p-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
 							onclick={() => discard(i)}
 						>
@@ -297,7 +298,7 @@
 						</span>
 						<button
 							type="button"
-							aria-label="Datei entfernen"
+							aria-label={t('composer.removeFile')}
 							class="hover:bg-background rounded-full p-0.5"
 							onclick={() => detach(i)}
 						>
@@ -330,7 +331,7 @@
 							variant="ghost"
 							size="icon"
 							class="text-muted-foreground order-2 shrink-0 rounded-full"
-							aria-label="Anhängen"
+							aria-label={t('composer.attach')}
 							disabled={busy}
 						>
 							<PlusIcon />
@@ -345,23 +346,23 @@
 							disabled={images.length + uploading >= MAX_IMAGES}
 						>
 							<UploadIcon />
-							Hochladen
+							{t('composer.upload')}
 						</DropdownMenu.Item>
 
 						<DropdownMenu.Sub>
 							<DropdownMenu.SubTrigger disabled={images.length + uploading >= MAX_IMAGES}>
 								<HistoryIcon />
-								Verlauf
+								{t('composer.history')}
 							</DropdownMenu.SubTrigger>
 							<!-- side="right": the submenu unfolds beside the drop-up, not over it. -->
 							<DropdownMenu.SubContent side="right" sideOffset={4} class="w-64">
 								{#if !recentLoaded}
 									<div class="text-muted-foreground flex items-center gap-2 px-2 py-3 text-sm">
 										<Spinner class="size-4" />
-										Wird geladen…
+										{t('common.loading')}
 									</div>
 								{:else if recent.length === 0}
-									<p class="text-muted-foreground px-2 py-3 text-sm">Noch keine Uploads</p>
+									<p class="text-muted-foreground px-2 py-3 text-sm">{t('composer.noRecentUploads')}</p>
 								{:else}
 									<DropdownMenu.Group>
 										{#each recent as item (item.id)}
@@ -375,7 +376,7 @@
 													loading="lazy"
 													class="size-6 shrink-0 rounded border object-cover"
 												/>
-												<span class="truncate">{item.filename ?? 'Ohne Namen'}</span>
+												<span class="truncate">{item.filename ?? t('common.unnamed')}</span>
 												<span class="text-muted-foreground ml-auto shrink-0 text-xs tabular-nums">
 													{formatBytes(item.bytes)}
 												</span>
@@ -389,17 +390,17 @@
 						<DropdownMenu.Sub>
 							<DropdownMenu.SubTrigger>
 								<FileTextIcon />
-								Generiert
+								{t('composer.generated')}
 							</DropdownMenu.SubTrigger>
 							<DropdownMenu.SubContent side="right" sideOffset={4} class="w-72">
 								{#if !generatedLoaded}
 									<div class="text-muted-foreground flex items-center gap-2 px-2 py-3 text-sm">
 										<Spinner class="size-4" />
-										Wird geladen…
+										{t('common.loading')}
 									</div>
 								{:else if generated.length === 0}
 									<p class="text-muted-foreground px-2 py-3 text-sm">
-										Noch keine gespeicherten Dateien
+										{t('composer.noGenerated')}
 									</p>
 								{:else}
 									<DropdownMenu.Group>
@@ -442,8 +443,7 @@
 				oninput={grow}
 				{onkeydown}
 				{onpaste}
-				rows="1"
-				placeholder="Frage eingeben…"
+				placeholder={t('composer.placeholder')}
 				class="placeholder:text-muted-foreground min-h-0 resize-none border-0 bg-transparent px-2 py-2 text-[0.95rem] leading-6 outline-none
 					{expanded ? 'order-1 w-full basis-full' : 'order-3 flex-1'}"
 			></textarea>
@@ -456,8 +456,7 @@
 						type="button"
 						size="icon"
 						variant="secondary"
-						class="rounded-full"
-						aria-label="Abbrechen"
+						aria-label={t('common.cancel')}
 						onclick={onstop}
 					>
 						<SquareIcon />
@@ -466,8 +465,7 @@
 					<Button
 						type="submit"
 						size="icon"
-						class="rounded-full"
-						aria-label="Senden"
+						aria-label={t('composer.send')}
 						disabled={!draft.trim()}
 					>
 						<ArrowUpIcon />
@@ -478,10 +476,8 @@
 	</div>
 
 	<p class="text-muted-foreground mt-2 text-center text-xs">
-		{mode === 'deep'
-			? 'Gründlich: mehrere Suchläufe, dauert länger.'
-			: 'Schnell: eine Suche, sofortige Antwort.'}
-		· Enter zum Senden, Shift+Enter für neue Zeile
+		{mode === 'deep' ? t('composer.deepNote') : t('composer.fastNote')}
+		· {t('composer.enterHint')}
 	</p>
 
 	<!--
@@ -491,12 +487,9 @@
 	-->
 	<p class="text-muted-foreground mt-1 text-center text-xs">
 		{#if knowledgeBases.length}
-			Durchsucht: {knowledgeBases.map((kb) => kb.label).join(', ')}
+			{t('composer.searches', { list: knowledgeBases.map((kb) => kb.label).join(', ') })}
 		{:else}
-			<span class="text-destructive">
-				Ihnen ist noch keine Wissensbasis zugewiesen — bitte wenden Sie sich an Ihre
-				Abteilungsleitung.
-			</span>
+			<span class="text-destructive">{t('composer.noKnowledgeBase')}</span>
 		{/if}
 	</p>
 </form>

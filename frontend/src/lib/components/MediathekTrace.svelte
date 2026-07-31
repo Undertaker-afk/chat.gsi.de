@@ -10,6 +10,7 @@
 	 * DocumentTrace -- "looked and found nothing" and "never ran" must not look
 	 * alike.
 	 */
+	import { t } from '$lib/language.svelte';
 	import type { ImageStep } from '$lib/chat.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -25,14 +26,14 @@
 {#if image.state === 'searching'}
 	<p class="text-muted-foreground flex items-center gap-2 text-sm">
 		<Spinner class="size-3.5" />
-		Mediathek wird durchsucht …
+		{t('trace.searchingMedia')}
 	</p>
 {:else if image.state === 'none'}
 	<p class="text-muted-foreground flex items-center gap-2 text-xs">
 		<ImageIcon class="size-3.5 shrink-0" />
-		Kein passendes Bild gefunden
+		{t('trace.noMatchingImage')}
 		{#if image.candidates}
-			({image.candidates} geprüft)
+			({t('trace.checked', { n: image.candidates })})
 		{/if}
 	</p>
 {:else}
@@ -41,11 +42,11 @@
 			{#snippet child({ props })}
 				<Button {...props} variant="ghost" size="sm" class="w-full justify-start font-normal">
 					<ImageIcon data-icon="inline-start" />
-					Mediathek
+					{t('trace.mediaLibrary')}
 					<Badge variant="secondary" class="ml-1">1</Badge>
 					{#if image.candidates}
 						<span class="text-muted-foreground ml-1 text-xs">
-							{image.candidates} geprüft
+							{t('trace.checked', { n: image.candidates })}
 						</span>
 					{/if}
 					<ChevronDownIcon
@@ -75,14 +76,14 @@
 						<span class="block truncate text-sm font-medium">{image.title}</span>
 						{#if image.credit}
 							<span class="text-muted-foreground block truncate text-xs">
-								Bild: {image.credit}
+								{t('trace.imageCredit', { credit: image.credit })}
 							</span>
 						{/if}
 						{#if image.effectiveQuery}
 							<!-- Only present when the search had to be broadened, so a less
 							     specific picture than asked for is never silent. -->
 							<span class="text-muted-foreground block truncate text-xs">
-								Suche erweitert auf „{image.effectiveQuery}“
+								{t('trace.searchBroadened', { query: image.effectiveQuery })}
 							</span>
 						{/if}
 					</span>

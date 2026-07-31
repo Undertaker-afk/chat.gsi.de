@@ -11,6 +11,7 @@
 	 * it looked and found nothing or never ran -- and "Indico has nothing on this"
 	 * is a genuine, useful answer.
 	 */
+	import { t } from '$lib/language.svelte';
 	import type { DocumentStep } from '$lib/chat.svelte';
 	import { viewer, isViewableDocument } from '$lib/viewer.svelte';
 	import { Badge } from '$lib/components/ui/badge';
@@ -27,11 +28,11 @@
 
 	let { documents }: { documents: DocumentStep } = $props();
 
-	const ORIGINS = {
-		indico: { label: 'Indico', icon: PresentationIcon },
-		repository: { label: 'Repository', icon: BookMarkedIcon },
-		'corpus-link': { label: 'Verlinkt', icon: LinkIcon }
-	} as const;
+	const ORIGINS = $derived({
+		indico: { label: t('trace.originIndico'), icon: PresentationIcon },
+		repository: { label: t('trace.originRepository'), icon: BookMarkedIcon },
+		'corpus-link': { label: t('trace.originLinked'), icon: LinkIcon }
+	});
 
 	const sources = $derived(documents.sources ?? []);
 	// Only the documents whose text we actually read. The rest are abstracts, and
@@ -42,15 +43,15 @@
 {#if documents.state === 'searching'}
 	<p class="text-muted-foreground flex items-center gap-2 text-sm">
 		<Spinner class="size-3.5" />
-		Externe Dokumente werden durchsucht …
+		{t('trace.searchingDocs')}
 	</p>
 {:else if documents.state === 'none'}
 	<p class="text-muted-foreground flex items-center gap-2 text-xs">
 		<FileSearchIcon class="size-3.5 shrink-0" />
 		{#if documents.searched}
-			Keine passenden externen Dokumente ({documents.searched} geprüft)
+			{t('trace.noMatchingDocs', { n: documents.searched })}
 		{:else}
-			Keine externen Dokumente gefunden
+			{t('trace.noDocsFound')}
 		{/if}
 	</p>
 {:else}
@@ -59,11 +60,11 @@
 			{#snippet child({ props })}
 				<Button {...props} variant="ghost" size="sm" class="w-full justify-start font-normal">
 					<FileSearchIcon data-icon="inline-start" />
-					Externe Dokumente
+					{t('trace.externalDocs')}
 					<Badge variant="secondary" class="ml-1">{sources.length}</Badge>
 					{#if readCount > 0}
 						<span class="text-muted-foreground ml-1 text-xs">
-							{readCount} gelesen
+							{t('trace.readCount', { n: readCount })}
 						</span>
 					{/if}
 					<ChevronDownIcon
@@ -115,7 +116,7 @@
 										<!-- repository.gsi.de blocks automated file access, so its
 										     records are only ever an abstract. Saying so is the
 										     difference between a source and a claim. -->
-										<span class="text-amber-600 dark:text-amber-500">nur Metadaten</span>
+										<span class="text-amber-600 dark:text-amber-500">{t('trace.metadataOnly')}</span>
 									{/if}
 									{#if source.context}
 										<span class="min-w-0 truncate">{source.context}</span>

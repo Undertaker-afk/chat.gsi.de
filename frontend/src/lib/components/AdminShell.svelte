@@ -4,6 +4,7 @@
 	 * right work area, with a back link to the chat. Kept as one component so the
 	 * two pages cannot drift apart visually.
 	 */
+	import { t } from '$lib/language.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Separator } from '$lib/components/ui/separator';
 	import Logo from './Logo.svelte';
@@ -47,7 +48,7 @@
 
 <div class="bg-background text-foreground min-h-svh">
 	<header class="flex items-center gap-3 border-b px-4 py-3">
-		<Button variant="ghost" size="icon" href="/" aria-label="Zurück zum Chat">
+		<Button variant="ghost" size="icon" href="/" aria-label={t('adminShell.backToChat')}>
 			<ArrowLeftIcon />
 		</Button>
 		<Logo class="h-5 w-auto" />
@@ -78,13 +79,13 @@
 						: 'justify-center'}"
 				>
 					{#if railOpen}
-						<span class="text-muted-foreground text-xs font-medium">Kategorien</span>
+						<span class="text-muted-foreground text-xs font-medium">{t('adminShell.categories')}</span>
 					{/if}
 					<Button
 						variant="ghost"
 						size="icon"
 						class="size-7 shrink-0"
-						aria-label={railOpen ? 'Kategorien einklappen' : 'Kategorien ausklappen'}
+						aria-label={railOpen ? t('adminShell.collapseCategories') : t('adminShell.expandCategories')}
 						onclick={() => (railOpen = !railOpen)}
 					>
 						{#if railOpen}<PanelLeftCloseIcon />{:else}<PanelLeftOpenIcon />{/if}

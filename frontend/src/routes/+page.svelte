@@ -23,6 +23,9 @@
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
+	// Only `t` here: `language` would collide with viewer.target.language (the
+	// code-highlighting language passed to FileViewer), which is unrelated.
+	import { t } from '$lib/language.svelte';
 
 	let { data } = $props();
 
@@ -32,12 +35,13 @@
 
 	onMount(() => chat.loadConversations());
 
-	const SUGGESTIONS = [
-		'Wie setze ich mein GSI Linux-Passwort zurück?',
-		'Welche Linux-Dienste bietet GSI an?',
-		'Wie beantrage ich einen Linux-Account?',
-		'Was ist das Lustre-Dateisystem?'
-	];
+	// Derived so the examples follow the interface language.
+	const SUGGESTIONS = $derived([
+		t('page.suggestion1'),
+		t('page.suggestion2'),
+		t('page.suggestion3'),
+		t('page.suggestion4')
+	]);
 
 	// Role-gated entries. The pages enforce the role themselves (hooks.server.ts
 	// and each load); this only decides what is worth showing.
@@ -102,7 +106,7 @@
 					{#if currentTitle}
 						<span class="truncate text-sm font-medium">{currentTitle}</span>
 					{:else}
-						<span class="text-muted-foreground truncate text-sm">Neue Unterhaltung</span>
+						<span class="text-muted-foreground truncate text-sm">{t('sidebar.newChat')}</span>
 					{/if}
 				</div>
 
@@ -113,7 +117,7 @@
 						<DropdownMenu.Root>
 							<DropdownMenu.Trigger>
 								{#snippet child({ props })}
-									<Button {...props} variant="ghost" size="icon" aria-label="Konto">
+									<Button {...props} variant="ghost" size="icon" aria-label={t('page.account')}>
 										<Avatar.Root class="size-7">
 											<Avatar.Fallback class="text-xs">{initials}</Avatar.Fallback>
 										</Avatar.Root>
@@ -131,27 +135,27 @@
 								<DropdownMenu.Group>
 									<DropdownMenu.Item onclick={() => (settingsOpen = true)}>
 										<SettingsIcon />
-										Einstellungen
+										{t('settings.title')}
 									</DropdownMenu.Item>
 									<DropdownMenu.Item onclick={() => (location.href = '/files')}>
 										<FilesIcon />
-										Generierte Dateien
+										{t('page.generatedFiles')}
 									</DropdownMenu.Item>
 									{#if canManage}
 										<DropdownMenu.Item onclick={() => (location.href = '/management')}>
 											<UsersIcon />
-											Verwaltung
+											{t('page.management')}
 										</DropdownMenu.Item>
 									{/if}
 									{#if canAdminister}
 										<DropdownMenu.Item onclick={() => (location.href = '/admin')}>
 											<ShieldIcon />
-											Administration
+											{t('page.administration')}
 										</DropdownMenu.Item>
 									{/if}
 									<DropdownMenu.Item onclick={() => (location.href = '/logout')}>
 										<LogOutIcon />
-										Abmelden
+										{t('page.logout')}
 									</DropdownMenu.Item>
 								</DropdownMenu.Group>
 							</DropdownMenu.Content>
@@ -169,10 +173,9 @@
 								<Empty.Media variant="icon">
 									<MessageSquareIcon />
 								</Empty.Media>
-								<Empty.Title>Fragen Sie etwas über GSI</Empty.Title>
+								<Empty.Title>{t('page.emptyTitle')}</Empty.Title>
 								<Empty.Description>
-									Antworten stammen ausschließlich aus dem GSI-Wiki — mit Quellenangaben zum
-									Nachlesen.
+									{t('page.emptyDescription')}
 								</Empty.Description>
 							</Empty.Header>
 							<Empty.Content>
@@ -224,7 +227,7 @@
 							variant="ghost"
 							size="icon"
 							class="ml-auto shrink-0"
-							aria-label="Seitenbereich schließen"
+							aria-label={t('page.closePanel')}
 							onclick={() => viewer.close()}
 						>
 							<XIcon />

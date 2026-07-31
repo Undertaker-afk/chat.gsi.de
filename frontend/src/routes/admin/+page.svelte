@@ -41,6 +41,7 @@
 	import SaveIcon from '@lucide/svelte/icons/save';
 	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
 	import { formatBytes } from '$lib/format';
+import { t } from '$lib/language.svelte';
 
 	let { data } = $props();
 
@@ -116,12 +117,12 @@
 					: { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 			});
 		} catch (e) {
-			errorMessage = `Netzwerkfehler: ${e instanceof Error ? e.message : String(e)}`;
+			errorMessage = t('admin.networkError', { error: e instanceof Error ? e.message : String(e) });
 			return null;
 		}
 		if (res.ok) return (await res.json().catch(() => ({}))) ?? {};
 		const detail = await res.json().catch(() => null);
-		errorMessage = detail?.message ?? `Speichern fehlgeschlagen (HTTP ${res.status})`;
+		errorMessage = detail?.message ?? t('admin.saveFailed', { status: String(res.status) });
 		return null;
 	}
 
@@ -131,8 +132,8 @@
 
 	const sweepMessage = (b: { hidden?: number; unhidden?: number }) =>
 		b.hidden || b.unhidden
-			? `Gespeichert. ${b.hidden ?? 0} Unterhaltung(en) ausgeblendet, ${b.unhidden ?? 0} wieder sichtbar.`
-			: 'Gespeichert.';
+			? t('admin.sweepSaved', { hidden: b.hidden ?? 0, unhidden: b.unhidden ?? 0 })
+			: t('common.saved');
 
 	$effect(() => {
 		if (selected !== null) loadMembers(selected);
@@ -288,7 +289,7 @@
 				});
 				if (!ok) break;
 			}
-			if (!errorMessage) message = `Gespeichert: ${changed.length} Änderung(en).`;
+			if (!errorMessage) message = t('admin.changesSaved', { count: changed.length });
 			await Promise.all([loadMembers(group.id), refreshGroups()]);
 		} finally {
 			busy = false;
@@ -409,7 +410,7 @@
 				});
 				if (!ok) break;
 			}
-			if (!errorMessage) message = `Gespeichert: ${changed.length} Änderung(en).`;
+			if (!errorMessage) message = t('admin.changesSaved', { count: changed.length });
 			await loadSources();
 		} finally {
 			busy = false;
@@ -430,14 +431,14 @@
 	// honestly says "eingereiht" rather than claiming a crawl is under way.
 
 	const MODES = [
-		{ id: 'changed-only', label: 'Nur Geändertes',
-		  hint: 'Fragt die Quelle nach der Revision und lädt unveränderte Seiten gar nicht erst. Schonendste Variante.' },
-		{ id: 'incremental', label: 'Inkrementell',
-		  hint: 'Lädt jede Seite und vergleicht den Inhalts-Hash. Findet auch Änderungen ohne Revisionsangabe.' },
-		{ id: 'skip-existing', label: 'Nur Neues',
-		  hint: 'Überspringt alles Bekannte ungeprüft. Schnell, bemerkt aber keine Bearbeitungen.' },
-		{ id: 'full', label: 'Vollständig',
-		  hint: 'Lädt und embeddet alles neu, unabhängig vom Hash. Teuer — nur nach Modellwechsel.' }
+		{ id: 'changed-only', label: t('admin.modeChangedOnly'),
+		  hint: t('admin.modeChangedOnlyHint') },
+		{ id: 'incremental', label: t('admin.modeIncremental'),
+		  hint: t('admin.modeIncrementalHint') },
+		{ id: 'skip-existing', label: t('admin.modeSkipExisting'),
+		  hint: t('admin.modeSkipExistingHint') },
+		{ id: 'full', label: t('admin.modeFull'),
+		  hint: t('admin.modeFullHint') }
 	] as const;
 
 	/** Per-source mode picker for the Start button. */
@@ -460,30 +461,30 @@
 		const body = await crawlAction(id, 'start', { mode: modeOf(id) });
 		if (!body) return;
 		message = body.alreadyQueued
-			? 'Für diese Quelle steht bereits ein Crawl in der Warteschlange.'
-			: 'Crawl eingereiht — startet beim nächsten Crawler-Durchlauf (max. 5 Min).';
+			? t('admin.alreadyQueued')
+			: t('admin.crawlQueued');
 	}
 
 	async function stopCrawl(id: number, slug: string) {
 		// Confirmed because it is not free to undo: the run ends where it is and
 		// the corpus keeps whatever it had, so restarting means crawling from the
 		// beginning again -- hours, at the wiki's 5 s crawl delay.
-		if (!confirm(`Crawl von „${slug}“ wirklich stoppen? Der Lauf endet an der nächsten Seite; bereits indexierte Seiten bleiben erhalten.`)) return;
+		if (!confirm(t('admin.confirmStopCrawl', { slug }))) return;
 		if (await crawlAction(id, 'stop')) {
-			message = 'Stopp angefordert — der Lauf endet an der nächsten Seitengrenze.';
+			message = t('admin.stopRequested');
 		}
 	}
 
 	async function pauseCrawl(id: number, paused: boolean) {
 		if (await crawlAction(id, paused ? 'pause' : 'resume')) {
 			message = paused
-				? 'Pausiert. Ein laufender Crawl wartet, geplante Läufe starten nicht.'
-				: 'Fortgesetzt.';
+				? t('admin.crawlPaused')
+				: t('admin.crawlResumed');
 		}
 	}
 
 	async function cancelCrawl(id: number) {
-		if (await crawlAction(id, 'cancel')) message = 'Warteschlange geleert.';
+		if (await crawlAction(id, 'cancel')) message = t('admin.crawlCancelled');
 	}
 
 	// --- schedule --------------------------------------------------------------
@@ -492,14 +493,14 @@
 	// minutes; offered in the units people actually think in.
 
 	const INTERVALS = [
-		{ minutes: null, label: 'Kein Automatik-Crawl' },
-		{ minutes: 60, label: 'Stündlich' },
-		{ minutes: 360, label: 'Alle 6 Stunden' },
-		{ minutes: 720, label: 'Alle 12 Stunden' },
-		{ minutes: 1440, label: 'Täglich' },
-		{ minutes: 4320, label: 'Alle 3 Tage' },
-		{ minutes: 10080, label: 'Wöchentlich' },
-		{ minutes: 43200, label: 'Monatlich' }
+		{ minutes: null, label: t('admin.intervalNone') },
+		{ minutes: 60, label: t('admin.intervalHourly') },
+		{ minutes: 360, label: t('admin.interval6Hours') },
+		{ minutes: 720, label: t('admin.interval12Hours') },
+		{ minutes: 1440, label: t('admin.intervalDaily') },
+		{ minutes: 4320, label: t('admin.interval3Days') },
+		{ minutes: 10080, label: t('admin.intervalWeekly') },
+		{ minutes: 43200, label: t('admin.intervalMonthly') }
 	] as const;
 
 	let scheduleDraft = $state<Record<number, { interval: number | null; mode: string }>>({});
@@ -530,8 +531,8 @@
 		if (!draft) return;
 		if (await crawlAction(id, 'schedule', { intervalMinutes: draft.interval, mode: draft.mode })) {
 			message = draft.interval === null
-				? 'Automatik-Crawl abgeschaltet.'
-				: 'Intervall gespeichert. Der erste automatische Lauf startet nach Ablauf des Intervalls.';
+				? t('admin.autoCrawlDisabled')
+				: t('admin.intervalSaved');
 		}
 	}
 
@@ -548,7 +549,7 @@
 
 	const intervalLabel = (minutes: number | null | undefined) =>
 		INTERVALS.find((i) => i.minutes === (minutes ?? null))?.label ??
-		(minutes ? `Alle ${relative(minutes * 60)}` : 'Kein Automatik-Crawl');
+		(minutes ? t('admin.intervalEvery', { interval: relative(minutes * 60) }) : t('admin.intervalNone'));
 
 	const modeLabel = (id: string | null | undefined) =>
 		MODES.find((m) => m.id === id)?.label ?? id ?? '—';
@@ -573,21 +574,21 @@
 
 	const RUN_STATUS: Record<string, { label: string; variant: 'secondary' | 'destructive' | 'outline' }> = {
 		ok: { label: 'ok', variant: 'secondary' },
-		partial: { label: 'teilweise', variant: 'outline' },
-		failed: { label: 'fehlgeschlagen', variant: 'destructive' },
-		stopped: { label: 'gestoppt', variant: 'outline' },
-		running: { label: 'läuft', variant: 'outline' }
+		partial: { label: t('admin.runStatusPartial'), variant: 'outline' },
+		failed: { label: t('admin.runStatusFailed'), variant: 'destructive' },
+		stopped: { label: t('admin.runStatusStopped'), variant: 'outline' },
+		running: { label: t('admin.runStatusRunning'), variant: 'outline' }
 	};
 
 	let expanded = $state<Record<number, boolean>>({});
 
 	const SECTIONS = [
-		{ id: 'groups', label: 'Gruppen', icon: UsersIcon, description: 'Zugriff festlegen' },
-		{ id: 'members', label: 'Mitglieder', icon: UserCogIcon, description: 'Personen & Leitung' },
-		{ id: 'kbs', label: 'Wissensbasen', icon: LibraryIcon, description: 'Standard für alle' },
-		{ id: 'sources', label: 'Quellen', icon: DatabaseIcon, description: 'Crawls & Status' },
-		{ id: 'audit', label: 'Protokoll', icon: ScrollTextIcon, description: 'Wer hat was geändert' },
-		{ id: 'stats', label: 'Statistik', icon: BarChart3Icon }
+		{ id: 'groups', label: t('admin.tabGroups'), icon: UsersIcon, description: t('admin.tabGroupsDesc') },
+		{ id: 'members', label: t('admin.members'), icon: UserCogIcon, description: t('admin.membersDescription') },
+		{ id: 'kbs', label: t('admin.knowledgeBases'), icon: LibraryIcon, description: t('admin.knowledgeBasesDescription') },
+		{ id: 'sources', label: t('admin.sources'), icon: DatabaseIcon, description: t('admin.sourcesDescription') },
+		{ id: 'audit', label: t('admin.audit'), icon: ScrollTextIcon, description: t('admin.auditDescription') },
+		{ id: 'stats', label: t('admin.stats'), icon: BarChart3Icon }
 	];
 
 	const displayName = (m: Member | DirectoryUser) =>
@@ -607,8 +608,8 @@
 {#snippet saveBar(dirty: boolean, onSave: () => void, onDiscard: () => void)}
 	<div class="flex items-center gap-2">
 		{#if dirty}
-			<span class="text-muted-foreground text-xs">Nicht gespeicherte Änderungen</span>
-			<Button variant="ghost" size="sm" onclick={onDiscard} disabled={busy}>Verwerfen</Button>
+			<span class="text-muted-foreground text-xs">{t('admin.unsaved')}</span>
+			<Button variant="ghost" size="sm" onclick={onDiscard} disabled={busy}>{t('admin.discard')}</Button>
 		{/if}
 		<Button size="sm" onclick={onSave} disabled={busy || !dirty}>
 			{#if busy}
@@ -616,14 +617,14 @@
 			{:else}
 				<SaveIcon data-icon="inline-start" />
 			{/if}
-			Speichern
+			{t('admin.save')}
 		</Button>
 	</div>
 {/snippet}
 
 <AdminShell
-	title="Administration"
-	subtitle="Gruppen, Wissensbasen und Quellen"
+	title={t('admin.title')}
+	subtitle={t('admin.subtitle')}
 	sections={SECTIONS}
 	bind:active
 >
@@ -646,8 +647,8 @@
 		<div class="grid gap-4 lg:grid-cols-[18rem_1fr]">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>Gruppen</Card.Title>
-					<Card.Description>Eine Gruppe pro Abteilung.</Card.Description>
+					<Card.Title>{t('admin.tabGroups')}</Card.Title>
+					<Card.Description>{t('admin.oneGroupPerDept')}</Card.Description>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-1">
 					{#each groups as g (g.id)}
@@ -661,32 +662,31 @@
 							<span class="text-muted-foreground shrink-0 text-xs">{g.members}</span>
 						</button>
 					{:else}
-						<p class="text-muted-foreground py-2 text-sm">Noch keine Gruppen.</p>
+						<p class="text-muted-foreground py-2 text-sm">{t('admin.noGroups')}</p>
 					{/each}
 				</Card.Content>
 				<Card.Footer class="flex-col items-stretch gap-2">
 					<Separator />
 					<div class="flex flex-col gap-2">
-						<Label for="group-name">Neue Gruppe</Label>
-						<Input id="group-name" bind:value={newName} placeholder="z. B. IT" />
-						<Label for="group-desc">Beschreibung</Label>
-						<Input id="group-desc" bind:value={newDescription} placeholder="optional" />
+						<Label for="group-name">{t('admin.newGroup')}</Label>
+						<Input id="group-name" bind:value={newName} placeholder={t('admin.groupNamePlaceholder')} />
+						<Label for="group-desc">{t('admin.description')}</Label>
+						<Input id="group-desc" bind:value={newDescription} placeholder={t('admin.optional')} />
 					</div>
 					<Button onclick={createGroup} disabled={busy || !newName.trim()}>
 						{#if busy}<Spinner data-icon="inline-start" />{:else}<PlusIcon
 								data-icon="inline-start"
 							/>{/if}
-						Anlegen
+						{t('admin.createGroup')}
 					</Button>
 				</Card.Footer>
 			</Card.Root>
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>{group?.name ?? 'Keine Gruppe gewählt'}</Card.Title>
+					<Card.Title>{group?.name ?? t('admin.noGroupSelected')}</Card.Title>
 					<Card.Description>
-						Obergrenze der Gruppe. Abteilungsleitungen können daraus je Person eine Teilmenge
-						vergeben — niemals mehr.
+						{t('admin.ceilingDescription')}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content class="flex flex-col gap-2">
@@ -702,11 +702,11 @@
 									<span class="truncate text-sm">{kb.label}</span>
 									<span class="text-muted-foreground text-xs">{kb.source_slug}</span>
 									{#if kb.is_default}
-										<Badge variant="secondary">Standard</Badge>
+										<Badge variant="secondary">{t('admin.standard')}</Badge>
 									{/if}
 								</span>
 								<span class="text-muted-foreground shrink-0 text-xs tabular-nums">
-									{kb.documents} Seiten
+									{kb.documents} {t('admin.pages')}
 								</span>
 							</label>
 						{/each}
@@ -714,7 +714,7 @@
 						<Empty.Root class="py-8">
 							<Empty.Header>
 								<Empty.Media variant="icon"><UsersIcon /></Empty.Media>
-								<Empty.Title>Keine Gruppe gewählt</Empty.Title>
+								<Empty.Title>{t('admin.noGroupSelected')}</Empty.Title>
 							</Empty.Header>
 						</Empty.Root>
 					{/if}
@@ -723,7 +723,7 @@
 					<Card.Footer class="flex-col items-stretch gap-3">
 						<div class="flex items-center justify-between gap-2">
 							<p class="text-muted-foreground text-xs">
-								Standard-Wissensbasen erhält jede angemeldete Person auch ohne Gruppe.
+								{t('admin.standardKbHint')}
 							</p>
 							{@render saveBar(grantsDirty, saveGrants, discardGrants)}
 						</div>
@@ -735,7 +735,7 @@
 							onclick={() => removeGroup(group.id)}
 						>
 							<Trash2Icon data-icon="inline-start" />
-							Gruppe löschen
+							{t('admin.deleteGroup')}
 						</Button>
 					</Card.Footer>
 				{/if}
@@ -744,10 +744,9 @@
 	{:else if active === 'members'}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Mitglieder von {group?.name ?? '—'}</Card.Title>
+				<Card.Title>{t('admin.membersOf', { name: group?.name ?? '\u2014' })}</Card.Title>
 				<Card.Description>
-					Wer in der Gruppe ist, und wer sie leitet. Leitung setzt zusätzlich die Rolle
-					<code>llmbot-privileged</code> in Keycloak voraus.
+					{@html t('admin.membersHeader')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
@@ -755,9 +754,9 @@
 					<Table.Root>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head>Person</Table.Head>
-								<Table.Head>Zugriff</Table.Head>
-								<Table.Head class="w-28">Leitung</Table.Head>
+								<Table.Head>{t('admin.person')}</Table.Head>
+								<Table.Head>{t('admin.access')}</Table.Head>
+								<Table.Head class="w-28">{t('admin.manager')}</Table.Head>
 								<Table.Head class="w-10"></Table.Head>
 							</Table.Row>
 						</Table.Header>
@@ -773,7 +772,7 @@
 									<Table.Cell class="text-muted-foreground text-xs">
 										{m.restricted
 											? `${m.kb_ids.length} von ${group?.kb_ids.length ?? 0}`
-											: 'volle Gruppenrechte'}
+											: t('admin.fullRights')}
 									</Table.Cell>
 									<Table.Cell>
 										<Switch
@@ -787,7 +786,7 @@
 											variant="ghost"
 											size="icon"
 											class="text-muted-foreground hover:text-destructive"
-											aria-label="Aus Gruppe entfernen"
+											aria-label={t('admin.removeFromGroup')}
 											onclick={() => dropMember(m.user_sub)}
 										>
 											<Trash2Icon />
@@ -801,7 +800,7 @@
 						{@render saveBar(managersDirty, saveManagers, discardManagers)}
 					</div>
 				{:else}
-					<p class="text-muted-foreground text-sm">Diese Gruppe hat noch keine Mitglieder.</p>
+					<p class="text-muted-foreground text-sm">{t('admin.noMembers')}</p>
 				{/if}
 
 				<Separator />
@@ -810,20 +809,19 @@
 					<div class="flex gap-2">
 						<Input
 							bind:value={userQuery}
-							placeholder="Person suchen (Name, Benutzername, E-Mail)"
+							placeholder={t('admin.searchPlaceholder')}
 							onkeydown={(e) => e.key === 'Enter' && searchUsers()}
 						/>
 						<Button variant="secondary" onclick={searchUsers} disabled={searching}>
 							{#if searching}<Spinner data-icon="inline-start" />{/if}
-							Suchen
+							{t('admin.search')}
 						</Button>
 					</div>
 
 					{#if directoryError}
 						<Alert.Root variant="destructive">
 							<Alert.Description>
-								Verzeichnis nicht erreichbar ({directoryError}). Es werden nur Personen angezeigt,
-								die sich bereits angemeldet haben.
+								{t('admin.directoryUnreachable', { error: directoryError })}
 							</Alert.Description>
 						</Alert.Root>
 					{/if}
@@ -834,7 +832,7 @@
 								<span class="truncate text-sm">{u.name || u.username}</span>
 								<span class="text-muted-foreground truncate text-xs">
 									{u.email}
-									{#if !u.everLoggedIn}· noch nie angemeldet{/if}
+									{#if !u.everLoggedIn}· {t('admin.neverLoggedIn')}{/if}
 								</span>
 							</span>
 							{#each u.roles.filter((r) => r.startsWith('llmbot-')) as role (role)}
@@ -846,7 +844,7 @@
 								disabled={!group || members.some((m) => m.user_sub === u.sub)}
 								onclick={() => addMember(u.sub)}
 							>
-								Hinzufügen
+								{t('admin.addUser')}
 							</Button>
 						</div>
 					{/each}
@@ -856,20 +854,19 @@
 	{:else if active === 'kbs'}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Wissensbasen</Card.Title>
+				<Card.Title>{t('admin.knowledgeBases')}</Card.Title>
 				<Card.Description>
-					Eine je Foswiki-Web plus eine je sonstiger Quelle. „Standard“ erhält jede angemeldete
-					Person auch ohne Gruppe — alles andere muss über eine Gruppe vergeben werden.
+					{t('admin.kbDescription')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head>Wissensbasis</Table.Head>
-							<Table.Head>Quelle</Table.Head>
-							<Table.Head class="w-24">Seiten</Table.Head>
-							<Table.Head class="w-32">Standard</Table.Head>
+							<Table.Head>{t('admin.knowledgeBase')}</Table.Head>
+							<Table.Head>{t('admin.source')}</Table.Head>
+							<Table.Head class="w-24">{t('admin.pages')}</Table.Head>
+							<Table.Head class="w-32">{t('admin.standard')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -897,12 +894,9 @@
 	{:else if active === 'sources'}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Quellen &amp; Crawler</Card.Title>
+				<Card.Title>{t('admin.sourcesAndCrawler')}</Card.Title>
 				<Card.Description>
-					Der Crawler läuft in einem eigenen Container. Diese Seite schreibt die
-					gewünschte Aktion in die Datenbank; der Crawler holt sie sich beim nächsten
-					Durchlauf (höchstens fünf Minuten) ab. Ein laufender Crawl reagiert auf
-					Pause und Stopp jeweils an der nächsten Seitengrenze.
+					{t('admin.crawlerDescription')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4">
@@ -920,15 +914,15 @@
 									{#if running}
 										<Badge variant="outline" class="gap-1">
 											<ActivityIcon class="size-3 animate-pulse" />
-											läuft · {modeLabel(running.mode)}
+											{t('admin.running')} · {modeLabel(running.mode)}
 										</Badge>
 									{:else if pending > 0}
-										<Badge variant="outline">eingereiht</Badge>
+										<Badge variant="outline">{t('admin.queued')}</Badge>
 									{:else if control.desired_state === 'paused'}
-										<Badge variant="outline">pausiert</Badge>
+										<Badge variant="outline">{t('admin.paused')}</Badge>
 									{/if}
 									{#if control.stop_requested_at}
-										<Badge variant="destructive">Stopp angefordert</Badge>
+										<Badge variant="destructive">{t('admin.stopRequestedLabel')}</Badge>
 									{/if}
 								</div>
 								<span class="text-muted-foreground text-xs">{s.base_url}</span>
@@ -943,9 +937,9 @@
 										onclick={() => pauseCrawl(s.id as number, control.desired_state !== 'paused')}
 									>
 										{#if control.desired_state === 'paused'}
-											<PlayIcon data-icon="inline-start" /> Fortsetzen
+											<PlayIcon data-icon="inline-start" /> {t('admin.resume')}
 										{:else}
-											<PauseIcon data-icon="inline-start" /> Pause
+											<PauseIcon data-icon="inline-start" /> {t('admin.pause')}
 										{/if}
 									</Button>
 									<Button
@@ -954,11 +948,11 @@
 										disabled={busy || !!control.stop_requested_at}
 										onclick={() => stopCrawl(s.id as number, String(s.slug))}
 									>
-										<SquareIcon data-icon="inline-start" /> Stopp
+										<SquareIcon data-icon="inline-start" /> {t('admin.stop')}
 									</Button>
 								{:else if pending > 0}
 									<Button size="sm" variant="outline" disabled={busy} onclick={() => cancelCrawl(s.id as number)}>
-										<XIcon data-icon="inline-start" /> Aus Warteschlange nehmen
+										<XIcon data-icon="inline-start" /> {t('admin.removeFromQueue')}
 									</Button>
 								{:else}
 									<!-- Native select: the design system has no Select component, and
@@ -979,10 +973,10 @@
 										size="sm"
 										variant="secondary"
 										disabled={busy || s.enabled !== true}
-										title={s.enabled === true ? undefined : 'Quelle ist deaktiviert'}
+										title={s.enabled === true ? undefined : t('admin.sourceDisabled')}
 										onclick={() => startCrawl(s.id as number)}
 									>
-										<PlayIcon data-icon="inline-start" /> Crawl starten
+										<PlayIcon data-icon="inline-start" /> {t('admin.startCrawl')}
 									</Button>
 								{/if}
 								<Switch
@@ -999,25 +993,24 @@
 								<Progress value={percent ?? 0} />
 								<div class="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs tabular-nums">
 									<span>
-										{running.pages_seen} Seiten gesehen{percent !== null ? ` · ca. ${percent}%` : ''}
+										{t('admin.pagesSeen', { count: running.pages_seen })}{percent !== null ? ` · ca. ${percent}%` : ''}
 									</span>
-									<span>{running.pages_changed} geändert</span>
-									<span>{running.pages_unfetched} nicht geladen</span>
+									<span>{t('admin.changed', { count: running.pages_changed })}</span>
+									<span>{t('admin.notLoaded', { count: running.pages_unfetched })}</span>
 									{#if running.pages_failed > 0}
-										<span class="text-destructive">{running.pages_failed} fehlgeschlagen</span>
+										<span class="text-destructive">{t('admin.failed', { count: running.pages_failed })}</span>
 									{/if}
-									<span>{running.chunks_written} Chunks</span>
-									<span>seit {relative(running.elapsed ?? null)}</span>
+									<span>{running.chunks_written} {t('admin.chunks')}</span>
+									<span>{t('admin.since', { time: relative(running.elapsed ?? null) })}</span>
 									{#if heartbeatStale(s)}
 										<span class="text-destructive">
-											kein Lebenszeichen seit {relative(running.heartbeat_age)} — Crawler vermutlich abgestürzt
+											{t('admin.noHeartbeat', { time: relative(running.heartbeat_age) })}
 										</span>
 									{/if}
 								</div>
 								{#if percent === null}
 									<p class="text-muted-foreground text-xs">
-										Kein Vergleichslauf vorhanden — der Fortschritt lässt sich erst ab dem
-										zweiten Crawl schätzen.
+										{t('admin.noComparison')}
 									</p>
 								{/if}
 							</div>
@@ -1027,7 +1020,7 @@
 
 						<div class="flex flex-wrap items-end gap-3">
 							<div class="space-y-1">
-								<Label class="text-xs">Automatik-Crawl</Label>
+								<Label class="text-xs">{t('admin.autoCrawl')}</Label>
 								<select
 									class="border-input bg-background h-9 rounded-md border px-2 text-sm"
 									value={String(draft.interval)}
@@ -1043,7 +1036,7 @@
 								</select>
 							</div>
 							<div class="space-y-1">
-								<Label class="text-xs">Modus für Automatik</Label>
+								<Label class="text-xs">{t('admin.autoModeLabel')}</Label>
 								<select
 									class="border-input bg-background h-9 rounded-md border px-2 text-sm"
 									value={draft.mode}
@@ -1057,7 +1050,7 @@
 							</div>
 							{#if scheduleChanged(s)}
 								<Button size="sm" disabled={busy} onclick={() => saveSchedule(s.id as number)}>
-									<SaveIcon data-icon="inline-start" /> Intervall speichern
+									<SaveIcon data-icon="inline-start" /> {t('admin.saveInterval')}
 								</Button>
 							{/if}
 							<div class="text-muted-foreground ml-auto text-right text-xs">
@@ -1067,25 +1060,25 @@
 								</div>
 								{#if control.next_run_at && control.interval_minutes}
 									<div>
-										nächster Lauf in {relative(
+										{t('admin.nextRunIn', { time: relative(
 											(new Date(control.next_run_at as string).getTime() - Date.now()) / 1000
-										)}
+										) })}
 									</div>
 								{/if}
 							</div>
 						</div>
 
 						<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-							<span class="tabular-nums">{s.documents} Seiten indexiert</span>
+							<span class="tabular-nums">{t('admin.pagesIndexed', { count: s.documents })}</span>
 							<span class="text-muted-foreground tabular-nums">
-								{s.documents_with_revision} mit Revision
+								{s.documents_with_revision} {t('admin.withRevision')}
 								{#if (s.documents as number) > 0 && (s.documents_with_revision as number) === 0}
-									— „Nur Geändertes“ wirkt erst nach einem vollen Lauf
+									— {t('admin.changedOnlyHint')}
 								{/if}
 							</span>
 							{#if s.last_run}
 								<span class="text-muted-foreground">
-									zuletzt {new Date(s.last_run as string).toLocaleString('de-DE')}
+									{t('admin.lastRun', { date: new Date(s.last_run as string).toLocaleString('de-DE') })}
 								</span>
 							{/if}
 							{#if s.last_status}
@@ -1103,7 +1096,7 @@
 								<ChevronDownIcon
 									class="size-3 transition-transform {expanded[s.id as number] ? 'rotate-180' : ''}"
 								/>
-								Letzte Läufe
+								{t('admin.lastRuns')}
 							</Button>
 						</div>
 
@@ -1111,14 +1104,14 @@
 							<Table.Root class="mt-2">
 								<Table.Header>
 									<Table.Row>
-										<Table.Head>Start</Table.Head>
-										<Table.Head>Modus</Table.Head>
-										<Table.Head>Status</Table.Head>
-										<Table.Head class="text-right">gesehen</Table.Head>
-										<Table.Head class="text-right">geändert</Table.Head>
-										<Table.Head class="text-right">nicht geladen</Table.Head>
-										<Table.Head class="text-right">gelöscht</Table.Head>
-										<Table.Head class="text-right">Chunks</Table.Head>
+										<Table.Head>{t('admin.start')}</Table.Head>
+										<Table.Head>{t('admin.mode')}</Table.Head>
+										<Table.Head>{t('admin.status')}</Table.Head>
+										<Table.Head class="text-right">{t('admin.seen')}</Table.Head>
+										<Table.Head class="text-right">{t('admin.changedLabel')}</Table.Head>
+										<Table.Head class="text-right">{t('admin.notLoadedLabel')}</Table.Head>
+										<Table.Head class="text-right">{t('admin.deleted')}</Table.Head>
+										<Table.Head class="text-right">{t('admin.chunks')}</Table.Head>
 									</Table.Row>
 								</Table.Header>
 								<Table.Body>
@@ -1151,11 +1144,7 @@
 			</Card.Content>
 			<Card.Footer class="justify-between">
 				<p class="text-muted-foreground max-w-xl text-xs">
-					„Nur Geändertes“ fragt die Quelle nach ihrer Revision und lädt unveränderte
-					Seiten gar nicht erst — bei fünf Sekunden Wartezeit pro Abruf ist das der
-					Unterschied zwischen Minuten und Stunden. Ein gestoppter Lauf löscht nie:
-					er hat nur einen Teil der Seiten gesehen, und alles danach würde
-					fälschlich als gelöscht gelten.
+					{t('admin.sourcesFooter')}
 				</p>
 				{@render saveBar(sourcesDirty, saveSources, discardSources)}
 			</Card.Footer>
@@ -1163,17 +1152,17 @@
 	{:else if active === 'audit'}
 		<Card.Root>
 			<Card.Header>
-				<Card.Title>Protokoll</Card.Title>
-				<Card.Description>Jede Rechteänderung, mit Person und Zeitpunkt.</Card.Description>
+				<Card.Title>{t('admin.audit')}</Card.Title>
+				<Card.Description>{t('admin.auditDescription2')}</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				<Table.Root>
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="w-44">Zeitpunkt</Table.Head>
-							<Table.Head>Wer</Table.Head>
-							<Table.Head>Aktion</Table.Head>
-							<Table.Head>Betrifft</Table.Head>
+							<Table.Head class="w-44">{t('admin.time')}</Table.Head>
+							<Table.Head>{t('admin.who')}</Table.Head>
+							<Table.Head>{t('admin.action')}</Table.Head>
+							<Table.Head>{t('admin.target')}</Table.Head>
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
@@ -1191,7 +1180,7 @@
 						{:else}
 							<Table.Row>
 								<Table.Cell colspan={4} class="text-muted-foreground py-6 text-center text-sm">
-									Noch keine Einträge.
+									{t('admin.noAuditEntries')}
 								</Table.Cell>
 							</Table.Row>
 						{/each}
@@ -1203,13 +1192,13 @@
 		{#if stats}
 			<div class="grid gap-4 md:grid-cols-2">
 				<Card.Root>
-					<Card.Header><Card.Title>Korpus</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('admin.corpus')}</Card.Title></Card.Header>
 					<Card.Content class="flex flex-col gap-2 text-sm">
 						{#each stats.corpus as c (c.slug)}
 							<div class="flex items-baseline justify-between gap-2">
 								<span>{c.slug}</span>
 								<span class="text-muted-foreground text-xs tabular-nums">
-									{c.documents} Seiten · {c.chunks} Chunks ·
+									{c.documents} {t('admin.pages')} · {c.chunks} {t('admin.chunks')} ·
 									{c.last_document ? new Date(c.last_document).toLocaleDateString('de-DE') : '—'}
 								</span>
 							</div>
@@ -1218,46 +1207,46 @@
 				</Card.Root>
 
 				<Card.Root>
-					<Card.Header><Card.Title>Nutzung (14 Tage)</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('admin.usage14Days')}</Card.Title></Card.Header>
 					<Card.Content class="flex flex-col gap-1 text-sm">
 						{#each stats.usage as u (u.day)}
 							<div class="flex items-baseline justify-between gap-2">
 								<span class="text-muted-foreground text-xs">
 									{new Date(u.day).toLocaleDateString('de-DE')}
 								</span>
-								<span class="text-xs tabular-nums">{u.fast} schnell · {u.deep} gründlich</span>
+								<span class="text-xs tabular-nums">{t('admin.fastDeepStats', { fast: u.fast, deep: u.deep })}</span>
 							</div>
 						{:else}
-							<p class="text-muted-foreground text-xs">Noch keine Fragen.</p>
+							<p class="text-muted-foreground text-xs">{t('admin.noQuestions')}</p>
 						{/each}
 					</Card.Content>
 				</Card.Root>
 
 				<Card.Root>
-					<Card.Header><Card.Title>Qualität</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('admin.quality')}</Card.Title></Card.Header>
 					<Card.Content class="flex gap-6 text-sm">
 						<span>👍 {stats.quality.up}</span>
 						<span>👎 {stats.quality.down}</span>
 						<span class="text-muted-foreground">
-							{stats.quality.uncited} Antworten ohne Quelle
+							{stats.quality.uncited} {t('admin.answersWithoutSource')}
 						</span>
 					</Card.Content>
 				</Card.Root>
 
 				<Card.Root>
-					<Card.Header><Card.Title>Speicher & Personen</Card.Title></Card.Header>
+					<Card.Header><Card.Title>{t('admin.storageAndUsers')}</Card.Title></Card.Header>
 					<Card.Content class="flex flex-col gap-1 text-sm">
-						<span>{stats.storage.users} Konten · {stats.storage.conversations} Unterhaltungen</span>
+						<span>{t('admin.accounts', { count: stats.storage.users })} · {t('admin.conversations', { count: stats.storage.conversations })}</span>
 						<span class="text-muted-foreground text-xs">
-							{stats.storage.files} Dateien · {formatBytes(stats.storage.upload_bytes)} ·
-							{stats.storage.hidden} ausgeblendet
+							{t('admin.filesCount', { count: stats.storage.files })} · {formatBytes(stats.storage.upload_bytes)} ·
+							{t('admin.hiddenCount', { count: stats.storage.hidden })}
 						</span>
 					</Card.Content>
 				</Card.Root>
 			</div>
 		{:else}
 			<div class="text-muted-foreground flex items-center gap-2 py-6 text-sm">
-				<Spinner class="size-4" /> Wird geladen…
+				<Spinner class="size-4" /> {t('common.loading')}
 			</div>
 		{/if}
 	{/if}

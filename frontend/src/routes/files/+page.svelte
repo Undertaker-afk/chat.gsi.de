@@ -26,6 +26,7 @@
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import * as Collapsible from '$lib/components/ui/collapsible';
 	import { formatBytes, formatDate } from '$lib/format';
+	import { t } from '$lib/language.svelte';
 
 	let { data } = $props();
 
@@ -88,7 +89,7 @@
 				if (selectedId === id) content = body.content;
 			})
 			.catch((e) => {
-				errorMessage = `Datei konnte nicht geladen werden: ${e.message}`;
+				errorMessage = t('files.loadError', { message: e.message });
 			})
 			.finally(() => {
 				if (selectedId === id) loading = false;
@@ -103,7 +104,7 @@
 			if (res.ok) {
 				items = items.filter((i) => i.id !== id);
 			} else {
-				errorMessage = `Löschen fehlgeschlagen (HTTP ${res.status})`;
+				errorMessage = t('files.deleteFailed', { status: String(res.status) });
 			}
 		} finally {
 			deleting = null;
@@ -113,7 +114,7 @@
 	const ICONS = { code: CodeIcon, markdown: FileTextIcon, pdf: FileIcon };
 
 	const SECTIONS = $derived([
-		{ id: 'all', label: 'Alle', icon: FilesIcon, description: `${items.length} Datei(en)` },
+		{ id: 'all', label: t('files.all'), icon: FilesIcon, description: t('files.fileCount', { count: items.length }) },
 		{
 			id: 'code',
 			label: 'Code',
@@ -135,11 +136,11 @@
 	]);
 </script>
 
-<svelte:head><title>Generierte Dateien · chat.gsi.de</title></svelte:head>
+<svelte:head><title>{t('files.title')} · chat.gsi.de</title></svelte:head>
 
 <AdminShell
-	title="Generierte Dateien"
-	subtitle="Vom Assistenten erzeugt und von Ihnen gespeichert"
+	title={t('files.title')}
+	subtitle={t('files.subtitle')}
 	sections={SECTIONS}
 	bind:active
 	collapsibleSections
@@ -155,10 +156,9 @@
 		<Empty.Root class="py-12">
 			<Empty.Header>
 				<Empty.Media variant="icon"><FilesIcon /></Empty.Media>
-				<Empty.Title>Noch keine Dateien</Empty.Title>
+				<Empty.Title>{t('files.noFiles')}</Empty.Title>
 				<Empty.Description>
-					Wenn der Assistent einen Codeblock schreibt, erscheint darüber „Speichern“. Gespeicherte
-					Dateien landen hier.
+					{t('files.noFilesDescription')}
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
@@ -175,7 +175,7 @@
 					<Button
 						variant="ghost"
 						size="icon"
-						aria-label="Dateiliste ausklappen"
+						aria-label={t('files.expandList')}
 						onclick={() => (listOpen = true)}
 					>
 						<PanelLeftOpenIcon />
@@ -185,16 +185,16 @@
 				<Card.Root class="min-h-0 self-start">
 					<Card.Header class="flex-row items-start justify-between gap-2 space-y-0">
 						<div class="flex min-w-0 flex-col gap-1">
-							<Card.Title>Dateien</Card.Title>
+							<Card.Title>{t('files.filesLabel')}</Card.Title>
 							<Card.Description>
-								{formatBytes(data.storage.generated)} von {formatBytes(data.storage.quota)} belegt
+								{t('storage.usedOfQuota', { used: formatBytes(data.storage.generated), quota: formatBytes(data.storage.quota) })}
 							</Card.Description>
 						</div>
 						<Button
 							variant="ghost"
 							size="icon"
 							class="shrink-0"
-							aria-label="Dateiliste einklappen"
+							aria-label={t('files.collapseList')}
 							onclick={() => (listOpen = false)}
 						>
 							<PanelLeftCloseIcon />
@@ -218,7 +218,7 @@
 							</span>
 						</button>
 						{:else}
-							<p class="text-muted-foreground py-2 text-sm">Nichts in dieser Kategorie.</p>
+							<p class="text-muted-foreground py-2 text-sm">{t('files.nothingInCategory')}</p>
 						{/each}
 					</Card.Content>
 				</Card.Root>
@@ -227,7 +227,7 @@
 			<Card.Root class="flex min-h-0 flex-col">
 				<Card.Header class="flex-row items-start justify-between gap-2 space-y-0">
 					<div class="flex min-w-0 flex-col gap-1">
-						<Card.Title class="truncate">{selected?.filename ?? 'Keine Datei gewählt'}</Card.Title>
+						<Card.Title class="truncate">{selected?.filename ?? t('files.noFileSelected')}</Card.Title>
 						{#if selected}
 							<div class="flex items-center gap-2">
 								<Badge variant="secondary">{selected.mime}</Badge>
@@ -246,13 +246,13 @@
 								download={selected.filename}
 							>
 								<DownloadIcon data-icon="inline-start" />
-								Herunterladen
+								{t('files.download')}
 							</Button>
 							<Button
 								variant="ghost"
 								size="icon"
 								class="text-muted-foreground hover:text-destructive"
-								aria-label="Löschen"
+								aria-label={t('common.delete')}
 								disabled={deleting === selected.id}
 								onclick={() => selected && remove(selected.id)}
 							>
@@ -264,7 +264,7 @@
 				<Card.Content class="flex min-h-[70vh] flex-col">
 					{#if loading}
 						<div class="text-muted-foreground flex items-center gap-2 py-6 text-sm">
-							<Spinner class="size-4" /> Wird geladen…
+							<Spinner class="size-4" /> {t('common.loading')}
 						</div>
 					{:else if selected && content !== null}
 						<FileViewer
@@ -274,7 +274,7 @@
 							{content}
 						/>
 					{:else if !selected}
-						<p class="text-muted-foreground text-sm">Wählen Sie links eine Datei.</p>
+						<p class="text-muted-foreground text-sm">{t('files.selectFileHint')}</p>
 					{/if}
 				</Card.Content>
 			</Card.Root>

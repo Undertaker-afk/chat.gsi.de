@@ -42,6 +42,7 @@
 	import FileIcon from '@lucide/svelte/icons/file';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import { t } from '$lib/language.svelte';
 
 	let {
 		message,
@@ -228,8 +229,8 @@
 				// being sent, so the chip outlived the bytes.
 				fileError =
 					res.status === 404
-						? `„${file.filename}“ wurde inzwischen gelöscht.`
-						: `Datei konnte nicht geladen werden (HTTP ${res.status}).`;
+						? t('message.fileDeleted', { name: file.filename })
+						: t('message.fileLoadError', { status: String(res.status) });
 				return;
 			}
 			const body = await res.json();
@@ -373,7 +374,7 @@
 						variant="ghost"
 						size="icon"
 						class="size-6"
-						aria-label="Im Seitenbereich öffnen"
+						aria-label={t('message.openInPanel')}
 						onclick={() =>
 							viewer.open({
 								kind: 'text',
@@ -406,14 +407,14 @@
 <Dialog.Root open={renaming !== null} onOpenChange={(o) => !o && (renaming = null)}>
 	<Dialog.Content class="sm:max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>In Generierte Dateien speichern</Dialog.Title>
+			<Dialog.Title>{t('message.saveToGenerated')}</Dialog.Title>
 			<Dialog.Description>
-				Gleicher Name überschreibt die vorhandene Datei.
+				{t('message.overwriteWarning')}
 			</Dialog.Description>
 		</Dialog.Header>
 		{#if renaming}
 			<div class="flex flex-col gap-2">
-				<Label for="generated-name">Dateiname</Label>
+				<Label for="generated-name">{t('message.filenameLabel')}</Label>
 				<Input
 					id="generated-name"
 					bind:value={renaming.name}
@@ -424,8 +425,7 @@
 					}}
 				/>
 				<p class="text-muted-foreground text-xs">
-					Die Endung bestimmt, wie die Datei angezeigt wird — <code>.md</code> gerendert,
-					alles andere im Code-Editor.
+					{t('message.filenameHint')}
 				</p>
 			</div>
 		{/if}
@@ -436,14 +436,14 @@
 			</Alert.Root>
 		{/if}
 		<Dialog.Footer>
-			<Button variant="ghost" onclick={() => (renaming = null)}>Abbrechen</Button>
+			<Button variant="ghost" onclick={() => (renaming = null)}>{t('common.cancel')}</Button>
 			<Button
 				disabled={!renaming?.name.trim() || saving !== null}
 				onclick={() =>
 					renaming && saveBlock(renaming.text, renaming.lang, renaming.name.trim())}
 			>
 				{#if saving !== null}<Spinner data-icon="inline-start" />{/if}
-				Speichern
+				{t('common.save')}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -478,12 +478,12 @@
 						<button
 							type="button"
 							class="focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
-							aria-label="Anhang {i + 1} vergrößern"
+							aria-label={t('message.enlargeAttachment', { n: i + 1 })}
 							onclick={() => (viewing = i)}
 						>
 							<img
 								{src}
-								alt="Anhang {i + 1}"
+								alt={t('message.attachment', { n: i + 1 })}
 								loading="lazy"
 								class="size-20 rounded-xl border object-cover transition-opacity hover:opacity-85"
 							/>
@@ -536,7 +536,7 @@
 							variant="ghost"
 							size="icon"
 							class="size-6"
-							aria-label="Vorherige Version"
+							aria-label={t('message.previousVersion')}
 							disabled={version <= 1 || busy}
 							onclick={() => step(-1)}
 						>
@@ -547,7 +547,7 @@
 							variant="ghost"
 							size="icon"
 							class="size-6"
-							aria-label="Nächste Version"
+							aria-label={t('message.nextVersion')}
 							disabled={version >= versions || busy}
 							onclick={() => step(1)}
 						>
@@ -561,7 +561,7 @@
 						variant="ghost"
 						size="icon"
 						class="text-muted-foreground size-6 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-						aria-label="Nachricht bearbeiten"
+						aria-label={t('message.editMessage')}
 						onclick={startEdit}
 					>
 						<PencilIcon />
@@ -580,14 +580,14 @@
 		<Dialog.Content class="max-w-[92vw] sm:max-w-3xl">
 			<Dialog.Header>
 				<Dialog.Title class="sr-only">
-					Anhang {(viewing ?? 0) + 1} von {attachments.length}
+					{t('message.attachmentOf', { n: (viewing ?? 0) + 1, total: attachments.length })}
 				</Dialog.Title>
 			</Dialog.Header>
 
 			{#if viewing !== null}
 				<img
 					src={attachments[viewing]}
-					alt="Anhang {viewing + 1}"
+					alt={t('message.attachment', { n: viewing + 1 })}
 					class="max-h-[75vh] w-full rounded-lg object-contain"
 				/>
 
@@ -596,7 +596,7 @@
 						<Button
 							variant="ghost"
 							size="icon"
-							aria-label="Vorheriger Anhang"
+							aria-label={t('message.previousAttachment')}
 							disabled={viewing === 0}
 							onclick={() => viewing !== null && (viewing -= 1)}
 						>
@@ -606,7 +606,7 @@
 						<Button
 							variant="ghost"
 							size="icon"
-							aria-label="Nächster Anhang"
+							aria-label={t('message.nextAttachment')}
 							disabled={viewing === attachments.length - 1}
 							onclick={() => viewing !== null && (viewing += 1)}
 						>
@@ -678,9 +678,9 @@
 			{#if message.partial}
 				<Alert.Root variant="destructive">
 					<ClockIcon />
-					<Alert.Title>Unvollständige Antwort</Alert.Title>
+					<Alert.Title>{t('message.incompleteAnswer')}</Alert.Title>
 					<Alert.Description>
-						Die Anfrage hat ihr Zeitbudget erreicht. Es wird gezeigt, was bis dahin gefunden wurde.
+						{t('message.timeoutDescription')}
 					</Alert.Description>
 				</Alert.Root>
 			{/if}
@@ -688,7 +688,7 @@
 			{#if message.error}
 				<Alert.Root variant="destructive">
 					<TriangleAlertIcon />
-					<Alert.Title>Fehler</Alert.Title>
+					<Alert.Title>{t('message.error')}</Alert.Title>
 					<Alert.Description>{message.error}</Alert.Description>
 				</Alert.Root>
 			{/if}
@@ -701,7 +701,7 @@
 								<Button {...props} variant="ghost" size="sm" class="text-muted-foreground -ml-2">
 									<ChevronDownIcon data-icon="inline-start" />
 									{sources.length}
-									{sources.length === 1 ? 'Quelle' : 'Quellen'}
+									{sources.length === 1 ? t('message.source') : t('message.sources')}
 								</Button>
 							{/snippet}
 						</Collapsible.Trigger>

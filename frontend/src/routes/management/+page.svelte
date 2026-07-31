@@ -21,6 +21,7 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import SaveIcon from '@lucide/svelte/icons/save';
 	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
+	import { t } from '$lib/language.svelte';
 
 	let { data } = $props();
 
@@ -140,22 +141,22 @@
 					body: JSON.stringify({ userSub: member.user_sub, kbIds: draft[member.user_sub] })
 				});
 			} catch (e) {
-				errorMessage = `Netzwerkfehler: ${e instanceof Error ? e.message : String(e)}`;
+				errorMessage = t('management.networkError', { error: e instanceof Error ? e.message : String(e) });
 				return;
 			}
 			if (!res.ok) {
 				// Never silent: a failed save used to be indistinguishable from a
 				// no-op, which is how a broken endpoint went unnoticed on /admin.
 				const detail = await res.json().catch(() => null);
-				errorMessage = detail?.message ?? `Speichern fehlgeschlagen (HTTP ${res.status})`;
+				errorMessage = detail?.message ?? t('management.saveFailed', { status: String(res.status) });
 				return;
 			}
 			const body = await res.json();
 			message = body.hidden
-				? `Gespeichert. ${body.hidden} Unterhaltung(en) ausgeblendet — nach ${30} Tagen werden sie gelöscht.`
+				? t('management.savedHidden', { count: body.hidden, days: 30 })
 				: body.unhidden
-					? `Gespeichert. ${body.unhidden} Unterhaltung(en) wieder sichtbar.`
-					: 'Gespeichert.';
+					? t('management.savedUnhidden', { count: body.unhidden })
+					: t('common.saved');
 			await loadMembers(group.id);
 		} finally {
 			busy = null;
@@ -169,7 +170,7 @@
 			id: String(g.id),
 			label: g.name,
 			icon: UsersIcon,
-			description: `${g.members} Mitglied(er)`
+			description: t('management.members', { count: g.members })
 		}))
 	);
 </script>
@@ -200,11 +201,10 @@
 		<Empty.Root class="py-12">
 			<Empty.Header>
 				<Empty.Media variant="icon"><UsersIcon /></Empty.Media>
-				<Empty.Title>Keine Gruppe zugewiesen</Empty.Title>
-				<Empty.Description>
-					Sie haben die Rolle für die Verwaltung, leiten aber noch keine Gruppe. Eine
-					Administratorin oder ein Administrator muss Sie als Leitung einer Gruppe eintragen.
-				</Empty.Description>
+				<Empty.Title>{t('management.noGroup')}</Empty.Title>
+			<Empty.Description>
+				{t('management.noGroupDescription')}
+			</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else if group}
@@ -212,24 +212,23 @@
 			<Card.Header>
 				<Card.Title>{group.name}</Card.Title>
 				<Card.Description>
-					{group.description ?? 'Zugriff je Person festlegen.'}
+					{group.description ?? t('management.personAccess')}
 				</Card.Description>
 			</Card.Header>
 			<Card.Content class="flex flex-col gap-4">
 				<Alert.Root>
 					<InfoIcon />
 					<Alert.Description>
-						Ihre Gruppe darf auf {ceiling.length} Wissensbasis(en) zugreifen. Mehr können Sie nicht vergeben
-						— das legt die Administration fest.
+						{t('management.ceilingInfo', { count: ceiling.length })}
 					</Alert.Description>
 				</Alert.Root>
 
 				{#if loading}
 					<div class="text-muted-foreground flex items-center gap-2 py-6 text-sm">
-						<Spinner class="size-4" /> Wird geladen…
+						<Spinner class="size-4" /> {t('common.loading')}
 					</div>
 				{:else if members.length === 0}
-					<p class="text-muted-foreground text-sm">Diese Gruppe hat noch keine Mitglieder.</p>
+					<p class="text-muted-foreground text-sm">{t('management.noMembers')}</p>
 				{:else}
 					{#each members as member (member.user_sub)}
 						<div class="flex flex-col gap-3 rounded-lg border p-3">
@@ -238,7 +237,7 @@
 									<span class="flex items-center gap-2 text-sm font-medium">
 										{displayName(member)}
 										{#if member.is_manager}
-											<Badge variant="secondary">Leitung</Badge>
+											<Badge variant="secondary">{t('management.manager')}</Badge>
 										{/if}
 									</span>
 									<span class="text-muted-foreground truncate text-xs">
@@ -251,7 +250,7 @@
 										<Spinner class="size-4" />
 									{/if}
 									{#if draft[member.user_sub] === null}
-										<Badge variant="outline">volle Gruppenrechte</Badge>
+										<Badge variant="outline">{t('management.fullRights')}</Badge>
 									{:else}
 										<Button
 											variant="ghost"
@@ -259,7 +258,7 @@
 											disabled={busy === member.user_sub}
 											onclick={() => stageFullRights(member)}
 										>
-											Volle Gruppenrechte
+											{t('management.grantFullRights')}
 										</Button>
 									{/if}
 								</div>
@@ -280,21 +279,21 @@
 									</label>
 								{:else}
 									<p class="text-muted-foreground text-sm">
-										Dieser Gruppe ist noch keine Wissensbasis zugewiesen.
+										{t('management.noKbAssigned')}
 									</p>
 								{/each}
 							</div>
 
 							<div class="flex items-center justify-end gap-2">
 								{#if isDirty(member)}
-									<span class="text-muted-foreground text-xs">Nicht gespeicherte Änderungen</span>
+									<span class="text-muted-foreground text-xs">{t('management.unsaved')}</span>
 									<Button
 										variant="ghost"
 										size="sm"
 										disabled={busy === member.user_sub}
 										onclick={() => discard(member)}
 									>
-										Verwerfen
+										{t('management.discard')}
 									</Button>
 								{/if}
 								<Button
@@ -307,7 +306,7 @@
 									{:else}
 										<SaveIcon data-icon="inline-start" />
 									{/if}
-									Speichern
+									{t('common.save')}
 								</Button>
 							</div>
 						</div>

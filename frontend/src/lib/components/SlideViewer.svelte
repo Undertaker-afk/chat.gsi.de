@@ -17,6 +17,7 @@
 	 * PDFs. `loadFromUrl` would do its own fetch and hit that wall.
 	 */
 	import { browser } from '$app/environment';
+import { t } from '$lib/language.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Alert from '$lib/components/ui/alert';
@@ -95,7 +96,7 @@
 {#if error}
 	<Alert.Root variant="destructive">
 		<TriangleAlertIcon />
-		<Alert.Title>Präsentation konnte nicht angezeigt werden</Alert.Title>
+		<Alert.Title>{t('slideViewer.errorTitle')}</Alert.Title>
 		<Alert.Description class="flex flex-col items-start gap-2">
 			<span>{error}</span>
 			{#if sourceUrl}
@@ -108,7 +109,7 @@
 					class="inline-flex items-center gap-1 underline underline-offset-2"
 				>
 					<ExternalLinkIcon class="size-3.5" />
-					Original öffnen
+					{t('slideViewer.openOriginal')}
 				</a>
 			{/if}
 		</Alert.Description>
@@ -119,7 +120,7 @@
 			{#if loading}
 				<div class="text-muted-foreground absolute inset-0 flex items-center gap-2 p-4 text-sm">
 					<Spinner class="size-4" />
-					Präsentation wird geladen…
+					{t('slideViewer.loading')}
 				</div>
 			{/if}
 			<canvas bind:this={canvas} class="h-auto w-full"></canvas>
@@ -130,19 +131,19 @@
 				<Button
 					variant="ghost"
 					size="icon"
-					aria-label="Vorherige Folie"
+					aria-label={t('slideViewer.previousSlide')}
 					disabled={slide <= 0}
 					onclick={() => go(slide - 1)}
 				>
 					<ChevronLeftIcon />
 				</Button>
 				<span class="text-muted-foreground text-xs tabular-nums">
-					Folie {slide + 1} / {count}
+					{t('slideViewer.slideCounter', { current: slide + 1, total: count })}
 				</span>
 				<Button
 					variant="ghost"
 					size="icon"
-					aria-label="Nächste Folie"
+					aria-label={t('slideViewer.nextSlide')}
 					disabled={slide >= count - 1}
 					onclick={() => go(slide + 1)}
 				>

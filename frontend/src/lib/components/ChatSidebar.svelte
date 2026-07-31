@@ -10,26 +10,29 @@
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
+	import { t } from '$lib/language.svelte';
 
 	let { chat }: { chat: ChatSession } = $props();
 
 	let renaming = $state<string | null>(null);
 	let draftTitle = $state('');
 
-	/** Group by recency so a long history stays scannable. */
+	/** Group by recency so a long history stays scannable. Keys are stable
+	 *  identifiers translated at render (t('sidebar.<key>')); insertion order
+	 *  today→older is the display order. */
 	const groups = $derived.by(() => {
 		const now = Date.now();
 		const day = 86_400_000;
 		const buckets: Record<string, typeof chat.conversations> = {
-			Heute: [],
-			Gestern: [],
-			'Letzte 7 Tage': [],
-			Älter: []
+			today: [],
+			yesterday: [],
+			last7Days: [],
+			older: []
 		};
 		for (const c of chat.conversations) {
 			const age = now - new Date(c.updatedAt).getTime();
 			const key =
-				age < day ? 'Heute' : age < 2 * day ? 'Gestern' : age < 7 * day ? 'Letzte 7 Tage' : 'Älter';
+				age < day ? 'today' : age < 2 * day ? 'yesterday' : age < 7 * day ? 'last7Days' : 'older';
 			buckets[key].push(c);
 		}
 		return Object.entries(buckets).filter(([, list]) => list.length > 0);
@@ -51,7 +54,7 @@
 	<Sidebar.Header>
 		<div class="flex items-center gap-2 px-2 py-1">
 			<Logo class="h-4 w-auto" />
-			<span class="text-muted-foreground text-sm">Assistant</span>
+			<span class="text-muted-foreground text-sm">{t('sidebar.assistant')}</span>
 		</div>
 		<Button
 			variant="outline"
@@ -60,18 +63,18 @@
 			disabled={chat.busy}
 		>
 			<PlusIcon data-icon="inline-start" />
-			Neue Unterhaltung
+			{t('sidebar.newChat')}
 		</Button>
 	</Sidebar.Header>
 
 	<Sidebar.Content>
 		{#if chat.conversations.length === 0}
-			<p class="text-muted-foreground px-4 py-3 text-sm">Noch keine Unterhaltungen.</p>
+			<p class="text-muted-foreground px-4 py-3 text-sm">{t('sidebar.empty')}</p>
 		{/if}
 
 		{#each groups as [label, items] (label)}
 			<Sidebar.Group>
-				<Sidebar.GroupLabel>{label}</Sidebar.GroupLabel>
+				<Sidebar.GroupLabel>{t(`sidebar.${label}`)}</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
 						{#each items as conversation (conversation.id)}
@@ -95,14 +98,14 @@
 									>
 										<MessageSquareIcon />
 										<span class="truncate">
-											{conversation.title ?? 'Ohne Titel'}
+											{conversation.title ?? t('common.untitled')}
 										</span>
 									</Sidebar.MenuButton>
 
 									<DropdownMenu.Root>
 										<DropdownMenu.Trigger>
 											{#snippet child({ props })}
-												<Sidebar.MenuAction {...props} showOnHover aria-label="Aktionen">
+												<Sidebar.MenuAction {...props} showOnHover aria-label={t('common.actions')}>
 													<MoreHorizontalIcon />
 												</Sidebar.MenuAction>
 											{/snippet}
@@ -113,14 +116,14 @@
 													onclick={() => startRename(conversation.id, conversation.title)}
 												>
 													<PencilIcon />
-													Umbenennen
+													{t('common.rename')}
 												</DropdownMenu.Item>
 												<DropdownMenu.Item
 													variant="destructive"
 													onclick={() => chat.remove(conversation.id)}
 												>
 													<Trash2Icon />
-													Löschen
+													{t('common.delete')}
 												</DropdownMenu.Item>
 											</DropdownMenu.Group>
 										</DropdownMenu.Content>

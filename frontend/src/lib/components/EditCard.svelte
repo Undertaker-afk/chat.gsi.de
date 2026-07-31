@@ -7,6 +7,7 @@
 	 * silent overwrite would be a change they never saw. One click is cheap; an
 	 * unnoticed rewrite is not.
 	 */
+import { t } from '$lib/language.svelte';
 	import { diffLines, type FileEdit } from '$lib/edits';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -25,7 +26,7 @@
 
 	async function apply() {
 		if (!conversationId) {
-			failure = 'Diese Unterhaltung ist noch nicht gespeichert.';
+			failure = t('editCard.notSaved');
 			return;
 		}
 		applying = true;
@@ -44,11 +45,10 @@
 			if (res.ok) {
 				applied = true;
 			} else {
-				const body = await res.json().catch(() => null);
-				failure = body?.message ?? `Fehlgeschlagen (HTTP ${res.status})`;
+				failure = body?.message ?? t('editCard.failed', { status: res.status });
 			}
 		} catch (e) {
-			failure = `Netzwerkfehler: ${e instanceof Error ? e.message : String(e)}`;
+			failure = t('editCard.networkError', { message: e instanceof Error ? e.message : String(e) });
 		} finally {
 			applying = false;
 		}
@@ -59,17 +59,17 @@
 	<div class="bg-muted/70 flex items-center gap-2 border-b px-3 py-1.5">
 		<PencilIcon class="text-muted-foreground size-3.5 shrink-0" />
 		<span class="truncate font-mono text-xs">{edit.filename}</span>
-		<Badge variant="secondary" class="shrink-0 text-[0.65rem]">Änderung</Badge>
+		<Badge variant="secondary" class="shrink-0 text-[0.65rem]">{t('editCard.change')}</Badge>
 		<div class="ml-auto shrink-0">
 			{#if applied}
 				<span class="text-muted-foreground flex items-center gap-1 text-xs">
 					<CheckIcon class="size-3.5" />
-					Übernommen
+					{t('editCard.applied')}
 				</span>
 			{:else}
 				<Button size="sm" variant="secondary" class="h-6" disabled={applying} onclick={apply}>
 					{#if applying}<Spinner class="size-3" data-icon="inline-start" />{/if}
-					Übernehmen
+					{t('editCard.apply')}
 				</Button>
 			{/if}
 		</div>

@@ -1,0 +1,761 @@
+/**
+ * The one language file.
+ *
+ * Everything the UI says, in every language, plus the reactive machinery that
+ * shows the right one. Components call `t('settings.title')` and re-render when
+ * the language changes, because `t` reads the `$state` below.
+ *
+ * ── To add a language ──────────────────────────────────────────────────────
+ *   1. add its code to `Language`
+ *   2. add an entry to `LANGUAGES` (code + the name to show in the dropdown)
+ *   3. add a block to `dictionaries` with the same keys as `de`
+ * Missing keys fall back to the default language, so a partial translation is
+ * safe to ship: untranslated strings just appear in German.
+ *
+ * `{name}` placeholders are filled from params: t('storage.usedOfQuota', {...}).
+ */
+
+export type Language = 'de' | 'en';
+
+/** Default and fallback. The app was authored in German. */
+export const DEFAULT_LANGUAGE: Language = 'de';
+
+/** Drives the settings dropdown; order here is the order shown. */
+export const LANGUAGES: { code: Language; label: string }[] = [
+	{ code: 'de', label: 'Deutsch' },
+	{ code: 'en', label: 'English' }
+];
+
+export function isLanguage(value: unknown): value is Language {
+	return LANGUAGES.some((l) => l.code === value);
+}
+
+type Dict = { [key: string]: string | Dict };
+
+const dictionaries: Record<Language, Dict> = {
+	de: {
+		common: {
+			loading: 'Wird geladen…',
+			save: 'Speichern',
+			saved: 'Gespeichert',
+			cancel: 'Abbrechen',
+			delete: 'Löschen',
+			rename: 'Umbenennen',
+			actions: 'Aktionen',
+			close: 'Schließen',
+			untitled: 'Ohne Titel',
+			unnamed: 'Ohne Namen'
+		},
+		theme: {
+			label: 'Design',
+			switch: 'Design wechseln',
+			systemHint: '„System“ folgt der Einstellung Ihres Betriebssystems.',
+			light: 'Hell',
+			dark: 'Dunkel',
+			system: 'System',
+			lightAria: 'Helles Design',
+			darkAria: 'Dunkles Design',
+			systemAria: 'Systemdesign'
+		},
+		language: {
+			label: 'Sprache',
+			hint: 'Sprache der Benutzeroberfläche.'
+		},
+		settings: {
+			title: 'Einstellungen',
+			description: 'Design, Sprache und hochgeladene Dateien verwalten.'
+		},
+		storage: {
+			title: 'Speicher',
+			usedOfQuota: '{used} von {quota} belegt',
+			uploads: 'Uploads',
+			chats: 'Chats',
+			generated: 'Generiert',
+			free: 'Frei',
+			barAria: '{uploads} Uploads, {chats} Chats, {generated} generierte Dateien, {free} frei',
+			noUploads: 'Keine Uploads',
+			noUploadsHint: 'Angehängte Bilder erscheinen hier und können einzeln gelöscht werden.',
+			notSent: 'nicht gesendet',
+			deletedNote: 'Gelöschte Bilder verschwinden auch aus bereits gesendeten Nachrichten.'
+		},
+		sidebar: {
+			assistant: 'Assistant',
+			newChat: 'Neue Unterhaltung',
+			empty: 'Noch keine Unterhaltungen.',
+			today: 'Heute',
+			yesterday: 'Gestern',
+			last7Days: 'Letzte 7 Tage',
+			older: 'Älter'
+		},
+		modes: {
+			fast: 'Schnell',
+			fastHint: 'Eine Suche · sofortige Antwort',
+			deep: 'Gründlich',
+			deepHint: 'Bis zu 3 Runden · mehrere Subagenten'
+		},
+		page: {
+			account: 'Konto',
+			generatedFiles: 'Generierte Dateien',
+			management: 'Verwaltung',
+			administration: 'Administration',
+			logout: 'Abmelden',
+			emptyTitle: 'Fragen Sie etwas über GSI',
+			emptyDescription:
+				'Antworten stammen ausschließlich aus dem GSI-Wiki — mit Quellenangaben zum Nachlesen.',
+			closePanel: 'Seitenbereich schließen',
+			suggestion1: 'Wie setze ich mein GSI Linux-Passwort zurück?',
+			suggestion2: 'Welche Linux-Dienste bietet GSI an?',
+			suggestion3: 'Wie beantrage ich einen Linux-Account?',
+			suggestion4: 'Was ist das Lustre-Dateisystem?'
+		},
+		composer: {
+			placeholder: 'Frage eingeben…',
+			send: 'Senden',
+			attach: 'Anhängen',
+			upload: 'Hochladen',
+			history: 'Verlauf',
+			generated: 'Generiert',
+			attachment: 'Anhang {n}',
+			removeAttachment: 'Anhang entfernen',
+			removeFile: 'Datei entfernen',
+			noRecentUploads: 'Noch keine Uploads',
+			noGenerated: 'Noch keine gespeicherten Dateien',
+			deepNote: 'Gründlich: mehrere Suchläufe, dauert länger.',
+			fastNote: 'Schnell: eine Suche, sofortige Antwort.',
+			enterHint: 'Enter zum Senden, Shift+Enter für neue Zeile',
+			searches: 'Durchsucht: {list}',
+			noKnowledgeBase:
+				'Ihnen ist noch keine Wissensbasis zugewiesen — bitte wenden Sie sich an Ihre Abteilungsleitung.',
+			uploadFailed: 'Upload fehlgeschlagen.',
+			uploadFailedStatus: 'Upload fehlgeschlagen ({status})'
+		},
+		message: {
+			fileDeleted: '„{name}“ wurde inzwischen gelöscht.',
+			fileLoadError: 'Datei konnte nicht geladen werden (HTTP {status}).',
+			saveToGenerated: 'In Generierte Dateien speichern',
+			filenameLabel: 'Dateiname',
+			editMessage: 'Nachricht bearbeiten',
+			error: 'Fehler',
+			filenameHint: 'Die Endung bestimmt, wie die Datei angezeigt wird — <code>.md</code> gerendert, alles andere im Code-Editor.',
+			openInPanel: 'Im Seitenbereich öffnen',
+			overwriteWarning: 'Gleicher Name überschreibt die vorhandene Datei.',
+			enlargeAttachment: 'Anhang {n} vergrößern',
+			attachment: 'Anhang {n}',
+			previousVersion: 'Vorherige Version',
+			nextVersion: 'Nächste Version',
+			attachmentOf: 'Anhang {n} von {total}',
+			previousAttachment: 'Vorheriger Anhang',
+			nextAttachment: 'Nächster Anhang',
+			incompleteAnswer: 'Unvollständige Antwort',
+			timeoutDescription: 'Die Anfrage hat ihr Zeitbudget erreicht. Es wird gezeigt, was bis dahin gefunden wurde.',
+			source: 'Quelle',
+			sources: 'Quellen'
+		},
+		management: {
+			title: 'Verwaltung',
+			subtitle: 'Zugriff Ihrer Abteilung auf Wissensbasen',
+			noGroup: 'Keine Gruppe zugewiesen',
+			noGroupDescription: 'Sie haben die Rolle für die Verwaltung, leiten aber noch keine Gruppe. Eine Administratorin oder ein Administrator muss Sie als Leitung einer Gruppe eintragen.',
+			personAccess: 'Zugriff je Person festlegen.',
+			ceilingInfo: 'Ihre Gruppe darf auf {count} Wissensbasis(en) zugreifen. Mehr können Sie nicht vergeben — das legt die Administration fest.',
+			noMembers: 'Diese Gruppe hat noch keine Mitglieder.',
+			manager: 'Leitung',
+			fullRights: 'volle Gruppenrechte',
+			grantFullRights: 'Volle Gruppenrechte',
+			noKbAssigned: 'Dieser Gruppe ist noch keine Wissensbasis zugewiesen.',
+			unsaved: 'Nicht gespeicherte Änderungen',
+			discard: 'Verwerfen',
+			members: '{count} Mitglied(er)',
+			networkError: 'Netzwerkfehler: {error}',
+			saveFailed: 'Speichern fehlgeschlagen (HTTP {status})',
+			savedHidden: 'Gespeichert. {count} Unterhaltung(en) ausgeblendet — nach {days} Tagen werden sie gelöscht.',
+			savedUnhidden: 'Gespeichert. {count} Unterhaltung(en) wieder sichtbar.'
+		},
+		files: {
+			title: 'Generierte Dateien',
+			subtitle: 'Vom Assistenten erzeugt und von Ihnen gespeichert',
+			noFiles: 'Noch keine Dateien',
+			noFilesDescription: 'Wenn der Assistent einen Codeblock schreibt, erscheint darüber „Speichern“. Gespeicherte Dateien landen hier.',
+			expandList: 'Dateiliste ausklappen',
+			collapseList: 'Dateiliste einklappen',
+			filesLabel: 'Dateien',
+			nothingInCategory: 'Nichts in dieser Kategorie.',
+			noFileSelected: 'Keine Datei gewählt',
+			download: 'Herunterladen',
+			selectFileHint: 'Wählen Sie links eine Datei.',
+			all: 'Alle',
+			fileCount: '{count} Datei(en)',
+			loadError: 'Datei konnte nicht geladen werden: {message}',
+			deleteFailed: 'Löschen fehlgeschlagen (HTTP {status})'
+		},
+		admin: {
+			networkError: 'Netzwerkfehler: {error}',
+			saveFailed: 'Speichern fehlgeschlagen (HTTP {status})',
+			sweepSaved: 'Gespeichert. {hidden} Unterhaltung(en) ausgeblendet, {unhidden} wieder sichtbar.',
+			changesSaved: 'Gespeichert: {count} Änderung(en).',
+			noGroupSelected: 'Keine Gruppe gewählt',
+			ceilingDescription: 'Obergrenze der Gruppe. Abteilungsleitungen können daraus je Person eine Teilmenge vergeben — niemals mehr.',
+			members: 'Mitglieder',
+			membersDescription: 'Personen & Leitung',
+			knowledgeBases: 'Wissensbasen',
+			knowledgeBasesDescription: 'Standard für alle',
+			sources: 'Quellen',
+			sourcesDescription: 'Crawls & Status',
+			audit: 'Protokoll',
+			auditDescription: 'Wer hat was geändert',
+			stats: 'Statistik',
+			standardKbHint: 'Standard-Wissensbasen erhält jede angemeldete Person auch ohne Gruppe.',
+			deleteGroup: 'Gruppe löschen',
+			membersHeader: 'Wer in der Gruppe ist, und wer sie leitet. Leitung setzt zusätzlich die Rolle <code>llmbot-privileged</code> in Keycloak voraus.',
+			addUser: 'Hinzufügen',
+			kbDescription: 'Eine je Foswiki-Web plus eine je sonstiger Quelle. „Standard" erhält jede angemeldete Person auch ohne Gruppe — alles andere muss über eine Gruppe vergeben werden.',
+			crawlerDescription: 'Der Crawler läuft in einem eigenen Container. Diese Seite schreibt die gewünschte Aktion in die Datenbank; der Crawler holt sie sich beim nächsten Durchlauf (höchstens fünf Minuten) ab. Ein laufender Crawl reagiert auf Pause und Stopp jeweils an der nächsten Seitengrenze.',
+			running: 'läuft',
+			stopped: 'gestoppt',
+			queued: 'eingereiht',
+			changed: '{count} geändert',
+			notLoaded: '{count} nicht geladen',
+			failed: '{count} fehlgeschlagen',
+			noHeartbeat: 'kein Lebenszeichen seit {time} — Crawler vermutlich abgestürzt',
+			noComparison: 'Kein Vergleichslauf vorhanden — der Fortschritt lässt sich erst ab dem zweiten Crawl schätzen.',
+			autoModeLabel: 'Modus für Automatik',
+			nextRunIn: 'nächster Lauf in {time}',
+			changedOnlyHint: '„Nur Geändertes" wirkt erst nach einem vollen Lauf',
+			lastRuns: 'Letzte Läufe',
+			seen: 'gesehen',
+			deleted: 'gelöscht',
+			chunks: 'Chunks',
+			sourcesFooter: '„Nur Geändertes" fragt die Quelle nach ihrer Revision und lädt unveränderte Seiten gar nicht erst — bei fünf Sekunden Wartezeit pro Abruf ist das der Unterschied zwischen Minuten und Stunden. Ein gestoppter Lauf löscht nie: er hat nur einen Teil der Seiten gesehen, und alles danach würde fälschlich als gelöscht gelten.',
+			noAuditEntries: 'Noch keine Einträge.',
+			quality: 'Qualität',
+			noQuestions: 'Noch keine Fragen.',
+			fastDeepStats: '{fast} schnell · {deep} gründlich',
+			alreadyQueued: 'Für diese Quelle steht bereits ein Crawl in der Warteschlange.',
+			crawlQueued: 'Crawl eingereiht — startet beim nächsten Crawler-Durchlauf (max. 5 Min).',
+			confirmStopCrawl: 'Crawl von „{slug}" wirklich stoppen? Der Lauf endet an der nächsten Seite; bereits indexierte Seiten bleiben erhalten.',
+			stopRequested: 'Stopp angefordert — der Lauf endet an der nächsten Seitengrenze.',
+			crawlPaused: 'Pausiert. Ein laufender Crawl wartet, geplante Läufe starten nicht.',
+			crawlResumed: 'Fortgesetzt.',
+			unsaved: 'Nicht gespeicherte Änderungen',
+			discard: 'Verwerfen',
+			save: 'Speichern',
+			title: 'Administration',
+			subtitle: 'Gruppen, Wissensbasen und Quellen',
+			tabGroups: 'Gruppen',
+			tabGroupsDesc: 'Zugriff festlegen',
+			oneGroupPerDept: 'Eine Gruppe pro Abteilung.',
+			noGroups: 'Noch keine Gruppen.',
+			newGroup: 'Neue Gruppe',
+			groupNamePlaceholder: 'z. B. IT',
+			description: 'Beschreibung',
+			optional: 'optional',
+			createGroup: 'Anlegen',
+			standard: 'Standard',
+			pages: 'Seiten',
+			membersOf: 'Mitglieder von {name}',
+			person: 'Person',
+			access: 'Zugriff',
+			manager: 'Leitung',
+			fullRights: 'volle Gruppenrechte',
+			removeFromGroup: 'Aus Gruppe entfernen',
+			noMembers: 'Diese Gruppe hat noch keine Mitglieder.',
+			searchPlaceholder: 'Person suchen (Name, Benutzername, E-Mail)',
+			search: 'Suchen',
+			directoryUnreachable: 'Verzeichnis nicht erreichbar ({error}). Es werden nur Personen angezeigt, die sich bereits angemeldet haben.',
+			neverLoggedIn: 'noch nie angemeldet',
+			knowledgeBase: 'Wissensbasis',
+			source: 'Quelle',
+			pagesIndexed: '{count} Seiten indexiert',
+			withRevision: 'mit Revision',
+			lastRun: 'zuletzt {date}',
+			start: 'Start',
+			mode: 'Modus',
+			status: 'Status',
+			changedLabel: 'geändert',
+			notLoadedLabel: 'nicht geladen',
+			sourcesAndCrawler: 'Quellen & Crawler',
+			paused: 'pausiert',
+			stopRequestedLabel: 'Stopp angefordert',
+			resume: 'Fortsetzen',
+			pause: 'Pause',
+			stop: 'Stopp',
+			removeFromQueue: 'Aus Warteschlange nehmen',
+			sourceDisabled: 'Quelle ist deaktiviert',
+			startCrawl: 'Crawl starten',
+			pagesSeen: '{count} Seiten gesehen',
+			since: 'seit {time}',
+			autoCrawl: 'Automatik-Crawl',
+			saveInterval: 'Intervall speichern',
+			auditDescription2: 'Jede Rechteänderung, mit Person und Zeitpunkt.',
+			time: 'Zeitpunkt',
+			who: 'Wer',
+			action: 'Aktion',
+			target: 'Betrifft',
+			corpus: 'Korpus',
+			usage14Days: 'Nutzung (14 Tage)',
+			answersWithoutSource: 'Antworten ohne Quelle',
+			storageAndUsers: 'Speicher & Personen',
+			accounts: '{count} Konten',
+			conversations: '{count} Unterhaltungen',
+			filesCount: '{count} Dateien',
+			hiddenCount: '{count} ausgeblendet',
+			crawlCancelled: 'Warteschlange geleert.',
+			intervalNone: 'Kein Automatik-Crawl',
+			intervalHourly: 'Stündlich',
+			interval6Hours: 'Alle 6 Stunden',
+			interval12Hours: 'Alle 12 Stunden',
+			intervalDaily: 'Täglich',
+			interval3Days: 'Alle 3 Tage',
+			intervalWeekly: 'Wöchentlich',
+			intervalMonthly: 'Monatlich',
+			intervalEvery: 'Alle {interval}',
+			autoCrawlDisabled: 'Automatik-Crawl abgeschaltet.',
+			intervalSaved: 'Intervall gespeichert. Der erste automatische Lauf startet nach Ablauf des Intervalls.',
+			runStatusPartial: 'teilweise',
+			runStatusFailed: 'fehlgeschlagen',
+			runStatusStopped: 'gestoppt',
+			runStatusRunning: 'läuft',
+			modeChangedOnly: 'Nur Geändertes',
+			modeChangedOnlyHint: 'Fragt die Quelle nach der Revision und lädt unveränderte Seiten gar nicht erst. Schonendste Variante.',
+			modeIncremental: 'Inkrementell',
+			modeIncrementalHint: 'Lädt jede Seite und vergleicht den Inhalts-Hash. Findet auch Änderungen ohne Revisionsangabe.',
+			modeSkipExisting: 'Nur Neues',
+			modeSkipExistingHint: 'Überspringt alles Bekannte ungeprüft. Schnell, bemerkt aber keine Bearbeitungen.',
+			modeFull: 'Vollständig',
+			modeFullHint: 'Lädt und embeddet alles neu, unabhängig vom Hash. Teuer — nur nach Modellwechsel.'
+		},
+		slideViewer: {
+			errorTitle: 'Fehler beim Laden',
+			errorDescription: 'Die Präsentation konnte nicht geladen werden.',
+			loading: 'Wird geladen…',
+			previousSlide: 'Vorherige Folie',
+			nextSlide: 'Nächste Folie',
+			openOriginal: 'Original öffnen'
+		},
+		editCard: {
+			change: 'Änderung',
+			applied: 'Übernommen',
+			apply: 'Übernehmen',
+			notSaved: 'Diese Unterhaltung ist noch nicht gespeichert.',
+			failed: 'Fehlgeschlagen (HTTP {status})',
+			networkError: 'Netzwerkfehler: {message}'
+		},
+		fileViewer: {
+			rendered: 'Gerendert',
+			renderedAria: 'Gerendert anzeigen',
+			source: 'Quelltext',
+			sourceAria: 'Quelltext anzeigen',
+			openOriginal: 'Original öffnen',
+			pdfError: 'PDF konnte nicht geladen werden',
+			pdfViewerLoadError: 'PDF-Betrachter konnte nicht geladen werden. Die Datei lässt sich weiterhin herunterladen.',
+			pdfLoading: 'PDF wird geladen…'
+		},
+		trace: {
+			searchingDocs: 'Externe Dokumente werden durchsucht …',
+			noMatchingDocs: 'Keine passenden externen Dokumente ({n} geprüft)',
+			noDocsFound: 'Keine externen Dokumente gefunden',
+			externalDocs: 'Externe Dokumente',
+			readCount: '{n} gelesen',
+			metadataOnly: 'nur Metadaten',
+			originIndico: 'Indico',
+			originRepository: 'Repository',
+			originLinked: 'Verlinkt',
+			searchingMedia: 'Mediathek wird durchsucht …',
+			noMatchingImage: 'Kein passendes Bild gefunden',
+			checked: '{n} geprüft',
+			mediaLibrary: 'Mediathek',
+			imageCredit: 'Bild: {credit}',
+			searchBroadened: 'Suche erweitert auf „{query}“'
+		},
+		adminShell: {
+			backToChat: 'Zurück zum Chat',
+			categories: 'Kategorien',
+			collapseCategories: 'Kategorien einklappen',
+			expandCategories: 'Kategorien ausklappen'
+		},
+	},
+
+	en: {
+		common: {
+			loading: 'Loading…',
+			save: 'Save',
+			saved: 'Saved',
+			cancel: 'Cancel',
+			delete: 'Delete',
+			rename: 'Rename',
+			actions: 'Actions',
+			close: 'Close',
+			untitled: 'Untitled',
+			unnamed: 'Unnamed'
+		},
+		theme: {
+			label: 'Theme',
+			switch: 'Switch theme',
+			systemHint: '“System” follows your operating system setting.',
+			light: 'Light',
+			dark: 'Dark',
+			system: 'System',
+			lightAria: 'Light theme',
+			darkAria: 'Dark theme',
+			systemAria: 'System theme'
+		},
+		language: {
+			label: 'Language',
+			hint: 'Interface language.'
+		},
+		settings: {
+			title: 'Settings',
+			description: 'Manage theme, language and uploaded files.'
+		},
+		storage: {
+			title: 'Storage',
+			usedOfQuota: '{used} of {quota} used',
+			uploads: 'Uploads',
+			chats: 'Chats',
+			generated: 'Generated',
+			free: 'Free',
+			barAria: '{uploads} uploads, {chats} chats, {generated} generated files, {free} free',
+			noUploads: 'No uploads',
+			noUploadsHint: 'Attached images appear here and can be deleted individually.',
+			notSent: 'not sent',
+			deletedNote: 'Deleted images also disappear from messages already sent.'
+		},
+		sidebar: {
+			assistant: 'Assistant',
+			newChat: 'New conversation',
+			empty: 'No conversations yet.',
+			today: 'Today',
+			yesterday: 'Yesterday',
+			last7Days: 'Last 7 days',
+			older: 'Older'
+		},
+		modes: {
+			fast: 'Fast',
+			fastHint: 'One search · instant answer',
+			deep: 'Thorough',
+			deepHint: 'Up to 3 rounds · multiple sub-agents'
+		},
+		page: {
+			account: 'Account',
+			generatedFiles: 'Generated files',
+			management: 'Management',
+			administration: 'Administration',
+			logout: 'Sign out',
+			emptyTitle: 'Ask something about GSI',
+			emptyDescription:
+				'Answers come exclusively from the GSI wiki — with sources to read up on.',
+			closePanel: 'Close side panel',
+			suggestion1: 'How do I reset my GSI Linux password?',
+			suggestion2: 'Which Linux services does GSI offer?',
+			suggestion3: 'How do I request a Linux account?',
+			suggestion4: 'What is the Lustre file system?'
+		},
+		composer: {
+			placeholder: 'Ask a question…',
+			send: 'Send',
+			attach: 'Attach',
+			upload: 'Upload',
+			history: 'History',
+			generated: 'Generated',
+			attachment: 'Attachment {n}',
+			removeAttachment: 'Remove attachment',
+			removeFile: 'Remove file',
+			noRecentUploads: 'No uploads yet',
+			noGenerated: 'No saved files yet',
+			deepNote: 'Thorough: several searches, takes longer.',
+			fastNote: 'Fast: one search, instant answer.',
+			enterHint: 'Enter to send, Shift+Enter for a new line',
+			searches: 'Searches: {list}',
+			noKnowledgeBase:
+				'You have not been assigned a knowledge base yet — please contact your department lead.',
+			uploadFailed: 'Upload failed.',
+			uploadFailedStatus: 'Upload failed ({status})'
+		},
+		message: {
+			fileDeleted: '"{name}" has since been deleted.',
+			fileLoadError: 'Could not load file (HTTP {status}).',
+			saveToGenerated: 'Save to Generated files',
+			filenameHint: 'The extension determines how the file is displayed — <code>.md</code> rendered, everything else in the code editor.',
+			error: 'Error',
+			editMessage: 'Edit message',
+			filenameLabel: 'Filename',
+			openInPanel: 'Open in side panel',
+			overwriteWarning: 'Same name overwrites the existing file.',
+			enlargeAttachment: 'Enlarge attachment {n}',
+			attachment: 'Attachment {n}',
+			previousVersion: 'Previous version',
+			nextVersion: 'Next version',
+			attachmentOf: 'Attachment {n} of {total}',
+			previousAttachment: 'Previous attachment',
+			nextAttachment: 'Next attachment',
+			incompleteAnswer: 'Incomplete answer',
+			timeoutDescription: 'The request reached its time budget. What was found up to that point is shown.',
+			source: 'Source',
+			sources: 'Sources'
+		},
+		fileViewer: {
+			rendered: 'Rendered',
+			renderedAria: 'Show rendered',
+			source: 'Source',
+			sourceAria: 'Show source',
+			openOriginal: 'Open original',
+			pdfError: 'Could not load PDF',
+			pdfViewerLoadError: 'PDF viewer could not be loaded. The file can still be downloaded.',
+			pdfLoading: 'Loading PDF…'
+		},
+		files: {
+			title: 'Generated files',
+			subtitle: 'Created by the assistant and saved by you',
+			noFiles: 'No files yet',
+			noFilesDescription: 'When the assistant writes a code block, "Save" appears above it. Saved files land here.',
+			expandList: 'Expand file list',
+			collapseList: 'Collapse file list',
+			filesLabel: 'Files',
+			nothingInCategory: 'Nothing in this category.',
+			noFileSelected: 'No file selected',
+			download: 'Download',
+			selectFileHint: 'Select a file on the left.',
+			all: 'All',
+			fileCount: '{count} file(s)',
+			loadError: 'Could not load file: {message}',
+			deleteFailed: 'Delete failed (HTTP {status})'
+		},
+		admin: {
+			networkError: 'Network error: {error}',
+			saveFailed: 'Save failed (HTTP {status})',
+			sweepSaved: 'Saved. {hidden} conversation(s) hidden, {unhidden} visible again.',
+			changesSaved: 'Saved: {count} change(s).',
+			noGroupSelected: 'No group selected',
+			ceilingDescription: 'Group ceiling. Department leads can subdivide this per person — never grant more.',
+			members: 'Members',
+			membersDescription: 'People and leadership',
+			knowledgeBases: 'Knowledge bases',
+			knowledgeBasesDescription: 'Default for everyone',
+			sources: 'Sources',
+			sourcesDescription: 'Crawls and status',
+			audit: 'Audit log',
+			auditDescription: 'Who changed what',
+			stats: 'Statistics',
+			standardKbHint: 'Default knowledge bases are available to every authenticated person even without a group.',
+			deleteGroup: 'Delete group',
+			membersHeader: 'Who is in the group, and who leads it. Leadership additionally requires the llmbot-privileged role in Keycloak.',
+			addUser: 'Add',
+			kbDescription: 'One per Foswiki web plus one per other source. Default is given to every authenticated person even without a group.',
+			crawlerDescription: 'The crawler runs in its own container. This page writes the desired action to the database; the crawler picks it up on its next pass (at most five minutes).',
+			running: 'running',
+			stopped: 'stopped',
+			queued: 'queued',
+			changed: '{count} changed',
+			notLoaded: '{count} not loaded',
+			failed: '{count} failed',
+			noHeartbeat: 'no heartbeat for {time}',
+			noComparison: 'No comparison run available.',
+			autoModeLabel: 'Mode for schedule',
+			nextRunIn: 'next run in {time}',
+			changedOnlyHint: 'Changed only takes effect after a full run',
+			lastRuns: 'Last runs',
+			seen: 'seen',
+			deleted: 'deleted',
+			chunks: 'Chunks',
+			sourcesFooter: 'Changed only asks the source for its revision and skips unchanged pages entirely.',
+			noAuditEntries: 'No entries yet.',
+			quality: 'Quality',
+			noQuestions: 'No questions yet.',
+			fastDeepStats: '{fast} fast, {deep} thorough',
+			alreadyQueued: 'A crawl is already queued for this source.',
+			crawlQueued: 'Crawl queued.',
+			confirmStopCrawl: 'Really stop crawl of {slug}? Already indexed pages are kept.',
+			stopRequested: 'Stop requested.',
+			crawlPaused: 'Paused.',
+			crawlResumed: 'Resumed.',
+			unsaved: 'Unsaved changes',
+			discard: 'Discard',
+			save: 'Save',
+			title: 'Administration',
+			subtitle: 'Groups, Knowledge Bases and Sources',
+			tabGroups: 'Groups',
+			tabGroupsDesc: 'Set access',
+			oneGroupPerDept: 'One group per department.',
+			noGroups: 'No groups yet.',
+			newGroup: 'New group',
+			groupNamePlaceholder: 'e.g. IT',
+			description: 'Description',
+			optional: 'optional',
+			createGroup: 'Create',
+			standard: 'Default',
+			pages: 'Pages',
+			membersOf: 'Members of {name}',
+			person: 'Person',
+			access: 'Access',
+			manager: 'Manager',
+			fullRights: 'full group rights',
+			removeFromGroup: 'Remove from group',
+			noMembers: 'This group has no members yet.',
+			searchPlaceholder: 'Search person (name, username, email)',
+			search: 'Search',
+			directoryUnreachable: 'Directory unreachable ({error}). Only users who have already logged in are shown.',
+			neverLoggedIn: 'never logged in',
+			knowledgeBase: 'Knowledge base',
+			source: 'Source',
+			pagesIndexed: '{count} pages indexed',
+			withRevision: 'with revision',
+			lastRun: 'last {date}',
+			start: 'Start',
+			mode: 'Mode',
+			status: 'Status',
+			changedLabel: 'changed',
+			notLoadedLabel: 'not loaded',
+			sourcesAndCrawler: 'Sources & Crawler',
+			paused: 'paused',
+			stopRequestedLabel: 'Stop requested',
+			resume: 'Resume',
+			pause: 'Pause',
+			stop: 'Stop',
+			removeFromQueue: 'Remove from queue',
+			sourceDisabled: 'Source is disabled',
+			startCrawl: 'Start crawl',
+			pagesSeen: '{count} pages seen',
+			since: 'since {time}',
+			autoCrawl: 'Auto crawl',
+			saveInterval: 'Save interval',
+			auditDescription2: 'Every permission change, with person and timestamp.',
+			time: 'Time',
+			who: 'Who',
+			action: 'Action',
+			target: 'Target',
+			corpus: 'Corpus',
+			usage14Days: 'Usage (14 days)',
+			answersWithoutSource: 'Answers without source',
+			storageAndUsers: 'Storage & Users',
+			accounts: '{count} accounts',
+			conversations: '{count} conversations',
+			filesCount: '{count} files',
+			hiddenCount: '{count} hidden',
+			crawlCancelled: 'Queue cleared.',
+			intervalNone: 'No auto crawl',
+			intervalHourly: 'Hourly',
+			interval6Hours: 'Every 6 hours',
+			interval12Hours: 'Every 12 hours',
+			intervalDaily: 'Daily',
+			interval3Days: 'Every 3 days',
+			intervalWeekly: 'Weekly',
+			intervalMonthly: 'Monthly',
+			intervalEvery: 'Every {interval}',
+			autoCrawlDisabled: 'Auto crawl disabled.',
+			intervalSaved: 'Interval saved. The first automatic run will start after the interval elapses.',
+			runStatusPartial: 'partial',
+			runStatusFailed: 'failed',
+			runStatusStopped: 'stopped',
+			runStatusRunning: 'running',
+			modeChangedOnly: 'Changed only',
+			modeChangedOnlyHint: 'Asks the source for its revision and skips unchanged pages entirely. The gentlest option.',
+			modeIncremental: 'Incremental',
+			modeIncrementalHint: 'Loads every page and compares the content hash. Also finds changes without a revision indicator.',
+			modeSkipExisting: 'New only',
+			modeSkipExistingHint: 'Skips everything known without checking. Fast, but does not notice edits.',
+			modeFull: 'Full',
+			modeFullHint: 'Loads and embeds everything anew, regardless of the hash. Expensive — only after a model change.'
+		},
+		slideViewer: {
+			errorTitle: 'Loading error',
+			errorDescription: 'The presentation could not be loaded.',
+			loading: 'Loading…',
+			previousSlide: 'Previous slide',
+			nextSlide: 'Next slide',
+			openOriginal: 'Open original'
+		},
+		management: {
+			title: 'Management',
+			subtitle: 'Your department\'s access to knowledge bases',
+			noGroup: 'No group assigned',
+			noGroupDescription: 'You have the management role but do not yet lead a group. An administrator must assign you as the head of a group.',
+			personAccess: 'Set access per person.',
+			ceilingInfo: 'Your group can access {count} knowledge base(s). You cannot grant more — this is set by the administration.',
+			noMembers: 'This group has no members yet.',
+			manager: 'Manager',
+			fullRights: 'full group rights',
+			grantFullRights: 'Full group rights',
+			noKbAssigned: 'No knowledge base has been assigned to this group yet.',
+			unsaved: 'Unsaved changes',
+			discard: 'Discard',
+			members: '{count} member(s)',
+			networkError: 'Network error: {error}',
+			saveFailed: 'Save failed (HTTP {status})',
+			savedHidden: 'Saved. {count} conversation(s) hidden — they will be deleted after {days} days.',
+			savedUnhidden: 'Saved. {count} conversation(s) visible again.'
+		},
+		editCard: {
+			change: 'Change',
+			applied: 'Applied',
+			apply: 'Apply',
+			notSaved: 'This conversation has not been saved yet.',
+			failed: 'Failed (HTTP {status})',
+			networkError: 'Network error: {message}'
+		},
+		trace: {
+			searchingDocs: 'Searching external documents…',
+			noMatchingDocs: 'No matching external documents ({n} checked)',
+			noDocsFound: 'No external documents found',
+			externalDocs: 'External documents',
+			readCount: '{n} read',
+			metadataOnly: 'metadata only',
+			originIndico: 'Indico',
+			originRepository: 'Repository',
+			originLinked: 'Linked',
+			searchingMedia: 'Searching media library…',
+			noMatchingImage: 'No matching image found',
+			checked: '{n} checked',
+			mediaLibrary: 'Media library',
+			imageCredit: 'Image: {credit}',
+			searchBroadened: 'Search broadened to "{query}"'
+		},
+		adminShell: {
+			backToChat: 'Back to chat',
+			categories: 'Categories',
+			collapseCategories: 'Collapse categories',
+			expandCategories: 'Expand categories'
+		},
+	}
+};
+
+// The current language, as reactive state. Reading it in `t()` is what makes
+// every translated string in every component update the moment it changes.
+let current = $state<Language>(DEFAULT_LANGUAGE);
+
+/** The active language. */
+export function language(): Language {
+	return current;
+}
+
+/** Switch language. Call from the settings dropdown; persistence is separate. */
+export function setLanguage(lang: Language): void {
+	current = isLanguage(lang) ? lang : DEFAULT_LANGUAGE;
+}
+
+function lookup(dict: Dict, path: string[]): string | undefined {
+	let node: string | Dict | undefined = dict;
+	for (const key of path) {
+		if (typeof node !== 'object' || node === null) return undefined;
+		node = node[key];
+	}
+	return typeof node === 'string' ? node : undefined;
+}
+
+/**
+ * Translate a dotted key in the active language.
+ *
+ * Falls back to the default language, then to the key itself, so a typo or a
+ * missing translation is visible but never blank. `{name}` in the string is
+ * replaced by `params.name`.
+ */
+export function t(key: string, params?: Record<string, string | number>): string {
+	const path = key.split('.');
+	let value = lookup(dictionaries[current], path) ?? lookup(dictionaries[DEFAULT_LANGUAGE], path);
+	if (value === undefined) return key;
+	if (params) {
+		for (const [name, replacement] of Object.entries(params)) {
+			value = value.replaceAll(`{${name}}`, String(replacement));
+		}
+	}
+	return value;
+}

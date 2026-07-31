@@ -11,6 +11,7 @@
 	 * exact syntax before copying it somewhere.
 	 */
 	import { browser } from '$app/environment';
+	import { t } from '$lib/language.svelte';
 	import SlideViewer from './SlideViewer.svelte';
 	import SvelteMarkdown, { buildUnsupportedHTML } from '@humanspeak/svelte-markdown';
 	import { prepareMarkdown } from '$lib/markdown';
@@ -122,13 +123,13 @@
 			onValueChange={(v) => v && (markdownMode = v as 'rendered' | 'source')}
 			class="justify-start"
 		>
-			<ToggleGroup.Item value="rendered" aria-label="Gerendert anzeigen">
+			<ToggleGroup.Item value="rendered" aria-label={t('fileViewer.renderedAria')}>
 				<EyeIcon data-icon="inline-start" />
-				Gerendert
+				{t('fileViewer.rendered')}
 			</ToggleGroup.Item>
-			<ToggleGroup.Item value="source" aria-label="Quelltext anzeigen">
+			<ToggleGroup.Item value="source" aria-label={t('fileViewer.sourceAria')}>
 				<CodeIcon data-icon="inline-start" />
-				Quelltext
+				{t('fileViewer.source')}
 			</ToggleGroup.Item>
 		</ToggleGroup.Root>
 	{/if}
@@ -141,7 +142,7 @@
 		{#if pdfError}
 			<Alert.Root variant="destructive">
 				<TriangleAlertIcon />
-				<Alert.Title>PDF konnte nicht geladen werden</Alert.Title>
+				<Alert.Title>{t('fileViewer.pdfError')}</Alert.Title>
 				<Alert.Description class="flex flex-col items-start gap-2">
 					<span>{pdfError}</span>
 					{#if sourceUrl}
@@ -154,7 +155,7 @@
 							class="inline-flex items-center gap-1 underline underline-offset-2"
 						>
 							<ExternalLinkIcon class="size-3.5" />
-							Original öffnen
+							{t('fileViewer.openOriginal')}
 						</a>
 					{/if}
 				</Alert.Description>
@@ -172,16 +173,13 @@
 						<Pdf.default url={blobUrl} showButtons={['navigation', 'zoom', 'rotate', 'print']} />
 					{/key}
 				{:catch}
-					<p class="text-muted-foreground p-4 text-sm">
-						PDF-Betrachter konnte nicht geladen werden. Die Datei lässt sich weiterhin
-						herunterladen.
-					</p>
+					<p class="text-muted-foreground p-4 text-sm">{t('fileViewer.pdfViewerLoadError')}</p>
 				{/await}
 			</div>
 		{:else}
 			<div class="text-muted-foreground flex items-center gap-2 rounded-lg border p-4 text-sm">
 				{#if pdfLoading}<Spinner class="size-4" />{/if}
-				PDF wird geladen…
+				{t('fileViewer.pdfLoading')}
 			</div>
 		{/if}
 	{:else if isMarkdown && markdownMode === 'rendered'}
