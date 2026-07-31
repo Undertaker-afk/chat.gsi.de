@@ -71,8 +71,27 @@ enable `nodeHostAliases` (see `values-lab.yaml`).
 
 ## Building images
 
-The three application images are not published anywhere public. Build and push
-them to a registry your cluster can pull from:
+### In CI (GitHub Actions → ghcr.io)
+
+`.github/workflows/publish.yml` builds all three images and packages the chart,
+pushing everything to `ghcr.io/<owner>` on every push to `main` (tag `:dev`) and
+on a `v*` tag (semver). No PAT needed — the built-in `GITHUB_TOKEN` writes
+packages. After the first run, point the chart at them:
+
+```yaml
+image:
+  frontend:   { repository: ghcr.io/<owner>/chat-gsi-frontend }
+  crawler:    { repository: ghcr.io/<owner>/chat-gsi-crawler }
+  statuspage: { repository: ghcr.io/<owner>/chat-gsi-statuspage }
+```
+
+> **ghcr packages are private by default.** For the cluster to pull the images
+> and Flux to pull the chart, either make the four packages public (repo →
+> Packages → each package → Package settings → Change visibility), or provide
+> credentials: `imagePullSecrets` for the images, and an OCIRepository
+> `secretRef` (a docker-registry secret with a read:packages PAT) for the chart.
+
+### By hand
 
 ```bash
 for c in frontend crawler statuspage; do

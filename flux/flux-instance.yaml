@@ -1,0 +1,26 @@
+# Flux, installed and managed by the Flux Operator (not `flux bootstrap`).
+#
+# There is no `spec.sync` here: this is a "gitless" setup where Flux does not sync
+# a whole repo, it just runs the controllers, and the app is delivered by the
+# OCIRepository + HelmRelease under chat-gsi/. Add a sync block later to have Flux
+# reconcile this whole flux/ directory from Git or an OCI artifact.
+apiVersion: fluxcd.controlplane.io/v1
+kind: FluxInstance
+metadata:
+  name: flux
+  namespace: flux-system
+  annotations:
+    fluxcd.controlplane.io/reconcileEvery: "1h"
+spec:
+  distribution:
+    version: "2.x"
+    registry: "ghcr.io/fluxcd"
+  # Only what an OCI HelmRelease needs. kustomize-controller and the image
+  # automation controllers are omitted to keep the footprint small on the lab node.
+  components:
+    - source-controller
+    - helm-controller
+    - notification-controller
+  cluster:
+    type: kubernetes
+    multitenant: false

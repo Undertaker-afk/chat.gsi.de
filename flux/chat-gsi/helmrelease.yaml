@@ -1,0 +1,78 @@
+# Deploy the chart into chat-gsi-flux, isolated from the live chat-gsi stack.
+#
+# Non-secret values are inline; secrets come from a Secret NOT in Git
+# (chat-gsi-flux-secrets, keyed values.yaml, created out of band). Distinct
+# `-f.lab` hosts keep Traefik from colliding with the live stack, and the heavy
+# optional pieces are off so this stays a light proof that Flux drives the chart.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: chat-gsi
+  namespace: chat-gsi-flux
+spec:
+  interval: 10m
+  chartRef:
+    kind: OCIRepository
+    name: chat-gsi
+  # Retry without rollback/uninstall, so a slow first boot does not tear it down.
+  install:
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 2m
+  upgrade:
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 2m
+  # Secrets live in a Secret, never in Git.
+  valuesFrom:
+    - kind: Secret
+      name: chat-gsi-flux-secrets
+      valuesKey: values.yaml
+  values:
+    global:
+      storageClass: local-path
+    hosts:
+      chat: chat-f.lab
+      keycloak: keycloak-f.lab
+      s3: s3-f.lab
+      grafana: grafana-f.lab
+      prometheus: prometheus-f.lab
+      uptime: uptime-f.lab
+      status: status-f.lab
+    ingress:
+      enabled: true
+      className: traefik
+    nodeHostAliases:
+      enabled: true
+      ip: "192.168.50.119"
+      hostnames:
+        - chat-f.lab
+        - keycloak-f.lab
+        - s3-f.lab
+    image:
+      frontend:
+        repository: 192.168.50.112:5000/chat-gsi-frontend
+        tag: dev
+        pullPolicy: Always
+      crawler:
+        repository: 192.168.50.112:5000/chat-gsi-crawler
+        tag: dev
+        pullPolicy: Always
+      statuspage:
+        repository: 192.168.50.112:5000/chat-gsi-statuspage
+        tag: dev
+        pullPolicy: Always
+    keycloak:
+      seedUsers: true
+    # Light proof: core only. Flip these on to have Flux manage the full stack.
+    observability:
+      enabled: false
+    logs:
+      enabled: false
+    crawler:
+      enabled: false
+    statusPage:
+      enabled: false
+    config:
+      LLM_BASE_URL: http://192.168.50.1:8080/api/v1
+      APP_VERSION: dev
