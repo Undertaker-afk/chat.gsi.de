@@ -443,6 +443,7 @@
 				oninput={grow}
 				{onkeydown}
 				{onpaste}
+				rows="1"
 				placeholder={t('composer.placeholder')}
 				class="placeholder:text-muted-foreground min-h-0 resize-none border-0 bg-transparent px-2 py-2 text-[0.95rem] leading-6 outline-none
 					{expanded ? 'order-1 w-full basis-full' : 'order-3 flex-1'}"

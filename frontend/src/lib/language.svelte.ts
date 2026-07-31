@@ -106,7 +106,13 @@ const dictionaries: Record<Language, Dict> = {
 			suggestion1: 'Wie setze ich mein GSI Linux-Passwort zurück?',
 			suggestion2: 'Welche Linux-Dienste bietet GSI an?',
 			suggestion3: 'Wie beantrage ich einen Linux-Account?',
-			suggestion4: 'Was ist das Lustre-Dateisystem?'
+			suggestion4: 'Was ist das Lustre-Dateisystem?',
+			help: 'Hilfe',
+		},
+		docs: {
+			title: 'Dokumentation',
+			empty: 'Keine Dokumentation gefunden.',
+			selectHint: 'Wählen Sie links ein Dokument.'
 		},
 		composer: {
 			placeholder: 'Frage eingeben…',
@@ -448,7 +454,13 @@ const dictionaries: Record<Language, Dict> = {
 			suggestion1: 'How do I reset my GSI Linux password?',
 			suggestion2: 'Which Linux services does GSI offer?',
 			suggestion3: 'How do I request a Linux account?',
-			suggestion4: 'What is the Lustre file system?'
+			suggestion4: 'What is the Lustre file system?',
+			help: 'Help',
+		},
+		docs: {
+			title: 'Documentation',
+			empty: 'No documentation found.',
+			selectHint: 'Select a document on the left.'
 		},
 		composer: {
 			placeholder: 'Ask a question…',

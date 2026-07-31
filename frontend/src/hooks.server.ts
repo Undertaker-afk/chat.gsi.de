@@ -13,7 +13,7 @@ import { accessLog, log } from '$lib/server/log';
  * `/metrics` is here because Prometheus scrapes with no cookie. It carries its
  * own optional bearer check; see routes/metrics/+server.ts.
  */
-const PUBLIC = ['/login', '/auth/callback', '/logout', '/health', '/metrics'];
+const PUBLIC = ['/login', '/auth/callback', '/logout', '/health', '/metrics', '/docs', '/api/docs'];
 
 /** Refresh the access token this long before it expires, so an in-flight
  *  request never races the expiry. */

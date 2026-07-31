@@ -50,7 +50,7 @@ config:
 	  --dry-run=client -o yaml | kubectl apply --server-side --force-conflicts -f -
 
 build:
-	podman build -t $(FRONTEND) -f frontend/Containerfile ./frontend
+	podman build -t $(FRONTEND) -f frontend/Containerfile .
 	podman build -t $(CRAWLER)  -f crawler/Containerfile  ./crawler
 	podman build -t $(STATUS)   -f statuspage/Containerfile ./statuspage
 

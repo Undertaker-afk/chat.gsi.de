@@ -21,6 +21,7 @@
 	import SettingsIcon from '@lucide/svelte/icons/settings';
 	import FilesIcon from '@lucide/svelte/icons/files';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import MessageSquareIcon from '@lucide/svelte/icons/message-square';
 	// Only `t` here: `language` would collide with viewer.target.language (the
@@ -153,6 +154,11 @@
 											{t('page.administration')}
 										</DropdownMenu.Item>
 									{/if}
+									<DropdownMenu.Item onclick={() => (location.href = '/docs')}>
+										<BookOpenIcon />
+										{t('page.help')}
+									</DropdownMenu.Item>
+									<DropdownMenu.Separator />
 									<DropdownMenu.Item onclick={() => (location.href = '/logout')}>
 										<LogOutIcon />
 										{t('page.logout')}
