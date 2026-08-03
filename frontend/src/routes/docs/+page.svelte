@@ -31,7 +31,7 @@
 		files: DocFile[];
 	}
 
-	const categories: Category[] = data.tree?.categories ?? [];
+	const categories: Category[] = $derived(data.tree?.categories ?? []);
 
 	let selectedPath = $state<string | null>(null);
 	let content = $state<string | null>(null);

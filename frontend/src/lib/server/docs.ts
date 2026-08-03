@@ -8,7 +8,7 @@
  */
 import { getDocContent } from './docs-s3';
 import { readdirSync, readFileSync, existsSync } from 'fs';
-import { join, basename, dirname, relative } from 'path';
+import { join, basename } from 'path';
 
 const DOCS_ROOT = join(process.cwd(), 'docs-content');
 
