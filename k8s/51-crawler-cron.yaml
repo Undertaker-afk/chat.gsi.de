@@ -10,6 +10,62 @@
 # queued admin requests, then start any source whose interval has come round.
 # With an empty queue and nothing due it exits in well under a second, which is
 # the normal case for 287 of every 288 daily runs.
+#
+# The corpus volume is declared here, in the file `make deploy` applies, because
+# the CronJob below cannot schedule a single pod without it. It is also mounted
+# by the manual Job in 50-crawler-job.yaml, which deploy does NOT apply -- and
+# while the claim lived there instead, a fresh cluster produced a CronJob whose
+# every pod stayed Pending and, under Forbid, silently blocked all later ticks.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: corpus
+  namespace: chat-gsi
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
+# The tick dispatches a Job per crawl, so it needs to create Jobs and to read the
+# CronJob it clones them from. Nothing else: no secrets, no pods, no deletes.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crawler
+  namespace: chat-gsi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: crawler-dispatch
+  namespace: chat-gsi
+rules:
+  # `get` on cronjobs is how a dispatched crawl inherits the image, env, volumes
+  # and resources of the tick itself, instead of a second copy of that spec here
+  # that would silently drift.
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: crawler-dispatch
+  namespace: chat-gsi
+subjects:
+  - kind: ServiceAccount
+    name: crawler
+    namespace: chat-gsi
+roleRef:
+  kind: Role
+  name: crawler-dispatch
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -18,10 +74,17 @@ metadata:
   namespace: chat-gsi
 spec:
   schedule: "*/5 * * * *"
-  # A crawl can run for hours. Forbid means a tick that is still crawling blocks
-  # the next one instead of starting a second crawler against the same source --
-  # `tick` guards against that in SQL too, but two independent guards is the
-  # right number for something that could otherwise hammer wiki.gsi.de.
+  # Forbid is still right, but it now guards something that finishes in under a
+  # second: the tick reaps, claims and dispatches, and the crawling happens in
+  # the Jobs it starts (crawler/app/dispatch.py).
+  #
+  # While the tick crawled inline this policy was actively harmful. A first full
+  # crawl of www ran for three hours; for all three hours every tick was refused
+  # with JobAlreadyActive, so no queued admin request could be claimed, while
+  # `kubectl get cronjob` showed a healthy schedule. Two crawls of one source are
+  # still prevented -- by the SQL claim in claim_crawl_requests() and by
+  # due_schedules() skipping sources with a run already running, which is where
+  # that guarantee belongs.
   concurrencyPolicy: Forbid
   # A node that was asleep should not wake up and replay every missed tick.
   startingDeadlineSeconds: 300
@@ -41,6 +104,10 @@ spec:
             app: crawler
         spec:
           restartPolicy: Never
+          # Inherited by every dispatched crawl Job, since they are clones of
+          # this template -- which is why they can dispatch nothing themselves
+          # and do not need to.
+          serviceAccountName: crawler
           containers:
             - name: crawler
               image: 192.168.50.112:5000/chat-gsi-crawler:dev

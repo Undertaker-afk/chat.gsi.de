@@ -14,6 +14,7 @@ import sys
 
 from .chunk import chunk_markdown
 from .config import Config
+from .dispatch import Dispatcher
 from .llm import LLMClient
 from .log import configure as configure_logging
 from .pipeline import MODES, crawl_source, flags_for
@@ -39,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
                        help="incremental (default) | changed-only | full | skip-existing. "
                             "changed-only skips the FETCH for pages whose source-side "
                             "revision is unchanged, so an unmodified page costs nothing.")
+    crawl.add_argument("--request-id", type=int, default=None,
+                       help="close this crawl_requests row when the crawl ends. Set by "
+                            "`tick` on the Job it dispatches, so the admin UI sees the "
+                            "request finish even though another process did the work.")
 
     tick = sub.add_parser(
         "tick",
@@ -78,24 +83,38 @@ def main(argv: list[str] | None = None) -> int:
     mode = args.mode or ("full" if args.force
                          else "skip-existing" if args.skip_existing
                          else "incremental")
-    return _crawl(cfg, args.source, mode)
+    return _crawl(cfg, args.source, mode, request_id=args.request_id)
 
 
-def _crawl(cfg: Config, slug: str | None, mode: str) -> int:
+def _crawl(cfg: Config, slug: str | None, mode: str, request_id: int | None = None) -> int:
     force, skip_existing = flags_for(mode)
     with Database(cfg.database_url) as db, LLMClient(cfg) as llm:
         sources = db.sources(slug)
         if not sources:
             print(f"no enabled source matching {slug!r}", file=sys.stderr)
+            if request_id is not None:
+                # The source was deleted or disabled between the tick claiming
+                # the request and this Job starting. Closing it is the only way
+                # the admin UI ever stops showing it as in progress.
+                db.finish_crawl_request(request_id, None)
             return 1
         failed = False
         for source in sources:
             try:
-                crawl_source(source, cfg, db, llm, force=force,
-                             skip_existing=skip_existing, mode=mode, requested_by="cli")
+                stats = crawl_source(source, cfg, db, llm, force=force,
+                                     skip_existing=skip_existing, mode=mode,
+                                     requested_by="cli" if request_id is None else "request")
+                if request_id is not None:
+                    db.finish_crawl_request(request_id, getattr(stats, "run_id", None))
+                    request_id = None
             except Exception as exc:  # noqa: BLE001
                 logging.error("source %s failed: %s", source["slug"], exc)
                 failed = True
+        if request_id is not None:
+            # Every source failed, or none matched after all. Either way the
+            # request is over; a request left open blocks nothing but misreports
+            # forever in the UI.
+            db.finish_crawl_request(request_id, None)
     return 1 if failed else 0
 
 
@@ -110,7 +129,18 @@ def _tick(cfg: Config) -> int:
     killed pod stays `running` forever and would block every future scheduled
     crawl of that source. Then queued admin requests, which a human is waiting
     on. Then expired intervals.
+
+    In Kubernetes the crawling itself happens in a Job per source and this
+    returns immediately (see dispatch.py). It used to crawl inline, which under
+    the CronJob's `concurrencyPolicy: Forbid` meant a three-hour crawl blocked
+    every tick behind it, so nothing claimed the queue for three hours while the
+    schedule looked healthy. Without a service account it still crawls inline,
+    which is what compose and a local checkout do.
     """
+    dispatcher = Dispatcher()
+    if dispatcher.available:
+        logging.debug("dispatching crawls as jobs in namespace %s", dispatcher.namespace)
+
     with Database(cfg.database_url) as db, LLMClient(cfg) as llm:
         reaped = db.stale_running_runs()
         if reaped:
@@ -125,9 +155,19 @@ def _tick(cfg: Config) -> int:
                 db.finish_crawl_request(req["id"], None)
                 continue
             mode = req.get("mode") or "incremental"
-            force, skip_existing = flags_for(mode)
             worked = True
             logging.info("claimed request %d: %s (%s)", req["id"], source["slug"], mode)
+
+            if dispatcher.available and dispatcher.dispatch(
+                    slug=source["slug"],
+                    args=["crawl", "--source", source["slug"], "--mode", mode,
+                          "--request-id", str(req["id"])]):
+                # The Job closes the request out when it finishes; leaving it
+                # open here is what lets a dispatched crawl be reaped if its pod
+                # dies, exactly like an inline one.
+                continue
+
+            force, skip_existing = flags_for(mode)
             try:
                 stats = crawl_source(source, cfg, db, llm, force=force,
                                      skip_existing=skip_existing, mode=mode,
@@ -143,7 +183,6 @@ def _tick(cfg: Config) -> int:
             if source is None:
                 continue
             mode = due.get("mode") or "changed-only"
-            force, skip_existing = flags_for(mode)
             worked = True
             logging.info("scheduled crawl due: %s (%s, every %s min)",
                          source["slug"], mode, due["interval_minutes"])
@@ -151,6 +190,13 @@ def _tick(cfg: Config) -> int:
             # than its own interval would otherwise be immediately due again the
             # moment it finished, and the wiki would be crawled continuously.
             db.schedule_next(due["source_id"])
+
+            if dispatcher.available and dispatcher.dispatch(
+                    slug=source["slug"],
+                    args=["crawl", "--source", source["slug"], "--mode", mode]):
+                continue
+
+            force, skip_existing = flags_for(mode)
             try:
                 crawl_source(source, cfg, db, llm, force=force,
                              skip_existing=skip_existing, mode=mode,

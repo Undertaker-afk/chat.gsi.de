@@ -1,18 +1,14 @@
 # Batch job, not a service -- the equivalent of the compose `tools` profile.
 # Run one with:  kubectl -n chat-gsi create -f k8s/50-crawler-job.yaml
 # (create, not apply: generateName gives each run a fresh name.)
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: corpus
-  namespace: chat-gsi
-spec:
-  accessModes: [ReadWriteOnce]
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 20Gi
+#
+# The `corpus` PVC this mounts is declared in 51-crawler-cron.yaml, NOT here.
+# It used to live in this file, which `make deploy` does not apply -- so a fresh
+# cluster got the CronJob and no volume for it. Every tick pod then sat Pending
+# on "persistentvolumeclaim corpus not found", and because the CronJob is
+# concurrencyPolicy: Forbid, that one stuck job blocked every tick after it. The
+# crawler looked scheduled and ran nothing for as long as nobody looked.
+# A volume that a scheduled workload needs belongs with that workload.
 ---
 apiVersion: batch/v1
 kind: Job

@@ -133,12 +133,43 @@ things in order:
 2. **Claim** queued admin requests.
 3. **Start** any source whose interval has come round.
 
-With an empty queue and nothing due it exits in well under a second — the normal
-case for 287 of every 288 daily runs.
+It **dispatches** rather than crawls: each crawl becomes its own Job, cloned from
+the tick's own `jobTemplate` (`crawler/app/dispatch.py`), and the tick exits in
+well under a second every time — including when there is work to do.
 
-`concurrencyPolicy: Forbid` plus a SQL guard means two independent mechanisms stop
-a second crawler hitting the same source. That is the right number for something
-that could otherwise hammer `wiki.gsi.de`.
+### Why the tick does not crawl inline any more
+
+It used to, and combined with `concurrencyPolicy: Forbid` that made the scheduler
+stall behind its own work. A first full crawl of `www` ran for three hours; for
+all three hours every tick was refused with `JobAlreadyActive`, so **no queued
+admin request could be claimed** — the admin UI's "crawl now" did nothing and the
+dashboard's *oldest queued* climbed without bound, while `kubectl get cronjob`
+showed a healthy schedule and an active job. The failure was invisible from every
+angle except the queue age.
+
+Dispatching separates the two jobs that were tangled together: scheduling must be
+prompt and bounded, crawling is long and unbounded. `Forbid` is still set, but now
+it guards a sub-second process.
+
+Two crawls of one source are still prevented — by the database, which is where
+that guarantee belongs:
+
+* `claim_crawl_requests()` claims with `UPDATE … RETURNING`, so two ticks cannot
+  take the same request;
+* `due_schedules()` skips sources with a run already `running`, and the tick
+  advances `next_run_at` *before* dispatching.
+
+Concurrency is therefore bounded by the number of sources, not by timer frequency.
+
+The dispatched Job carries `--request-id`, so it closes the `crawl_requests` row
+itself and the admin UI still sees the request finish. It sets `backoffLimit: 0`:
+a Kubernetes-level retry would start a second crawl of the same source behind the
+database's back, and the stale-run reaper is the intended recovery path instead.
+
+**Outside Kubernetes** (compose, a local checkout) there is no service account,
+`Dispatcher.available` is False, and `tick` crawls inline exactly as before. The
+RBAC it needs in-cluster is `get` on cronjobs and `create` on jobs, and nothing
+else — the Role is in `k8s/51-crawler-cron.yaml`.
 
 ### Pause and stop
 

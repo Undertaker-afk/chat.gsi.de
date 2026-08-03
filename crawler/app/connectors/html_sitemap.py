@@ -92,11 +92,31 @@ class HtmlSitemapConnector(Connector):
             log.warning("%s: no sitemap, falling back to link crawl", self.slug)
             refs = list(self._from_link_crawl())
         seen: set[str] = set()
+        rejected: list[str] = []
         for ref in refs:
-            if ref.url in seen or not self._allowed(ref.url):
+            if ref.url in seen:
+                continue
+            if not self._allowed(ref.url):
+                rejected.append(ref.url)
                 continue
             seen.add(ref.url)
             yield ref
+
+        # "52 urls from sitemap" followed by "discovery returned no pages" is a
+        # true and useless pair of lines: it took a sitemap fetch and a read of
+        # this file to learn that `include: ["/user-guide/**"]` matched none of
+        # the site's actual `/virgo/user-guide/...` paths. If the patterns threw
+        # everything away, say so, and show what was thrown away.
+        if rejected and not seen:
+            log.error(
+                "%s: all %d discovered url(s) were rejected by the source's "
+                "include/exclude patterns (include=%s exclude=%s). Example paths: %s",
+                self.slug, len(rejected), self._include or ["(everything)"],
+                self._exclude or ["(nothing)"],
+                ", ".join(urlparse(u).path or "/" for u in rejected[:3]))
+        elif rejected:
+            log.info("%s: %d url(s) skipped by include/exclude patterns",
+                     self.slug, len(rejected))
 
     def fetch(self, ref: PageRef, known_revision: str | None = None) -> RawPage:
         if not self._in_scope(ref.url):
