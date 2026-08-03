@@ -30,6 +30,15 @@ reading of its schema, and it keeps working if the database layout changes.
 
 Auth is HTTP Basic with an EMPTY username and the key as the password -- Kuma's
 scheme, and the empty username is not a mistake.
+
+## When the key is wrong
+
+A 401 is final, not transient: the key arrives from the environment, and the
+environment cannot change without restarting this process, so the next poll can
+only produce the same 401. It is therefore logged once, loudly enough to be
+actionable, and the API path then switches itself off for the lifetime of the
+container. The page carries on unaffected -- everything it displays is read from
+the database -- so this degrades detail, never availability.
 """
 
 from __future__ import annotations
@@ -77,10 +86,28 @@ class KumaApi:
     def __init__(self, base_url: str, api_key: str):
         self.base_url = (base_url or "").rstrip("/")
         self.api_key = api_key or ""
+        #: Set after Kuma rejects the key. A 401 is a configuration fault, not a
+        #: blip: the key comes from the environment, the environment cannot
+        #: change without restarting this process, so retrying it every poll can
+        #: only ever produce the same 401. Left unhandled it did exactly that --
+        #: one identical line in Loki every 30 seconds, forever, for a condition
+        #: no amount of waiting fixes.
+        self._rejected = False
+        #: Suppresses duplicate lines for transient failures too. The first is
+        #: worth a line; the two thousandth is not.
+        self._last_error: str | None = None
+        self._failures = 0
 
     @property
     def configured(self) -> bool:
-        return bool(self.base_url and self.api_key)
+        return bool(self.base_url and self.api_key) and not self._rejected
+
+    @property
+    def rejected(self) -> bool:
+        """Whether Kuma refused the key. The page still works: everything it
+        shows comes from the database, and only live status and response time
+        are lost."""
+        return self._rejected
 
     def monitors(self) -> dict[str, LiveMonitor]:
         """
@@ -100,11 +127,41 @@ class KumaApi:
         try:
             with urllib.request.urlopen(request, timeout=TIMEOUT_S) as response:
                 body = response.read().decode("utf-8", "replace")
+        except urllib.error.HTTPError as err:
+            if err.code in (401, 403):
+                self._rejected = True
+                log.warning(
+                    "kuma rejected KUMA_API_KEY (HTTP %d): live status and response "
+                    "times are unavailable and will not be retried until this "
+                    "container restarts. The page still works -- everything on it "
+                    "comes from Kuma's database. To fix: create a key in Uptime Kuma "
+                    "(Settings, API Keys), put it in the KUMA_API_KEY secret and "
+                    "restart this deployment.", err.code)
+            else:
+                self._log_once(f"kuma api returned HTTP {err.code}")
+            return {}
         except (urllib.error.URLError, OSError) as err:
-            log.info("kuma api unreachable: %s", err)
+            # Genuinely transient: Kuma restarting, a rollout, a timeout.
+            self._log_once(f"kuma api unreachable: {err}")
             return {}
 
+        if self._failures:
+            log.info("kuma api reachable again after %d failed attempt(s)", self._failures)
+            self._failures = 0
+            self._last_error = None
         return _parse(body)
+
+    def _log_once(self, message: str) -> None:
+        """Log a repeating failure the first time, then stay quiet about it.
+
+        Every poll hits this path, and an unreachable Kuma during a rollout is
+        normal. One line per occurrence buries the events that matter in a log
+        nobody can then read.
+        """
+        self._failures += 1
+        if message != self._last_error:
+            log.info("%s", message)
+            self._last_error = message
 
 
 def _parse(body: str) -> dict[str, LiveMonitor]:
