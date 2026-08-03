@@ -25,7 +25,17 @@ INSERT INTO sources (slug, base_url, connector, config, enabled) VALUES
   -- Phase 6. Disabled until the wiki pipeline is proven.
   ('virgo-docs', 'https://virgo-docs.hpc.gsi.de/', 'html', jsonb_build_object(
       'sitemap', '/sitemap.xml',
-      'include', jsonb_build_array('/user-guide/**')
+      -- BOTH path forms, because this site has two of them (see 019). The
+      -- sitemap lists  https://hpc.gsi.de/virgo/user-guide/...
+      -- which redirects to  https://virgo-docs.hpc.gsi.de/user-guide/...
+      -- The include filter runs during DISCOVERY, so it sees the first form;
+      -- the document is stored under the second. With only '/user-guide/**'
+      -- every one of the 52 sitemap URLs was rejected before a single fetch,
+      -- discovery yielded nothing, and the run failed with 0 pages -- every
+      -- time, silently, since the source was created.
+      -- Matching both means neither a redirect change nor a canonicalised
+      -- sitemap can quietly empty this source again.
+      'include', jsonb_build_array('/virgo/user-guide/**', '/user-guide/**')
   ), false),
 
   ('www', 'https://www.gsi.de/', 'html', jsonb_build_object(
