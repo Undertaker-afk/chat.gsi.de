@@ -85,12 +85,38 @@ class HtmlSitemapConnector(Connector):
         raise NotImplementedError("html connector has no reliable change feed")
 
     def discover(self) -> Iterable[PageRef]:
-        refs = list(self._from_sitemap())
-        if refs:
-            log.info("%s: %d urls from sitemap", self.slug, len(refs))
-        else:
-            log.warning("%s: no sitemap, falling back to link crawl", self.slug)
-            refs = list(self._from_link_crawl())
+        # config `discovery`:
+        #   sitemap  (default) the sitemap, falling back to links if it is empty
+        #   links               link crawl only
+        #   both                the union of the two
+        #
+        # `both` exists because a sitemap is a claim about a site, not a map of
+        # it. www.gsi.de publishes `?sitemap=pages`: 2040 page records, and none
+        # of the news, press or detail URLs that are reachable by following
+        # links. The sitemap alone therefore caps that source at 2040 pages
+        # however much else is published.
+        #
+        # It costs a second pass over the site: the link crawl fetches pages to
+        # read their links, and the pipeline fetches again to index them. That
+        # is the price of finding what the CMS did not list, so it is opt-in per
+        # source rather than the default.
+        mode = str(self.config.get("discovery") or "sitemap").lower()
+
+        refs: list[PageRef] = []
+        if mode in ("sitemap", "both"):
+            refs = list(self._from_sitemap())
+            if refs:
+                log.info("%s: %d urls from sitemap", self.slug, len(refs))
+            elif mode == "sitemap":
+                log.warning("%s: no sitemap, falling back to link crawl", self.slug)
+                refs = list(self._from_link_crawl())
+
+        if mode in ("links", "both"):
+            before = len(refs)
+            # Deduplicated below with everything else, so overlap is free.
+            refs.extend(self._from_link_crawl())
+            log.info("%s: %d url(s) from link crawl (%d from the sitemap)",
+                     self.slug, len(refs) - before, before)
         seen: set[str] = set()
         rejected: list[str] = []
         for ref in refs:

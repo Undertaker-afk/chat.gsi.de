@@ -39,6 +39,15 @@ INSERT INTO sources (slug, base_url, connector, config, enabled) VALUES
   ), false),
 
   ('www', 'https://www.gsi.de/', 'html', jsonb_build_object(
-      'sitemap', '/sitemap.xml'
+      'sitemap', '/sitemap.xml',
+      -- Sitemap AND link crawl. TYPO3 publishes `?sitemap=pages`: 2040 page
+      -- records across three nested sitemaps, and nothing else -- no news, no
+      -- press, no record-backed detail URLs. The sitemap alone therefore caps
+      -- this source at 2040 pages no matter how much the site publishes.
+      -- Following links as well reaches what the CMS chose not to list.
+      -- Costs a second pass over the site (the link crawl fetches to read
+      -- links, the pipeline fetches again to index), which is why it is set
+      -- per source and not globally.
+      'discovery', 'both'
   ), false)
 ON CONFLICT (slug) DO NOTHING;
