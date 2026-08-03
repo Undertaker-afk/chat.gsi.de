@@ -220,10 +220,31 @@ class FoswikiConnector(Connector):
         return sorted(webs) or ["Main"]
 
     def _crawl_web(self, web: str, seen: set[str]) -> Iterable[PageRef]:
-        """Breadth-first link crawl within one web, seeded from its WebHome."""
+        """Breadth-first link crawl within one web, seeded from WebTopicList.
+
+        WebHome alone is not a map of a web, only of what someone chose to link
+        from its front page. Measured on wiki.gsi.de: crawling from WebHome
+        across all 27 webs reached 157 topics, while the webs' own WebTopicList
+        pages list 1592 (CSframework 337, Epics 283, Linux 172). Everything else
+        is an orphan as far as the front page is concerned -- reachable, indexed
+        by Foswiki, and invisible to us.
+
+        The original comment here assumed WebIndex and WebTopicList were
+        login-gated for anonymous users. WebIndex and WebChanges are; verified
+        2026-08-03, WebTopicList is NOT, and it lists every topic in the web.
+
+        Still a link crawl underneath: WebTopicList seeds the queue, and links
+        found while crawling are followed as before, so a topic missing from
+        both is still reached if anything links to it.
+        """
         start = urljoin(self.base_url, f"{web}/WebHome")
         queue: list[str] = [start]
         queued = {start}
+
+        for url in self._topics_from_list(web):
+            if url not in queued and self._is_indexable(url, web):
+                queued.add(url)
+                queue.append(url)
 
         while queue and len(seen) < self.max_pages:
             url = queue.pop(0)
@@ -251,6 +272,28 @@ class FoswikiConnector(Connector):
                     continue
                 queued.add(candidate)
                 queue.append(candidate)
+
+    def _topics_from_list(self, web: str) -> list[str]:
+        """Every topic WebTopicList names for this web, as absolute URLs.
+
+        Best-effort: a web whose list is restricted or missing simply falls back
+        to the WebHome link crawl, which is what every web did before.
+        """
+        html = self._get(urljoin(self.base_url, f"{web}/WebTopicList") + "?skin=text")
+        if not html:
+            log.debug("[%s] no WebTopicList for %s", self.slug, web)
+            return []
+
+        urls = []
+        for node in HTMLParser(html).css("a[href]"):
+            href = node.attributes.get("href")
+            if not href:
+                continue
+            urls.append(urldefrag(urljoin(self.base_url, href)).url)
+
+        unique = list(dict.fromkeys(urls))
+        log.info("[%s] %s: %d topic(s) listed in WebTopicList", self.slug, web, len(unique))
+        return unique
 
     def _is_indexable(self, url: str, web: str) -> bool:
         parsed = urlparse(url)
@@ -290,9 +333,11 @@ class FoswikiConnector(Connector):
         """
         self._throttle()
         try:
-            resp = self._http.get(url, headers=headers or {})
+            resp = self._follow_on_site(url, headers or {})
         except Exception as exc:  # noqa: BLE001
             log.debug("[%s] %s failed: %s", self.slug, url, exc)
+            return None
+        if resp is None:
             return None
 
         if resp.status_code == 304:
@@ -301,18 +346,68 @@ class FoswikiConnector(Connector):
         if resp.status_code != 200:
             log.debug("[%s] %s -> %d", self.slug, url, resp.status_code)
             return None
-        if "html" not in resp.headers.get("content-type", ""):
-            return None
-
-        # Foswiki topics can redirect off-site (Linux/BatchFarm -> www.gsi.de).
-        # follow_redirects is on for in-site redirects, so the landing host has to
-        # be checked explicitly -- otherwise the wiki crawl silently starts
-        # indexing the public website under wiki URLs.
-        if urlparse(str(resp.url)).netloc != urlparse(self.base_url).netloc:
-            log.debug("[%s] %s redirected off-site to %s", self.slug, url, resp.url)
-            return None
 
         return resp
+
+    #: Enough for the in-site redirect chains Foswiki produces, few enough that a
+    #: redirect loop ends quickly.
+    MAX_REDIRECTS = 5
+
+    def _follow_on_site(self, url: str, headers: dict[str, str]):
+        """GET, following redirects only while they stay on the wiki's host.
+
+        The host check has to happen BEFORE the body is read, not after. Several
+        Foswiki topics are redirect stubs to downloads:
+
+            wiki.gsi.de/CSframework/CSPackagingLV2009Current?skin=text  302
+              -> sourceforge.net/.../CSPackaging_1.05.zip/download      302
+              -> master.dl.sourceforge.net/.../CSPackaging_1.05.zip
+
+        With redirects followed automatically, httpx downloaded that archive in
+        full and only then was it discarded for not being HTML -- tens of
+        megabytes and, measured in the crawl log, 13 seconds per such topic, for
+        a page that is never indexed either way. Attachments are fetched
+        deliberately by the media path, never as a side effect of a topic
+        redirect.
+
+        Non-HTML responses are dropped without reading the body for the same
+        reason: a wiki attachment can be arbitrarily large and this connector
+        indexes topics, not files.
+        """
+        host = urlparse(self.base_url).netloc
+        current = url
+
+        for _ in range(self.MAX_REDIRECTS):
+            with self._http.stream("GET", current, headers=headers,
+                                   follow_redirects=False) as resp:
+                if resp.status_code in (301, 302, 303, 307, 308):
+                    location = resp.headers.get("location")
+                    if not location:
+                        return None
+                    target = urljoin(current, location)
+                    if urlparse(target).netloc != host:
+                        log.debug("[%s] %s redirects off-site to %s -- not following",
+                                  self.slug, current, target)
+                        return None
+                    current = target
+                    continue
+
+                if resp.status_code == 304:
+                    resp.read()
+                    return resp
+                if resp.status_code != 200:
+                    log.debug("[%s] %s -> %d", self.slug, current, resp.status_code)
+                    return None
+                if "html" not in resp.headers.get("content-type", ""):
+                    log.debug("[%s] %s is %s -- not downloading", self.slug, current,
+                              resp.headers.get("content-type", "unknown"))
+                    return None
+
+                resp.read()
+                return resp
+
+        log.debug("[%s] %s exceeded %d redirects", self.slug, url, self.MAX_REDIRECTS)
+        return None
 
     def _throttle(self) -> None:
         if self._min_interval <= 0:
