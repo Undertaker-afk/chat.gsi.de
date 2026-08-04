@@ -121,10 +121,23 @@ class Dispatcher:
             },
             "spec": spec["spec"],
         }
-        # Inherited selectors and labels belong to the CronJob's own Jobs; leaving
-        # them on a clone makes Kubernetes reject the create.
+        # An inherited selector belongs to the CronJob's own Jobs and makes the
+        # create fail on a clone. The pod template's LABELS, however, must be
+        # kept: promtail ships logs and every Grafana panel selects
+        # {app="crawler"}, so dropping them made dispatched crawls invisible --
+        # crawls running, pages climbing, and "No data" in all three log panels.
+        # Only the controller-managed labels are stripped; the meaningful ones
+        # stay, plus the source so one crawl's logs can be isolated.
         body["spec"].pop("selector", None)
-        body["spec"].get("template", {}).get("metadata", {}).pop("labels", None)
+        labels = (body["spec"].setdefault("template", {})
+                              .setdefault("metadata", {})
+                              .setdefault("labels", {}))
+        for managed in ("controller-uid", "job-name",
+                        "batch.kubernetes.io/controller-uid",
+                        "batch.kubernetes.io/job-name"):
+            labels.pop(managed, None)
+        labels.setdefault("app", "crawler")
+        labels["crawler/source"] = _dns_safe(slug)
 
         created = self._post(f"/apis/batch/v1/namespaces/{self.namespace}/jobs", body)
         if created is None:
