@@ -62,12 +62,51 @@ export interface ImageStep {
 	effectiveQuery?: string;
 }
 
+/**
+ * An attachment is written two ways and the two must not be mixed up.
+ *
+ *   `<uuid>`               what POST /api/uploads returns and what the composer
+ *                          hands to `send`, and the only form POST /api/chat
+ *                          accepts (it filters with isAttachmentId, a plain UUID
+ *                          test, and silently drops anything else)
+ *   `/api/uploads/<uuid>`  what the server stores on the message and therefore
+ *                          what a reloaded conversation carries, and the only
+ *                          form an <img src> can actually load
+ *
+ * Both bugs this pair fixes came from passing one where the other was meant.
+ * The optimistic user message was built from the composer's ids, so every
+ * freshly sent attachment rendered as a broken image until the page was
+ * reloaded and the server's URLs replaced them. In the other direction, retry
+ * and edit resend the images already on the message -- URL form after a reload
+ * -- which isAttachmentId rejected, so regenerating a question quietly lost its
+ * attachments.
+ */
+const UPLOAD_PREFIX = '/api/uploads/';
+
+/** The form an <img> can load. Leaves anything already renderable alone. */
+export function attachmentUrl(value: string): string {
+	return value.startsWith(UPLOAD_PREFIX) ||
+		value.startsWith('data:') ||
+		value.startsWith('http')
+		? value
+		: UPLOAD_PREFIX + value;
+}
+
+/** The bare id, which is the only thing POST /api/chat accepts. */
+export function attachmentId(value: string): string {
+	return value.startsWith(UPLOAD_PREFIX) ? value.slice(UPLOAD_PREFIX.length) : value;
+}
+
 export interface ChatMessage {
 	id?: string;
 	parentId?: string | null;
 	role: 'user' | 'assistant';
 	content: string;
-	/** Data URLs of attached images (both chat models are vision-capable). */
+	/**
+	 * Attached images as URLs the browser can render, i.e. `/api/uploads/<id>`.
+	 * Always the URL form here -- see `attachmentUrl`, which exists because the
+	 * composer and the API speak in bare ids instead.
+	 */
 	images?: string[];
 	/** Generated files this question carried, for the chips under it. */
 	files?: AttachedFile[];
@@ -255,7 +294,9 @@ export class ChatSession {
 		this.messages.push({
 			role: 'user',
 			content: question,
-			images,
+			// URL form, so the attachment draws immediately instead of after a
+			// reload. The composer passes ids.
+			images: images?.map(attachmentUrl),
 			files,
 			citations: [],
 			agents: []
@@ -287,7 +328,9 @@ export class ChatSession {
 					question,
 					mode: this.mode,
 					conversationId: this.conversationId,
-					...(images?.length ? { images } : {}),
+					// Bare ids: the endpoint filters with isAttachmentId and drops
+					// anything else, which is how retry used to lose attachments.
+					...(images?.length ? { images: images.map(attachmentId) } : {}),
 					...(files?.length ? { files: files.map((f) => f.id) } : {}),
 					...(parentId !== undefined ? { parentId } : {})
 				}),

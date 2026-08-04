@@ -76,9 +76,17 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 	// only ever add to an answer.
 	//
 	// The RAW question, not the standalone rewrite: the rewrite is a model call we
-	// Only in deep mode. Fast mode does a single retrieval pass and the
+	// would otherwise have to wait for before starting, and these are keyword
+	// searches against external indexes where a follow-up's missing antecedent
+	// costs far less than the delay would.
+	//
+	// Only started in deep mode. Fast mode does a single retrieval pass and the
 	// external search adds latency without the sub-agent fan-out to hide it.
 	let documentWork: Promise<DocumentFindings | null> = Promise.resolve(null);
+
+	/** External sources, in the order they will be cited. Filled just before the answer. */
+	let externalSources: DocumentSource[] = [];
+
 	try {
 		const question = await standalone(input, controller.signal);
 
@@ -112,6 +120,7 @@ export async function* run(input: RunInput): AsyncGenerator<OrchestratorEvent> {
 			documentWork = runDocumentsAgent(input.question, corpusIds, controller.signal).catch(
 				() => null
 			);
+			const findings: Finding[] = [];
 			const { subqueries, imageQuery } = await plan(question, controller.signal);
 			let queries = subqueries;
 
